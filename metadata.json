@@ -1,0 +1,6 @@
+{
+  "name": "Bangladesh National Institute of Education",
+  "description": "An online certificate verification and vocational skill development platform for SSC, HSC, and Diploma programs under the Bangladesh National Institute of Education (BNIE).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
