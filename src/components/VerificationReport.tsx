@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Student, getLetterGrade } from "../types";
-import { ArrowLeft, Printer, Award, Calendar, Clock, CheckCircle2, FileDown, ShieldAlert, Globe, Settings, Link, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Printer, Award, Calendar, Clock, CheckCircle2, FileDown } from "lucide-react";
 import { motion } from "motion/react";
 import { QRCodeCanvas } from "qrcode.react";
 import Logo from "./Logo";
@@ -153,7 +153,7 @@ function getSafePhotoUrl(url: string): string {
 
 // Rewriter to force desktop-equivalent classes on cloned nodes to avoid mobile column collapse
 function forceDesktopLayout(node: HTMLElement) {
-  const elements = node.querySelectorAll("*");
+  const elements = [node, ...Array.from(node.querySelectorAll("*"))];
   elements.forEach((el) => {
     const classList = el.className;
     if (typeof classList === "string") {
@@ -245,32 +245,8 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
     return () => clearInterval(timer);
   }, []);
 
-  const [qrDomainMode, setQrDomainMode] = useState<"origin" | "cloudrun" | "custom">(() => {
-    if (typeof window !== "undefined" && window.location.hostname.endsWith(".run.app")) {
-      return "origin";
-    }
-    return "cloudrun";
-  });
-  const [customQrDomain, setCustomQrDomain] = useState("");
-
-  const cloudRunUrl = "https://ais-pre-ksmrh4gzaadqy5isair6fu-95199308812.asia-southeast1.run.app";
-  
-  let baseDomain = "";
-  if (typeof window !== "undefined") {
-    baseDomain = window.location.origin;
-  }
-  if (qrDomainMode === "cloudrun") {
-    baseDomain = cloudRunUrl;
-  } else if (qrDomainMode === "custom" && customQrDomain.trim()) {
-    let formatted = customQrDomain.trim();
-    if (!/^https?:\/\//i.test(formatted)) {
-      formatted = `https://${formatted}`;
-    }
-    baseDomain = formatted;
-  }
-
   // Generate secure URL with encrypted identifier
-  const verificationUrl = `${baseDomain}${typeof window !== "undefined" ? window.location.pathname : ""}?token=${student.secureToken || student.id}`;
+  const verificationUrl = `${window.location.origin}${window.location.pathname}?token=${student.secureToken || student.id}`;
 
   const handlePrint = () => {
     window.print();
@@ -288,15 +264,117 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
 
     // Create wrapper node to hold the clone off-screen but visible to layout rendering
     const wrapper = document.createElement("div");
+    wrapper.className = "force-desktop-pdf";
     wrapper.style.position = "fixed";
     wrapper.style.top = "0";
-    wrapper.style.left = "0";
+    wrapper.style.left = "-9999px"; // Off-screen to avoid any screen flashes
     wrapper.style.width = "840px";
     wrapper.style.height = "auto";
-    wrapper.style.overflow = "hidden";
+    wrapper.style.overflow = "visible";
     wrapper.style.zIndex = "-9999";
-    wrapper.style.opacity = "0.01"; // Faint visibility triggers layout rasterization reliably
     wrapper.style.pointerEvents = "none";
+
+    // Inject temporary custom stylesheet to force desktop rules unconditionally on mobile viewports
+    const styleEl = document.createElement("style");
+    styleEl.id = "force-desktop-pdf-styles";
+    styleEl.innerHTML = `
+      .force-desktop-pdf #a4-verification-report {
+        width: 840px !important;
+        max-width: 840px !important;
+        padding: 40px !important;
+        border-width: 10px !important;
+        border-style: double !important;
+        border-color: #006a4e !important;
+        border-radius: 1rem !important;
+        box-shadow: none !important;
+        background-color: #ffffff !important;
+      }
+      .force-desktop-pdf .print-card .text-center.border-b-2 {
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+      }
+      .force-desktop-pdf .print-card .text-center.border-b-2 .hidden.sm\\:block {
+        display: block !important;
+      }
+      .force-desktop-pdf .print-card .text-center.border-b-2 .sm\\:hidden {
+        display: none !important;
+      }
+      .force-desktop-pdf .grid.grid-cols-12 {
+        display: grid !important;
+        grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+        align-items: stretch !important;
+      }
+      .force-desktop-pdf .col-span-12.md\\:col-span-9 {
+        grid-column: span 9 / span 9 !important;
+      }
+      .force-desktop-pdf .col-span-12.md\\:col-span-3 {
+        grid-column: span 3 / span 3 !important;
+      }
+      .force-desktop-pdf table {
+        width: 100% !important;
+        display: table !important;
+        border-collapse: collapse !important;
+      }
+      .force-desktop-pdf tbody {
+        display: table-row-group !important;
+      }
+      .force-desktop-pdf tr {
+        display: table-row !important;
+      }
+      .force-desktop-pdf td {
+        display: table-cell !important;
+        border: 1px solid #d1d5db !important;
+      }
+      .force-desktop-pdf td.sm\\:w-\\[22\\%\\] {
+        width: 22% !important;
+      }
+      .force-desktop-pdf td.sm\\:w-\\[28\\%\\] {
+        width: 28% !important;
+      }
+      .force-desktop-pdf td.sm\\:w-auto {
+        width: auto !important;
+      }
+      .force-desktop-pdf .flex-row.md\\:flex-col {
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        height: 100% !important;
+      }
+      .force-desktop-pdf .hidden.md\\:block {
+        display: block !important;
+      }
+      .force-desktop-pdf .block.md\\:hidden {
+        display: none !important;
+      }
+      .force-desktop-pdf .overflow-x-auto {
+        overflow-x: visible !important;
+      }
+      .force-desktop-pdf .min-w-\\[600px\\] {
+        min-width: 0 !important;
+      }
+      .force-desktop-pdf .flex-col.sm\\:flex-row {
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: flex-end !important;
+      }
+      .force-desktop-pdf .text-center.sm\\:text-left {
+        text-align: left !important;
+      }
+      .force-desktop-pdf .justify-center.sm\\:justify-start {
+        justify-content: flex-start !important;
+      }
+      .force-desktop-pdf .w-full.sm\\:w-auto {
+        width: auto !important;
+      }
+      .force-desktop-pdf .w-full.max-w-\\[260px\\].sm\\:w-64 {
+        width: 16rem !important;
+      }
+      .force-desktop-pdf .sm\\:mt-10 {
+        margin-top: 2.5rem !important;
+      }
+    `;
+    document.head.appendChild(styleEl);
 
     try {
       // 1. Clone the report element
@@ -316,6 +394,20 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
       wrapper.appendChild(clone);
       document.body.appendChild(wrapper);
 
+      // 3.5 Copy Canvas pixel buffers. Since cloneNode does not duplicate canvas drawing buffers,
+      // we must copy the QR code canvas' pixels from the original canvas to the cloned canvas manually.
+      const originalCanvases = Array.from(reportElement.querySelectorAll("canvas"));
+      const clonedCanvases = Array.from(clone.querySelectorAll("canvas"));
+      originalCanvases.forEach((origCanvas, idx) => {
+        const clonedCanvas = clonedCanvases[idx];
+        if (clonedCanvas) {
+          const ctx = clonedCanvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(origCanvas, 0, 0);
+          }
+        }
+      });
+
       // Wait a moment for dynamic SVGs / QR canvas and style evaluations
       await new Promise((resolve) => setTimeout(resolve, 350));
 
@@ -331,10 +423,8 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
         })
       );
 
-      // Detect mobile device to apply memory-safe high-DPI scaling
-      const isMobile = /Mobi|Android|iPhone|iPad|Tablet/i.test(navigator.userAgent) || 
-                       (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
-      const renderScale = isMobile ? 2.0 : 2.5;
+      // Render with 3.0 scale (ultra high-definition crisp output)
+      const renderScale = 3.0;
 
       // 4. Render canvas from full-size desktop clone
       const canvas = await html2canvas(clone, {
@@ -354,10 +444,10 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
 
       const pdfWidth = 210;
       const pdfHeight = 297;
-      const margin = 10; // Strict 10mm margins on all sides
+      const margin = 4; // Minimal margin to maximize card size on A4 sheet (matching user image)
 
-      const printableWidth = pdfWidth - (margin * 2); // 190mm
-      const printableHeight = pdfHeight - (margin * 2); // 277mm
+      const printableWidth = pdfWidth - (margin * 2); // 202mm
+      const printableHeight = pdfHeight - (margin * 2); // 289mm
       
       const canvasWidth = canvas.width;
       const canvasHeight = canvas.height;
@@ -369,12 +459,12 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
       let yOffset = margin;
 
       if (finalImgHeight > printableHeight) {
-        // Shrink width slightly to maintain exact height constraints within 10mm limits
+        // Shrink width slightly to maintain exact height constraints within margins limits
         finalImgHeight = printableHeight;
         finalImgWidth = printableHeight / contentRatio;
         xOffset = margin + (printableWidth - finalImgWidth) / 2;
       } else {
-        // Perfectly center vertically inside the 10mm margins printable area
+        // Perfectly center vertically inside the margins printable area
         yOffset = margin + (printableHeight - finalImgHeight) / 2;
       }
 
@@ -389,14 +479,19 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
       console.error("Failed to generate PDF:", error);
       alert("An error occurred during PDF generation. Please use the Print feature as a workaround.");
     } finally {
-      // Clean up DOM wrapper
+      // Clean up DOM wrapper & custom style tag
       if (wrapper.parentNode) {
         document.body.removeChild(wrapper);
+      }
+      const injectedStyle = document.getElementById("force-desktop-pdf-styles");
+      if (injectedStyle) {
+        injectedStyle.parentNode?.removeChild(injectedStyle);
       }
       restoreGetComputedStyle();
       setIsGeneratingPDF(false);
     }
   };
+
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -442,128 +537,7 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
         </div>
       </div>
 
-      {/* Dynamic QR Link Control & Safe Browsing Configuration Panel */}
-      <div className="mb-6 bg-red-50/75 border border-red-200/80 rounded-2xl p-5 no-print text-left">
-        <div className="flex items-start space-x-3">
-          <div className="bg-red-100 p-2 rounded-xl text-red-600 shrink-0">
-            <ShieldAlert className="w-5 h-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-extrabold text-red-950 font-sans">
-              Google Chrome "Dangerous site" বা লাল সতর্কতা স্ক্রিন সমাধান সেটিংস
-            </h3>
-            <p className="text-red-800 text-xs mt-1 leading-relaxed font-medium">
-              আপনার কাস্টম ডোমেইন <strong className="font-bold underline">bnie-my-gov-portal.com</strong>-এ "my-gov-portal" শব্দটি থাকায় গুগল ক্রোম তাদের স্বয়ংক্রিয় অ্যান্টি-ফিশিং ফিল্টারের কারণে এই লাল সতর্কতা দেখাচ্ছে। এটি কোনো ভাইরাস বা অ্যাপের ত্রুটি নয়। নিচে প্রদত্ত ২টি সহজ উপায়ে এটি সাথে সাথে সমাধান করতে পারেন:
-            </p>
 
-            {/* Selection Options */}
-            <div className="mt-4 bg-white/90 p-4 rounded-xl border border-red-150/60 shadow-3xs">
-              <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                <Settings className="w-4 h-4 text-[#006a4e]" />
-                <span>কিউআর কোড ভেরিফিকেশন লিংক কনফিগারেশন:</span>
-              </h4>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setQrDomainMode("cloudrun")}
-                  className={`p-3 rounded-xl border text-xs text-left transition-all flex flex-col justify-between cursor-pointer ${
-                    qrDomainMode === "cloudrun"
-                      ? "border-[#006a4e] bg-emerald-50/50 text-[#006a4e] font-extrabold shadow-3xs"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  <span className="font-bold">১. নিরাপদ গুগল ক্লাউড লিংক</span>
-                  <span className="text-[10px] font-mono mt-1 text-emerald-700 font-semibold truncate max-w-full">
-                    {cloudRunUrl}
-                  </span>
-                  <span className="text-[9px] mt-1 text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded font-sans font-medium w-fit">
-                    ★ কোনো সতর্কতা দেখাবে না (১০০% নিরাপদ)
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setQrDomainMode("origin")}
-                  className={`p-3 rounded-xl border text-xs text-left transition-all flex flex-col justify-between cursor-pointer ${
-                    qrDomainMode === "origin"
-                      ? "border-red-300 bg-red-50/30 text-red-950 font-extrabold shadow-3xs"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  <span className="font-bold">২. কাস্টম ডোমেইন লিংক</span>
-                  <span className="text-[10px] font-mono mt-1 text-gray-500 truncate max-w-full">
-                    {typeof window !== "undefined" ? window.location.origin : "bnie-my-gov-portal.com"}
-                  </span>
-                  <span className="text-[9px] mt-1 text-red-700 bg-red-100 px-1.5 py-0.5 rounded font-sans font-medium w-fit">
-                    ⚠ সার্চ কনসোল অনুমোদন না হওয়া পর্যন্ত লাল সতর্কতা দেখাবে
-                  </span>
-                </button>
-
-                <div className={`p-3 rounded-xl border text-xs transition-all flex flex-col justify-between ${
-                  qrDomainMode === "custom"
-                    ? "border-[#006a4e] bg-emerald-50/50"
-                    : "border-gray-200 bg-white"
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => setQrDomainMode("custom")}
-                      className={`font-bold text-left cursor-pointer ${
-                        qrDomainMode === "custom" ? "text-[#006a4e] font-extrabold" : "text-gray-700"
-                      }`}
-                    >
-                      ৩. নতুন ডোমেইন যোগ করুন
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="যেমন: bnie-edu.com"
-                    value={customQrDomain}
-                    onChange={(e) => {
-                      setQrDomainMode("custom");
-                      setCustomQrDomain(e.target.value);
-                    }}
-                    className="mt-1.5 w-full bg-white border border-gray-200 rounded-lg px-2 py-1 text-[11px] font-medium text-gray-950 focus:outline-hidden focus:border-[#006a4e]"
-                  />
-                </div>
-              </div>
-
-              {/* Dynamic QR Link Indicator */}
-              <div className="mt-3 p-2 bg-gray-50 border border-gray-150 rounded-lg flex items-center space-x-2 text-[11px] font-medium text-gray-600 font-mono overflow-hidden">
-                <Link className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                <span className="text-gray-400 shrink-0 font-sans">QR Code URL:</span>
-                <span className="text-gray-800 truncate font-semibold">{verificationUrl}</span>
-              </div>
-            </div>
-
-            {/* Step-by-step to whitelist custom domain permanently */}
-            <div className="mt-4 border-t border-red-200/50 pt-3">
-              <h4 className="text-xs font-bold text-red-950 flex items-center gap-1.5 mb-1.5">
-                <AlertTriangle className="w-4 h-4 text-red-600" />
-                <span>আপনার কাস্টম ডোমেইন থেকে চিরতরে লাল সতর্কতা দূর করার পদ্ধতি:</span>
-              </h4>
-              <ul className="list-decimal list-inside text-[11px] text-red-900 space-y-1 font-medium leading-relaxed pl-1">
-                <li>
-                  <strong className="font-bold font-sans">Google Search Console</strong>-এ যান (<a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" className="underline font-bold text-red-950 hover:text-red-800">search.google.com</a>) এবং আপনার জিমেইল অ্যাকাউন্ট দিয়ে লগইন করুন।
-                </li>
-                <li>
-                  "Add Property" তে ক্লিক করে আপনার কাস্টম ডোমেইন URL <code className="bg-red-100 px-1 py-0.2 rounded text-red-950 font-mono text-[10px] font-bold">https://bnie-my-gov-portal.com</code> টাইপ করে DNS বা HTML ফাইল দিয়ে ভেরিফাই করুন।
-                </li>
-                <li>
-                  বামদিকের মেনু থেকে <strong className="font-bold">"Security & Manual Actions"</strong> {`>`} <strong className="font-bold">"Security issues"</strong> অপশনে যান।
-                </li>
-                <li>
-                  সেখানে <strong className="font-bold">"Request Review"</strong> বাটনে ক্লিক করে লিখুন: <em className="italic bg-white/70 px-1.5 py-0.5 rounded text-gray-800 font-sans not-italic text-[10px] font-semibold border border-red-200/50">"Our website is a legitimate educational certification verification portal for BNIE graduates in Bangladesh. It contains static public results directory and does not collect or harvest any passwords or credit card information. Please remove the false positive warning."</em>
-                </li>
-                <li>
-                  গুগল ২৪ ঘণ্টার মধ্যে আপনার সাইটটি পুনরায় পর্যবেক্ষণ করে সম্পূর্ণ আনব্লক ও নিরাপদ ঘোষণা করবে।
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Official A4 Certificate Verification Card */}
       <motion.div
