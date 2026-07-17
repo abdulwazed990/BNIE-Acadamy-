@@ -304,7 +304,7 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
 
           <button
             onClick={handlePrint}
-            className="inline-flex items-center space-x-2 text-xs font-bold text-white bg-[#006a4e] hover:bg-[#00563f] px-5 py-2.5 rounded-xl transition-all shadow-md cursor-pointer border border-[#00563f]"
+            className="hidden sm:inline-flex items-center space-x-2 text-xs font-bold text-white bg-[#006a4e] hover:bg-[#00563f] px-5 py-2.5 rounded-xl transition-all shadow-md cursor-pointer border border-[#00563f]"
           >
             <Printer className="w-4 h-4" />
             <span>Print Report (A4)</span>

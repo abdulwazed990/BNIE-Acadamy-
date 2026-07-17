@@ -233,68 +233,27 @@ export default function VerificationForm({ students, onVerifySuccess }: Verifica
             </div>
           )}
 
-          {/* Quick Help Test Credentials Badge (hidden when token loaded) */}
-          {!isTokenLoaded && (
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-              <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center space-x-1.5">
-                <SearchCode className="w-4 h-4 text-[#006a4e]" />
-                <span>Registered Test Credentials (Use for Instant Verification):</span>
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-                <div className="bg-white p-2 rounded-lg border border-gray-150 text-xs">
-                  <span className="font-bold text-[#006a4e] block">SSC (Science):</span>
-                  <span className="text-gray-600">Roll: </span><span className="font-semibold text-gray-800">102938</span>
-                  <br />
-                  <span className="text-gray-600">Reg: </span><span className="font-semibold text-gray-800">2019384756</span>
-                </div>
-                <div className="bg-white p-2 rounded-lg border border-gray-150 text-xs">
-                  <span className="font-bold text-[#006a4e] block">HSC (Business Studies):</span>
-                  <span className="text-gray-600">Roll: </span><span className="font-semibold text-gray-800">203948</span>
-                  <br />
-                  <span className="text-gray-600">Reg: </span><span className="font-semibold text-gray-800">3019284756</span>
-                </div>
-                <div className="bg-white p-2 rounded-lg border border-gray-150 text-xs">
-                  <span className="font-bold text-[#006a4e] block">Diploma (Engineering):</span>
-                  <span className="text-gray-600">Roll: </span><span className="font-semibold text-gray-800">405968</span>
-                  <br />
-                  <span className="text-gray-600">Reg: </span><span className="font-semibold text-gray-800">5019283746</span>
-                </div>
-              </div>
-            </div>
-          )}
-
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             {/* Category selection */}
             <div className="md:col-span-12">
-              <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">
-                Examination Category <span className="text-[#f42a41]">*</span>
+              <label htmlFor="exam-category-select" className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">
+                Exam Category <span className="text-[#f42a41]">*</span>
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {[
-                  { value: Category.SSC, label: "Secondary School Certificate (SSC)" },
-                  { value: Category.HSC, label: "Higher Secondary Certificate (HSC)" },
-                  { value: Category.DIPLOMA, label: "Diploma in Engineering" }
-                ].map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    disabled={isTokenLoaded}
-                    onClick={() => {
-                      setCategory(opt.value);
-                      setSearchError("");
-                    }}
-                    className={`px-4 py-3 rounded-xl border text-xs font-bold text-left transition-all flex flex-col justify-between ${
-                      category === opt.value
-                        ? "border-[#006a4e] bg-emerald-50/50 text-[#006a4e] shadow-2xs font-extrabold"
-                        : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                    } ${isTokenLoaded ? "opacity-75 cursor-not-allowed" : "cursor-pointer"}`}
-                  >
-                    <span>{opt.label}</span>
-                    <span className={`text-[10px] font-mono mt-1 ${category === opt.value ? "text-[#006a4e]" : "text-gray-400"}`}>
-                      {opt.value} Stream
-                    </span>
-                  </button>
-                ))}
+              <div className="relative">
+                <select
+                  id="exam-category-select"
+                  disabled={isTokenLoaded}
+                  value={category}
+                  onChange={(e) => {
+                    setCategory(e.target.value as Category);
+                    setSearchError("");
+                  }}
+                  className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3.5 text-sm text-gray-950 font-bold focus:outline-hidden focus:border-[#006a4e] focus:ring-1 focus:ring-[#006a4e] disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed cursor-pointer transition-all shadow-3xs"
+                >
+                  <option value={Category.SSC}>Secondary School Certificate (SSC)</option>
+                  <option value={Category.HSC}>Higher Secondary Certificate (HSC)</option>
+                  <option value={Category.DIPLOMA}>Diploma</option>
+                </select>
               </div>
             </div>
 

@@ -12,12 +12,10 @@ export default function Header() {
 
       <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col items-center text-center">
         {/* Emblem / Logo */}
-        <div className="mb-4 relative">
-          <div className="relative overflow-hidden">
-            <Logo size={112} className="mx-auto" />
-          </div>
+        <div className="mb-7 relative">
+          <Logo size={112} className="mx-auto" />
           {/* Govt Approved Badge */}
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#006a4e] text-white text-[10px] font-semibold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap uppercase tracking-wider border border-white">
+          <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-[#006a4e] text-white text-[10px] font-semibold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap uppercase tracking-wider border border-white">
             Govt. Approved
           </div>
         </div>

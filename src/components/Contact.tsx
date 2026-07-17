@@ -22,30 +22,56 @@ export default function Contact() {
                 </p>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <a
-                  href="tel:+8801000000000"
-                  className="flex items-center space-x-3 p-3 rounded-xl border border-gray-100 hover:border-[#006a4e]/20 hover:bg-emerald-50/20 transition-all group"
+                  href="tel:+880255123456"
+                  className="flex items-center space-x-3 p-2.5 rounded-xl border border-gray-100 hover:border-[#006a4e]/20 hover:bg-emerald-50/20 transition-all group"
                 >
-                  <div className="p-2.5 rounded-lg bg-[#006a4e]/10 text-[#006a4e] group-hover:bg-[#006a4e] group-hover:text-white transition-all">
-                    <Phone className="w-5 h-5 stroke-[2]" />
+                  <div className="p-2 rounded-lg bg-[#006a4e]/10 text-[#006a4e] group-hover:bg-[#006a4e] group-hover:text-white transition-all">
+                    <Phone className="w-4 h-4 stroke-[2]" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-gray-400 uppercase font-semibold">National Helpline</p>
-                    <p className="text-sm font-bold text-gray-900">+8801000000000</p>
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Phone</p>
+                    <p className="text-xs font-bold text-gray-900">+880-2-55123456</p>
                   </div>
                 </a>
 
                 <a
-                  href="mailto:info@bnie-gov.org"
-                  className="flex items-center space-x-3 p-3 rounded-xl border border-gray-100 hover:border-[#006a4e]/20 hover:bg-emerald-50/20 transition-all group"
+                  href="tel:+8809610123456"
+                  className="flex items-center space-x-3 p-2.5 rounded-xl border border-gray-100 hover:border-[#006a4e]/20 hover:bg-emerald-50/20 transition-all group"
                 >
-                  <div className="p-2.5 rounded-lg bg-[#006a4e]/10 text-[#006a4e] group-hover:bg-[#006a4e] group-hover:text-white transition-all">
-                    <Mail className="w-5 h-5 stroke-[2]" />
+                  <div className="p-2 rounded-lg bg-[#006a4e]/10 text-[#006a4e] group-hover:bg-[#006a4e] group-hover:text-white transition-all">
+                    <Phone className="w-4 h-4 stroke-[2]" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-gray-400 uppercase font-semibold">Official Email</p>
-                    <p className="text-sm font-bold text-gray-900">info@bnie-gov.org</p>
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Hotline</p>
+                    <p className="text-xs font-bold text-gray-900">+880-9610-123456</p>
+                  </div>
+                </a>
+
+                <a
+                  href="mailto:info@bisd.gov.bd"
+                  className="flex items-center space-x-3 p-2.5 rounded-xl border border-gray-100 hover:border-[#006a4e]/20 hover:bg-emerald-50/20 transition-all group"
+                >
+                  <div className="p-2 rounded-lg bg-[#006a4e]/10 text-[#006a4e] group-hover:bg-[#006a4e] group-hover:text-white transition-all">
+                    <Mail className="w-4 h-4 stroke-[2]" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Email</p>
+                    <p className="text-xs font-bold text-gray-900">info@bisd.gov.bd</p>
+                  </div>
+                </a>
+
+                <a
+                  href="mailto:support@bisd.gov.bd"
+                  className="flex items-center space-x-3 p-2.5 rounded-xl border border-gray-100 hover:border-[#006a4e]/20 hover:bg-emerald-50/20 transition-all group"
+                >
+                  <div className="p-2 rounded-lg bg-[#006a4e]/10 text-[#006a4e] group-hover:bg-[#006a4e] group-hover:text-white transition-all">
+                    <Mail className="w-4 h-4 stroke-[2]" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Support Email</p>
+                    <p className="text-xs font-bold text-gray-900">support@bisd.gov.bd</p>
                   </div>
                 </a>
               </div>

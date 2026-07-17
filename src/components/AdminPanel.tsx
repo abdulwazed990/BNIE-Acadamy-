@@ -63,8 +63,8 @@ export default function AdminPanel({
 
   // Simple hardcoded admin credentials
   const ADMIN_CREDENTIALS = {
-    username: "admin",
-    password: "bnieadminpassword"
+    username: "Sa7@kL3!",
+    password: "Sa7@kL3!"
   };
 
   const handleLogin = (e: FormEvent) => {
@@ -431,15 +431,6 @@ export default function AdminPanel({
 
           {/* Form */}
           <form onSubmit={handleLogin} className="p-6 space-y-4">
-            
-            {/* Show on-screen developer assistance credentials */}
-            <div className="bg-emerald-50 text-emerald-800 border border-emerald-200 p-3.5 rounded-xl text-xs space-y-1.5">
-              <span className="font-bold block uppercase tracking-wider">Demo Admin Credentials:</span>
-              <div className="flex justify-between font-mono">
-                <span>Username: <span className="font-bold">admin</span></span>
-                <span>Password: <span className="font-bold">bnieadminpassword</span></span>
-              </div>
-            </div>
 
             <div className="space-y-1">
               <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block">

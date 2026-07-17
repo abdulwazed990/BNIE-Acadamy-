@@ -50,12 +50,7 @@
   
   /* Scale content perfectly for printing single A4 with zero margins overflow */
   .print-card {
-    border: none !important;
     box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
     background-color: white !important;
     background: white !important;
     page-break-inside: avoid !important;

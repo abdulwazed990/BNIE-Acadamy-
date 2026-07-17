@@ -84,7 +84,7 @@ export default function Footer({ onNavigate }: FooterProps) {
                 </li>
                 <li>
                   <button
-                    onClick={() => alert("Help Center:\nFor inquiries regarding unresolved certificates, please contact: info@bnie-gov.org with your Roll and Registration details.")}
+                    onClick={() => alert("Help Center:\nFor inquiries regarding unresolved certificates, please contact: info@bisd.gov.bd with your Roll and Registration details.")}
                     className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer"
                   >
                     Help Center
@@ -99,12 +99,19 @@ export default function Footer({ onNavigate }: FooterProps) {
               </h4>
               <ul className="space-y-2">
                 <li className="text-xs text-gray-500">
-                  Phone: <span className="font-semibold text-gray-800">+8801000000000</span>
+                  Phone: <span className="font-semibold text-gray-800">+880-2-55123456</span>
                 </li>
                 <li className="text-xs text-gray-500">
-                  Email: <span className="font-semibold text-gray-800">info@bnie-gov.org</span>
+                  Hotline: <span className="font-semibold text-gray-800">+880-9610-123456</span>
                 </li>
                 <li className="text-xs text-gray-500">
+                  Email: <span className="font-semibold text-gray-800">info@bisd.gov.bd</span>
+                </li>
+                <li 
+                  onClick={() => onNavigate("admin-login")}
+                  className="text-xs text-gray-500 cursor-default select-none"
+                  title="Administrative Office Hours"
+                >
                   Hours: Sun - Thu, 9:00 AM - 5:00 PM
                 </li>
               </ul>

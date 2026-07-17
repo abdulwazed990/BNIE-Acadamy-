@@ -1,0 +1,30 @@
+{
+  "collections": {
+    "students": {
+      "schema": {
+        "id": "string",
+        "category": "string",
+        "group": "string",
+        "religion": "string",
+        "name": "string",
+        "fatherName": "string",
+        "motherName": "string",
+        "dob": "string",
+        "rollNumber": "string",
+        "registrationNumber": "string",
+        "instituteName": "string",
+        "session": "string",
+        "passingYear": "string",
+        "certificateSerialNumber": "string",
+        "issueDate": "string",
+        "photoUrl": "string",
+        "qrCodeUrl": "string",
+        "secureToken": "string",
+        "finalGpa": "number",
+        "totalMarks": "number",
+        "subjects": "array"
+      },
+      "indexes": []
+    }
+  }
+}
