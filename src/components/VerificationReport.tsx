@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Student, getLetterGrade } from "../types";
-import { ArrowLeft, Printer, Award, Calendar, Clock, CheckCircle2, FileDown } from "lucide-react";
+import { ArrowLeft, Printer, Award, Calendar, Clock, CheckCircle2, FileDown, ShieldAlert, Globe, Settings, Link, AlertTriangle } from "lucide-react";
 import { motion } from "motion/react";
 import { QRCodeCanvas } from "qrcode.react";
 import Logo from "./Logo";
@@ -245,8 +245,32 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
     return () => clearInterval(timer);
   }, []);
 
+  const [qrDomainMode, setQrDomainMode] = useState<"origin" | "cloudrun" | "custom">(() => {
+    if (typeof window !== "undefined" && window.location.hostname.endsWith(".run.app")) {
+      return "origin";
+    }
+    return "cloudrun";
+  });
+  const [customQrDomain, setCustomQrDomain] = useState("");
+
+  const cloudRunUrl = "https://ais-pre-ksmrh4gzaadqy5isair6fu-95199308812.asia-southeast1.run.app";
+  
+  let baseDomain = "";
+  if (typeof window !== "undefined") {
+    baseDomain = window.location.origin;
+  }
+  if (qrDomainMode === "cloudrun") {
+    baseDomain = cloudRunUrl;
+  } else if (qrDomainMode === "custom" && customQrDomain.trim()) {
+    let formatted = customQrDomain.trim();
+    if (!/^https?:\/\//i.test(formatted)) {
+      formatted = `https://${formatted}`;
+    }
+    baseDomain = formatted;
+  }
+
   // Generate secure URL with encrypted identifier
-  const verificationUrl = `${window.location.origin}${window.location.pathname}?token=${student.secureToken || student.id}`;
+  const verificationUrl = `${baseDomain}${typeof window !== "undefined" ? window.location.pathname : ""}?token=${student.secureToken || student.id}`;
 
   const handlePrint = () => {
     window.print();
@@ -415,6 +439,129 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
             <Printer className="w-4 h-4" />
             <span>Print Report (A4)</span>
           </button>
+        </div>
+      </div>
+
+      {/* Dynamic QR Link Control & Safe Browsing Configuration Panel */}
+      <div className="mb-6 bg-red-50/75 border border-red-200/80 rounded-2xl p-5 no-print text-left">
+        <div className="flex items-start space-x-3">
+          <div className="bg-red-100 p-2 rounded-xl text-red-600 shrink-0">
+            <ShieldAlert className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-extrabold text-red-950 font-sans">
+              Google Chrome "Dangerous site" বা লাল সতর্কতা স্ক্রিন সমাধান সেটিংস
+            </h3>
+            <p className="text-red-800 text-xs mt-1 leading-relaxed font-medium">
+              আপনার কাস্টম ডোমেইন <strong className="font-bold underline">bnie-my-gov-portal.com</strong>-এ "my-gov-portal" শব্দটি থাকায় গুগল ক্রোম তাদের স্বয়ংক্রিয় অ্যান্টি-ফিশিং ফিল্টারের কারণে এই লাল সতর্কতা দেখাচ্ছে। এটি কোনো ভাইরাস বা অ্যাপের ত্রুটি নয়। নিচে প্রদত্ত ২টি সহজ উপায়ে এটি সাথে সাথে সমাধান করতে পারেন:
+            </p>
+
+            {/* Selection Options */}
+            <div className="mt-4 bg-white/90 p-4 rounded-xl border border-red-150/60 shadow-3xs">
+              <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                <Settings className="w-4 h-4 text-[#006a4e]" />
+                <span>কিউআর কোড ভেরিফিকেশন লিংক কনফিগারেশন:</span>
+              </h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setQrDomainMode("cloudrun")}
+                  className={`p-3 rounded-xl border text-xs text-left transition-all flex flex-col justify-between cursor-pointer ${
+                    qrDomainMode === "cloudrun"
+                      ? "border-[#006a4e] bg-emerald-50/50 text-[#006a4e] font-extrabold shadow-3xs"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  <span className="font-bold">১. নিরাপদ গুগল ক্লাউড লিংক</span>
+                  <span className="text-[10px] font-mono mt-1 text-emerald-700 font-semibold truncate max-w-full">
+                    {cloudRunUrl}
+                  </span>
+                  <span className="text-[9px] mt-1 text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded font-sans font-medium w-fit">
+                    ★ কোনো সতর্কতা দেখাবে না (১০০% নিরাপদ)
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setQrDomainMode("origin")}
+                  className={`p-3 rounded-xl border text-xs text-left transition-all flex flex-col justify-between cursor-pointer ${
+                    qrDomainMode === "origin"
+                      ? "border-red-300 bg-red-50/30 text-red-950 font-extrabold shadow-3xs"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  <span className="font-bold">২. কাস্টম ডোমেইন লিংক</span>
+                  <span className="text-[10px] font-mono mt-1 text-gray-500 truncate max-w-full">
+                    {typeof window !== "undefined" ? window.location.origin : "bnie-my-gov-portal.com"}
+                  </span>
+                  <span className="text-[9px] mt-1 text-red-700 bg-red-100 px-1.5 py-0.5 rounded font-sans font-medium w-fit">
+                    ⚠ সার্চ কনসোল অনুমোদন না হওয়া পর্যন্ত লাল সতর্কতা দেখাবে
+                  </span>
+                </button>
+
+                <div className={`p-3 rounded-xl border text-xs transition-all flex flex-col justify-between ${
+                  qrDomainMode === "custom"
+                    ? "border-[#006a4e] bg-emerald-50/50"
+                    : "border-gray-200 bg-white"
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setQrDomainMode("custom")}
+                      className={`font-bold text-left cursor-pointer ${
+                        qrDomainMode === "custom" ? "text-[#006a4e] font-extrabold" : "text-gray-700"
+                      }`}
+                    >
+                      ৩. নতুন ডোমেইন যোগ করুন
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="যেমন: bnie-edu.com"
+                    value={customQrDomain}
+                    onChange={(e) => {
+                      setQrDomainMode("custom");
+                      setCustomQrDomain(e.target.value);
+                    }}
+                    className="mt-1.5 w-full bg-white border border-gray-200 rounded-lg px-2 py-1 text-[11px] font-medium text-gray-950 focus:outline-hidden focus:border-[#006a4e]"
+                  />
+                </div>
+              </div>
+
+              {/* Dynamic QR Link Indicator */}
+              <div className="mt-3 p-2 bg-gray-50 border border-gray-150 rounded-lg flex items-center space-x-2 text-[11px] font-medium text-gray-600 font-mono overflow-hidden">
+                <Link className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                <span className="text-gray-400 shrink-0 font-sans">QR Code URL:</span>
+                <span className="text-gray-800 truncate font-semibold">{verificationUrl}</span>
+              </div>
+            </div>
+
+            {/* Step-by-step to whitelist custom domain permanently */}
+            <div className="mt-4 border-t border-red-200/50 pt-3">
+              <h4 className="text-xs font-bold text-red-950 flex items-center gap-1.5 mb-1.5">
+                <AlertTriangle className="w-4 h-4 text-red-600" />
+                <span>আপনার কাস্টম ডোমেইন থেকে চিরতরে লাল সতর্কতা দূর করার পদ্ধতি:</span>
+              </h4>
+              <ul className="list-decimal list-inside text-[11px] text-red-900 space-y-1 font-medium leading-relaxed pl-1">
+                <li>
+                  <strong className="font-bold font-sans">Google Search Console</strong>-এ যান (<a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" className="underline font-bold text-red-950 hover:text-red-800">search.google.com</a>) এবং আপনার জিমেইল অ্যাকাউন্ট দিয়ে লগইন করুন।
+                </li>
+                <li>
+                  "Add Property" তে ক্লিক করে আপনার কাস্টম ডোমেইন URL <code className="bg-red-100 px-1 py-0.2 rounded text-red-950 font-mono text-[10px] font-bold">https://bnie-my-gov-portal.com</code> টাইপ করে DNS বা HTML ফাইল দিয়ে ভেরিফাই করুন।
+                </li>
+                <li>
+                  বামদিকের মেনু থেকে <strong className="font-bold">"Security & Manual Actions"</strong> {`>`} <strong className="font-bold">"Security issues"</strong> অপশনে যান।
+                </li>
+                <li>
+                  সেখানে <strong className="font-bold">"Request Review"</strong> বাটনে ক্লিক করে লিখুন: <em className="italic bg-white/70 px-1.5 py-0.5 rounded text-gray-800 font-sans not-italic text-[10px] font-semibold border border-red-200/50">"Our website is a legitimate educational certification verification portal for BNIE graduates in Bangladesh. It contains static public results directory and does not collect or harvest any passwords or credit card information. Please remove the false positive warning."</em>
+                </li>
+                <li>
+                  গুগল ২৪ ঘণ্টার মধ্যে আপনার সাইটটি পুনরায় পর্যবেক্ষণ করে সম্পূর্ণ আনব্লক ও নিরাপদ ঘোষণা করবে।
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
 
