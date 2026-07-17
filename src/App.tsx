@@ -333,6 +333,7 @@ export default function App() {
                 <VerificationForm 
                   students={students} 
                   onVerifySuccess={handleVerifySuccess} 
+                  isDbLoading={isDbLoading}
                 />
               </div>
               <Contact />

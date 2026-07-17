@@ -6,6 +6,7 @@ import { motion } from "motion/react";
 interface VerificationFormProps {
   students: Student[];
   onVerifySuccess: (student: Student) => void;
+  isDbLoading?: boolean;
 }
 
 interface Captcha {
@@ -15,7 +16,7 @@ interface Captcha {
   result: number;
 }
 
-export default function VerificationForm({ students, onVerifySuccess }: VerificationFormProps) {
+export default function VerificationForm({ students, onVerifySuccess, isDbLoading = false }: VerificationFormProps) {
   // Input fields
   const [category, setCategory] = useState<Category>(Category.SSC);
   const [rollNumber, setRollNumber] = useState("");
@@ -65,6 +66,11 @@ export default function VerificationForm({ students, onVerifySuccess }: Verifica
     const token = params.get("token") || params.get("id");
 
     if (token) {
+      // If the database is still loading, wait and don't evaluate error yet
+      if (isDbLoading) {
+        return;
+      }
+
       const matched = students.find(
         (s) => s.secureToken === token || s.id === token
       );
@@ -76,6 +82,9 @@ export default function VerificationForm({ students, onVerifySuccess }: Verifica
         setTokenStudentName(matched.name);
         setIsTokenLoaded(true);
         setTokenError("");
+        
+        // AUTO-VERIFY: Instantly bypass the form & math captcha for valid URL tokens to avoid unnecessary warning boxes
+        onVerifySuccess(matched);
       } else {
         setTokenError("Certificate Not Found: The scanned verification token is invalid, expired, or has been canceled.");
         setIsTokenLoaded(false);
@@ -84,7 +93,7 @@ export default function VerificationForm({ students, onVerifySuccess }: Verifica
       setIsTokenLoaded(false);
       setTokenError("");
     }
-  }, [students]);
+  }, [students, isDbLoading]);
 
   const clearToken = () => {
     const url = new URL(window.location.href);
