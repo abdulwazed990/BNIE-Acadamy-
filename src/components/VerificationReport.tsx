@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Student, getLetterGrade } from "../types";
 import { ArrowLeft, Printer, Award, Calendar, Clock, CheckCircle2, FileDown } from "lucide-react";
 import { motion } from "motion/react";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeCanvas } from "qrcode.react";
 import Logo from "./Logo";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
@@ -134,6 +134,84 @@ const patchGetComputedStyle = () => {
   };
 };
 
+// Helper to ensure any SVG data URLs are converted to Base64 for iOS/Safari html2canvas compatibility
+function getSafePhotoUrl(url: string): string {
+  if (url.startsWith("data:image/svg+xml") && !url.includes(";base64,")) {
+    try {
+      const headerIndex = url.indexOf(",");
+      if (headerIndex !== -1) {
+        const svgContent = decodeURIComponent(url.substring(headerIndex + 1));
+        const base64 = btoa(unescape(encodeURIComponent(svgContent)));
+        return `data:image/svg+xml;base64,${base64}`;
+      }
+    } catch (e) {
+      console.error("Error converting SVG data URL to Base64:", e);
+    }
+  }
+  return url;
+}
+
+// Rewriter to force desktop-equivalent classes on cloned nodes to avoid mobile column collapse
+function forceDesktopLayout(node: HTMLElement) {
+  const elements = node.querySelectorAll("*");
+  elements.forEach((el) => {
+    const classList = el.className;
+    if (typeof classList === "string") {
+      let newClasses = classList;
+      
+      // Convert grid/flex layouts to force desktop specifications
+      if (newClasses.includes("md:col-span-9")) {
+        newClasses = newClasses.replace(/\bcol-span-12\b/g, "").replace(/\bmd:col-span-9\b/g, "col-span-9");
+      }
+      if (newClasses.includes("md:col-span-3")) {
+        newClasses = newClasses.replace(/\bcol-span-12\b/g, "").replace(/\bmd:col-span-3\b/g, "col-span-3");
+      }
+      if (newClasses.includes("md:flex-col")) {
+        newClasses = newClasses.replace(/\bflex-row\b/g, "").replace(/\bmd:flex-col\b/g, "flex-col");
+      }
+      if (newClasses.includes("md:block")) {
+        newClasses = newClasses.replace(/\bhidden\b/g, "block").replace(/\bmd:block\b/g, "block");
+      }
+      if (newClasses.includes("md:hidden")) {
+        newClasses = newClasses.replace(/\bblock\b/g, "hidden").replace(/\bmd:hidden\b/g, "hidden");
+      }
+      
+      // Force table rendering classes from collapsed mobile blocks to proper rows/cells
+      if (newClasses.includes("sm:table-row-group")) {
+        newClasses = newClasses.replace(/\bflex\b/g, "").replace(/\bflex-col\b/g, "").replace(/\bsm:table-row-group\b/g, "table-row-group");
+      }
+      if (newClasses.includes("sm:table-row")) {
+        newClasses = newClasses.replace(/\bflex\b/g, "").replace(/\bflex-col\b/g, "").replace(/\bsm:table-row\b/g, "table-row");
+      }
+      if (newClasses.includes("sm:w-[22%]")) {
+        newClasses = newClasses.replace(/\bw-full\b/g, "").replace(/\bsm:w-\[22%\]\b/g, "w-[22%]");
+      }
+      if (newClasses.includes("sm:w-[28%]")) {
+        newClasses = newClasses.replace(/\bw-full\b/g, "").replace(/\bsm:w-\[28%\]\b/g, "w-[28%]");
+      }
+      if (newClasses.includes("sm:w-auto")) {
+        newClasses = newClasses.replace(/\bw-full\b/g, "").replace(/\bsm:w-auto\b/g, "w-auto");
+      }
+      if (newClasses.includes("sm:border")) {
+        newClasses = newClasses.replace(/\bborder-b\b/g, "border").replace(/\bsm:border\b/g, "border");
+      }
+      if (newClasses.includes("sm:border-b-0")) {
+        newClasses = newClasses.replace(/\bborder-b\b/g, "").replace(/\bsm:border-b-0\b/g, "");
+      }
+      
+      // Align borders and paddings to matches full desktop proportions
+      if (newClasses.includes("md:p-10")) {
+        newClasses = newClasses.replace(/\bp-4\b/g, "p-10").replace(/\bsm:p-6\b/g, "p-10").replace(/\bmd:p-10\b/g, "p-10");
+      }
+      if (newClasses.includes("sm:border-[6px]")) {
+        newClasses = newClasses.replace(/\bborder-\[4px\]\b/g, "border-[10px]").replace(/\bsm:border-\[6px\]\b/g, "border-[10px]").replace(/\bmd:border-\[10px\]\b/g, "border-[10px]");
+      }
+      
+      el.className = newClasses;
+    }
+  });
+}
+
 interface VerificationReportProps {
   student: Student;
   onBack: () => void;
@@ -184,41 +262,66 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
     setIsGeneratingPDF(true);
     const restoreGetComputedStyle = patchGetComputedStyle();
 
+    // Create wrapper node to hold the clone off-screen but visible to layout rendering
+    const wrapper = document.createElement("div");
+    wrapper.style.position = "fixed";
+    wrapper.style.top = "0";
+    wrapper.style.left = "0";
+    wrapper.style.width = "840px";
+    wrapper.style.height = "auto";
+    wrapper.style.overflow = "hidden";
+    wrapper.style.zIndex = "-9999";
+    wrapper.style.opacity = "0.01"; // Faint visibility triggers layout rasterization reliably
+    wrapper.style.pointerEvents = "none";
+
     try {
-      // 1. Clone the report element so screen zoom levels do not interfere with resolution
+      // 1. Clone the report element
       const clone = reportElement.cloneNode(true) as HTMLDivElement;
       
-      // 2. Set specific offline style overrides for pixel-perfect standard scaling
-      clone.style.position = "absolute";
-      clone.style.top = "-9999px";
-      clone.style.left = "-9999px";
+      // 2. Set static design overrides for pixel-perfect standard portrait layout
       clone.style.width = "840px";
       clone.style.height = "auto";
-      clone.style.zoom = "1";
-      clone.style.transform = "none";
-      clone.style.boxShadow = "none";
       clone.style.margin = "0";
+      clone.style.boxShadow = "none";
       clone.style.backgroundColor = "#ffffff";
+
+      // 3. Force full desktop classes to replace responsive collapsed equivalents
+      forceDesktopLayout(clone);
       
-      document.body.appendChild(clone);
+      // Append clone to off-screen wrapper and DOM
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
 
-      // Wait a short moment to ensure resource render state is fully loaded in clone
-      await new Promise((resolve) => setTimeout(resolve, 250));
+      // Wait a moment for dynamic SVGs / QR canvas and style evaluations
+      await new Promise((resolve) => setTimeout(resolve, 350));
 
-      // 3. Render off-screen clone with high DPI factor
+      // Wait for all images in clone to load completely before capturing
+      const images = Array.from(clone.querySelectorAll("img"));
+      await Promise.all(
+        images.map((img) => {
+          if (img.complete) return Promise.resolve();
+          return new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          });
+        })
+      );
+
+      // Detect mobile device to apply memory-safe high-DPI scaling
+      const isMobile = /Mobi|Android|iPhone|iPad|Tablet/i.test(navigator.userAgent) || 
+                       (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+      const renderScale = isMobile ? 2.0 : 2.5;
+
+      // 4. Render canvas from full-size desktop clone
       const canvas = await html2canvas(clone, {
-        scale: 2.2, // Optimized Retina density
+        scale: renderScale, 
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
-        allowTaint: true,
       });
 
-      // Cleanup cloned node
-      document.body.removeChild(clone);
-
-      // 4. Create single-page A4 PDF matching high-fidelity canvas dimensions
-      const imgData = canvas.toDataURL("image/jpeg", 0.98);
+      // 5. Generate high-quality portrait PDF conforming exactly to A4 boundaries
+      const imgData = canvas.toDataURL("image/jpeg", 1.0); // 100% Quality
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
@@ -227,34 +330,33 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
 
       const pdfWidth = 210;
       const pdfHeight = 297;
+      const margin = 10; // Strict 10mm margins on all sides
+
+      const printableWidth = pdfWidth - (margin * 2); // 190mm
+      const printableHeight = pdfHeight - (margin * 2); // 277mm
       
       const canvasWidth = canvas.width;
       const canvasHeight = canvas.height;
       const contentRatio = canvasHeight / canvasWidth;
 
-      // Fit content beautifully onto a single Portrait A4 page
-      const margin = 8; // Standard professional portrait borders
-      const imgWidth = pdfWidth - (margin * 2); // 194mm
-      const imgHeight = imgWidth * contentRatio;
-
-      let finalImgWidth = imgWidth;
-      let finalImgHeight = imgHeight;
+      let finalImgWidth = printableWidth;
+      let finalImgHeight = printableWidth * contentRatio;
       let xOffset = margin;
       let yOffset = margin;
 
-      // Strict vertical constraints to prevent second-page spills
-      if (imgHeight > (pdfHeight - (margin * 2))) {
-        finalImgHeight = pdfHeight - (margin * 2);
-        finalImgWidth = finalImgHeight / contentRatio;
-        xOffset = (pdfWidth - finalImgWidth) / 2;
+      if (finalImgHeight > printableHeight) {
+        // Shrink width slightly to maintain exact height constraints within 10mm limits
+        finalImgHeight = printableHeight;
+        finalImgWidth = printableHeight / contentRatio;
+        xOffset = margin + (printableWidth - finalImgWidth) / 2;
       } else {
-        // Perfectly center vertically on page
-        yOffset = (pdfHeight - imgHeight) / 2;
+        // Perfectly center vertically inside the 10mm margins printable area
+        yOffset = margin + (printableHeight - finalImgHeight) / 2;
       }
 
       pdf.addImage(imgData, "JPEG", xOffset, yOffset, finalImgWidth, finalImgHeight);
 
-      // 5. Automatic filename matching requirement: StudentName_BNIE_Verification_Report.pdf
+      // Save using compliant format: StudentName_BNIE_Verification_Report.pdf
       const sanitizedName = student.name.trim().replace(/\s+/g, "_");
       const filename = `${sanitizedName}_BNIE_Verification_Report.pdf`;
       pdf.save(filename);
@@ -263,6 +365,10 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
       console.error("Failed to generate PDF:", error);
       alert("An error occurred during PDF generation. Please use the Print feature as a workaround.");
     } finally {
+      // Clean up DOM wrapper
+      if (wrapper.parentNode) {
+        document.body.removeChild(wrapper);
+      }
       restoreGetComputedStyle();
       setIsGeneratingPDF(false);
     }
@@ -436,7 +542,7 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
             <div className="flex flex-col items-center shrink-0">
               <div className="w-24 h-28 border border-gray-300 bg-white rounded-md overflow-hidden relative shadow-sm shrink-0">
                 <img
-                  src={student.photoUrl}
+                  src={getSafePhotoUrl(student.photoUrl)}
                   alt={student.name}
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
@@ -453,9 +559,10 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
             {/* QR Code */}
             <div className="flex flex-col items-center shrink-0">
               <div className="bg-white p-1.5 border border-gray-200 rounded-lg shadow-2xs">
-                <QRCodeSVG
+                <QRCodeCanvas
                   value={verificationUrl}
-                  size={76}
+                  size={150}
+                  style={{ width: "76px", height: "76px" }}
                   bgColor={"#ffffff"}
                   fgColor={"#006a4e"}
                   level={"H"}
