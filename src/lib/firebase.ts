@@ -33,7 +33,13 @@ const STUDENTS_COLLECTION = "students";
  */
 export async function seedDatabaseIfEmpty(): Promise<Student[]> {
   try {
-    const querySnapshot = await getDocs(collection(db, STUDENTS_COLLECTION));
+    // Add a fast 2.5s connection timeout so we don't keep the user waiting for a long network freeze
+    const getDocsPromise = getDocs(collection(db, STUDENTS_COLLECTION));
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error("Firestore backend connection timed out")), 2500)
+    );
+    
+    const querySnapshot = await Promise.race([getDocsPromise, timeoutPromise]);
     if (querySnapshot.empty) {
       console.log("Firestore collection is empty. Seeding with default student records...");
       const batch = writeBatch(db);
@@ -63,7 +69,12 @@ export async function seedDatabaseIfEmpty(): Promise<Student[]> {
  */
 export async function fetchAllStudents(): Promise<Student[]> {
   try {
-    const querySnapshot = await getDocs(collection(db, STUDENTS_COLLECTION));
+    const getDocsPromise = getDocs(collection(db, STUDENTS_COLLECTION));
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error("Firestore backend connection timed out")), 2500)
+    );
+    
+    const querySnapshot = await Promise.race([getDocsPromise, timeoutPromise]);
     const students: Student[] = [];
     querySnapshot.forEach((doc) => {
       students.push(doc.data() as Student);

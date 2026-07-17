@@ -85,40 +85,124 @@ function oklchToRgba(oklchStr: string): string {
   }
 }
 
-// Intercept window.getComputedStyle to translate oklch to rgb during html2canvas render
-const patchGetComputedStyle = () => {
-  const originalGetComputedStyle = window.getComputedStyle;
+// Helper to convert oklab CSS color values to standard rgb/rgba to prevent html2canvas parsing crashes in Tailwind v4
+function oklabToRgba(oklabStr: string): string {
+  const match = oklabStr.match(/oklab\s*\(([^)]+)\)/i);
+  if (!match) return oklabStr;
+
+  const parts = match[1].trim().split(/[\s,/]+/);
+  if (parts.length < 3) return oklabStr;
+
+  const lStr = parts[0];
+  const aValStr = parts[1];
+  const bValStr = parts[2];
+  const alphaStr = parts[3] || "1";
+
+  let L = 0;
+  if (lStr.endsWith("%")) {
+    L = parseFloat(lStr) / 100;
+  } else {
+    L = parseFloat(lStr);
+  }
+
+  let a = parseFloat(aValStr);
+  let b = parseFloat(bValStr);
+
+  let A = 1;
+  if (alphaStr) {
+    if (alphaStr.endsWith("%")) {
+      A = parseFloat(alphaStr) / 100;
+    } else {
+      A = parseFloat(alphaStr);
+    }
+  }
+
+  const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+
+  const l = l_ * l_ * l_;
+  const m = m_ * m_ * m_;
+  const s = s_ * s_ * s_;
+
+  const r = +4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+  const g = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+  const bl = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
+
+  const gamma = (c: number) => {
+    const clamped = Math.max(0, Math.min(1, c));
+    return clamped <= 0.0031308
+      ? 12.92 * clamped
+      : 1.055 * Math.pow(clamped, 1 / 2.4) - 0.055;
+  };
+
+  const R = Math.round(gamma(r) * 255);
+  const G = Math.round(gamma(g) * 255);
+  const B = Math.round(gamma(bl) * 255);
+
+  if (A === 1) {
+    return `rgb(${R}, ${G}, ${B})`;
+  } else {
+    return `rgba(${R}, ${G}, ${B}, ${A})`;
+  }
+}
+
+// Intercept window.getComputedStyle to translate oklch and oklab to rgb during html2canvas render
+const patchGetComputedStyle = (targetWindow: any) => {
+  const originalGetComputedStyle = targetWindow.getComputedStyle;
   
-  window.getComputedStyle = function (elt: Element, pseudoElt?: string | null) {
+  targetWindow.getComputedStyle = function (elt: Element, pseudoElt?: string | null) {
     const style = originalGetComputedStyle(elt, pseudoElt);
     
     return new Proxy(style, {
       get(target, prop) {
         if (prop === "getPropertyValue") {
           return function(propertyName: string) {
-            const val = target.getPropertyValue(propertyName);
-            if (typeof val === "string" && val.includes("oklch")) {
-              return val.replace(/oklch\s*\([^)]+\)/gi, (match) => {
-                try {
-                  return oklchToRgba(match);
-                } catch (e) {
-                  return "rgb(0, 0, 0)";
-                }
-              });
+            let val = target.getPropertyValue(propertyName);
+            if (typeof val === "string") {
+              if (val.includes("oklch")) {
+                val = val.replace(/oklch\s*\([^)]+\)/gi, (match) => {
+                  try {
+                    return oklchToRgba(match);
+                  } catch (e) {
+                    return "rgb(0, 0, 0)";
+                  }
+                });
+              }
+              if (val.includes("oklab")) {
+                val = val.replace(/oklab\s*\([^)]+\)/gi, (match) => {
+                  try {
+                    return oklabToRgba(match);
+                  } catch (e) {
+                    return "rgb(0, 0, 0)";
+                  }
+                });
+              }
             }
             return val;
           }.bind(target);
         }
         
-        const val = Reflect.get(target, prop);
-        if (typeof val === "string" && val.includes("oklch")) {
-          return val.replace(/oklch\s*\([^)]+\)/gi, (match) => {
-            try {
-              return oklchToRgba(match);
-            } catch (e) {
-              return "rgb(0, 0, 0)";
-            }
-          });
+        let val = Reflect.get(target, prop);
+        if (typeof val === "string") {
+          if (val.includes("oklch")) {
+            val = val.replace(/oklch\s*\([^)]+\)/gi, (match) => {
+              try {
+                return oklchToRgba(match);
+              } catch (e) {
+                return "rgb(0, 0, 0)";
+              }
+            });
+          }
+          if (val.includes("oklab")) {
+            val = val.replace(/oklab\s*\([^)]+\)/gi, (match) => {
+              try {
+                return oklabToRgba(match);
+              } catch (e) {
+                return "rgb(0, 0, 0)";
+              }
+            });
+          }
         }
         
         if (typeof val === "function") {
@@ -130,7 +214,7 @@ const patchGetComputedStyle = () => {
   };
 
   return () => {
-    window.getComputedStyle = originalGetComputedStyle;
+    targetWindow.getComputedStyle = originalGetComputedStyle;
   };
 };
 
@@ -151,74 +235,27 @@ function getSafePhotoUrl(url: string): string {
   return url;
 }
 
-// Rewriter to force desktop-equivalent classes on cloned nodes to avoid mobile column collapse
-function forceDesktopLayout(node: HTMLElement) {
-  const elements = [node, ...Array.from(node.querySelectorAll("*"))];
-  elements.forEach((el) => {
-    const classList = el.className;
-    if (typeof classList === "string") {
-      let newClasses = classList;
-      
-      // Convert grid/flex layouts to force desktop specifications
-      if (newClasses.includes("md:col-span-9")) {
-        newClasses = newClasses.replace(/\bcol-span-12\b/g, "").replace(/\bmd:col-span-9\b/g, "col-span-9");
-      }
-      if (newClasses.includes("md:col-span-3")) {
-        newClasses = newClasses.replace(/\bcol-span-12\b/g, "").replace(/\bmd:col-span-3\b/g, "col-span-3");
-      }
-      if (newClasses.includes("md:flex-col")) {
-        newClasses = newClasses.replace(/\bflex-row\b/g, "").replace(/\bmd:flex-col\b/g, "flex-col");
-      }
-      if (newClasses.includes("md:block")) {
-        newClasses = newClasses.replace(/\bhidden\b/g, "block").replace(/\bmd:block\b/g, "block");
-      }
-      if (newClasses.includes("md:hidden")) {
-        newClasses = newClasses.replace(/\bblock\b/g, "hidden").replace(/\bmd:hidden\b/g, "hidden");
-      }
-      
-      // Force table rendering classes from collapsed mobile blocks to proper rows/cells
-      if (newClasses.includes("sm:table-row-group")) {
-        newClasses = newClasses.replace(/\bflex\b/g, "").replace(/\bflex-col\b/g, "").replace(/\bsm:table-row-group\b/g, "table-row-group");
-      }
-      if (newClasses.includes("sm:table-row")) {
-        newClasses = newClasses.replace(/\bflex\b/g, "").replace(/\bflex-col\b/g, "").replace(/\bsm:table-row\b/g, "table-row");
-      }
-      if (newClasses.includes("sm:w-[22%]")) {
-        newClasses = newClasses.replace(/\bw-full\b/g, "").replace(/\bsm:w-\[22%\]\b/g, "w-[22%]");
-      }
-      if (newClasses.includes("sm:w-[28%]")) {
-        newClasses = newClasses.replace(/\bw-full\b/g, "").replace(/\bsm:w-\[28%\]\b/g, "w-[28%]");
-      }
-      if (newClasses.includes("sm:w-auto")) {
-        newClasses = newClasses.replace(/\bw-full\b/g, "").replace(/\bsm:w-auto\b/g, "w-auto");
-      }
-      if (newClasses.includes("sm:border")) {
-        newClasses = newClasses.replace(/\bborder-b\b/g, "border").replace(/\bsm:border\b/g, "border");
-      }
-      if (newClasses.includes("sm:border-b-0")) {
-        newClasses = newClasses.replace(/\bborder-b\b/g, "").replace(/\bsm:border-b-0\b/g, "");
-      }
-      
-      // Align borders and paddings to matches full desktop proportions
-      if (newClasses.includes("md:p-10")) {
-        newClasses = newClasses.replace(/\bp-4\b/g, "p-10").replace(/\bsm:p-6\b/g, "p-10").replace(/\bmd:p-10\b/g, "p-10");
-      }
-      if (newClasses.includes("sm:border-[6px]")) {
-        newClasses = newClasses.replace(/\bborder-\[4px\]\b/g, "border-[10px]").replace(/\bsm:border-\[6px\]\b/g, "border-[10px]").replace(/\bmd:border-\[10px\]\b/g, "border-[10px]");
-      }
-      
-      el.className = newClasses;
-    }
-  });
-}
-
 interface VerificationReportProps {
   student: Student;
   onBack: () => void;
 }
 
 export default function VerificationReport({ student, onBack }: VerificationReportProps) {
-  const [currentDateTime, setCurrentDateTime] = useState({ date: "", time: "" });
+  const [currentDateTime, setCurrentDateTime] = useState(() => {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
+    const timeStr = now.toLocaleTimeString("en-US", {
+      hour12: true,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    });
+    return { date: dateStr, time: timeStr };
+  });
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   useEffect(() => {
@@ -260,142 +297,108 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
     }
 
     setIsGeneratingPDF(true);
-    const restoreGetComputedStyle = patchGetComputedStyle();
 
-    // Create wrapper node to hold the clone off-screen but visible to layout rendering
-    const wrapper = document.createElement("div");
-    wrapper.className = "force-desktop-pdf";
-    wrapper.style.position = "fixed";
-    wrapper.style.top = "0";
-    wrapper.style.left = "-9999px"; // Off-screen to avoid any screen flashes
-    wrapper.style.width = "840px";
-    wrapper.style.height = "auto";
-    wrapper.style.overflow = "visible";
-    wrapper.style.zIndex = "-9999";
-    wrapper.style.pointerEvents = "none";
+    // Patch main window computed styles to avoid OKLCH crashes
+    const restoreMainWindowStyles = patchGetComputedStyle(window);
 
-    // Inject temporary custom stylesheet to force desktop rules unconditionally on mobile viewports
-    const styleEl = document.createElement("style");
-    styleEl.id = "force-desktop-pdf-styles";
-    styleEl.innerHTML = `
-      .force-desktop-pdf #a4-verification-report {
-        width: 840px !important;
-        max-width: 840px !important;
-        padding: 40px !important;
-        border-width: 10px !important;
-        border-style: double !important;
-        border-color: #006a4e !important;
-        border-radius: 1rem !important;
-        box-shadow: none !important;
-        background-color: #ffffff !important;
+    // Create sandbox iframe
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.top = "0";
+    iframe.style.left = "-9999px";
+    iframe.style.width = "1024px"; // Fixed desktop width
+    iframe.style.height = "1400px"; // Tall height to prevent cutoff
+    iframe.style.border = "0";
+    iframe.style.pointerEvents = "none";
+    document.body.appendChild(iframe);
+
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!iframeDoc) {
+      alert("Error initializing sandbox render!");
+      iframe.parentNode?.removeChild(iframe);
+      restoreMainWindowStyles();
+      setIsGeneratingPDF(false);
+      return;
+    }
+
+    // Write base layout structure inside the sandboxed iframe
+    iframeDoc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>A4 Verification Report Renderer</title>
+          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #ffffff; -webkit-print-color-adjust: exact; font-family: 'Hind Siliguri', 'Inter', sans-serif;">
+          <div id="sandbox-root" style="width: 840px; margin: 0 auto; padding: 10px; font-family: 'Hind Siliguri', 'Inter', sans-serif;"></div>
+        </body>
+      </html>
+    `);
+    iframeDoc.close();
+
+    // Copy all style blocks and link stylesheets from parent document to ensure Tailwind CSS and custom webfonts are perfectly loaded
+    const parentHead = document.head;
+    const iframeHead = iframeDoc.head;
+    Array.from(parentHead.querySelectorAll("link, style")).forEach((node) => {
+      const clonedNode = node.cloneNode(true);
+      iframeHead.appendChild(clonedNode);
+    });
+
+    // Wait for custom fonts to resolve completely inside both window contexts to prevent character shifts/overlaps
+    try {
+      if (document.fonts) {
+        await Promise.all([
+          document.fonts.load("400 12px 'Hind Siliguri'"),
+          document.fonts.load("500 12px 'Hind Siliguri'"),
+          document.fonts.load("600 12px 'Hind Siliguri'"),
+          document.fonts.load("700 12px 'Hind Siliguri'"),
+          document.fonts.load("400 12px 'Inter'"),
+          document.fonts.load("700 12px 'Inter'"),
+          document.fonts.ready
+        ]).catch(err => console.warn("Parent fonts preload warning:", err));
       }
-      .force-desktop-pdf .print-card .text-center.border-b-2 {
-        flex-direction: row !important;
-        justify-content: space-between !important;
-        align-items: center !important;
+      if (iframe.contentWindow?.document?.fonts) {
+        await Promise.all([
+          iframe.contentWindow.document.fonts.load("400 12px 'Hind Siliguri'"),
+          iframe.contentWindow.document.fonts.load("500 12px 'Hind Siliguri'"),
+          iframe.contentWindow.document.fonts.load("600 12px 'Hind Siliguri'"),
+          iframe.contentWindow.document.fonts.load("700 12px 'Hind Siliguri'"),
+          iframe.contentWindow.document.fonts.load("400 12px 'Inter'"),
+          iframe.contentWindow.document.fonts.load("700 12px 'Inter'"),
+          iframe.contentWindow.document.fonts.ready
+        ]).catch(err => console.warn("Iframe fonts preload warning:", err));
       }
-      .force-desktop-pdf .print-card .text-center.border-b-2 .hidden.sm\\:block {
-        display: block !important;
-      }
-      .force-desktop-pdf .print-card .text-center.border-b-2 .sm\\:hidden {
-        display: none !important;
-      }
-      .force-desktop-pdf .grid.grid-cols-12 {
-        display: grid !important;
-        grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
-        align-items: stretch !important;
-      }
-      .force-desktop-pdf .col-span-12.md\\:col-span-9 {
-        grid-column: span 9 / span 9 !important;
-      }
-      .force-desktop-pdf .col-span-12.md\\:col-span-3 {
-        grid-column: span 3 / span 3 !important;
-      }
-      .force-desktop-pdf table {
-        width: 100% !important;
-        display: table !important;
-        border-collapse: collapse !important;
-      }
-      .force-desktop-pdf tbody {
-        display: table-row-group !important;
-      }
-      .force-desktop-pdf tr {
-        display: table-row !important;
-      }
-      .force-desktop-pdf td {
-        display: table-cell !important;
-        border: 1px solid #d1d5db !important;
-      }
-      .force-desktop-pdf td.sm\\:w-\\[22\\%\\] {
-        width: 22% !important;
-      }
-      .force-desktop-pdf td.sm\\:w-\\[28\\%\\] {
-        width: 28% !important;
-      }
-      .force-desktop-pdf td.sm\\:w-auto {
-        width: auto !important;
-      }
-      .force-desktop-pdf .flex-row.md\\:flex-col {
-        flex-direction: column !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        height: 100% !important;
-      }
-      .force-desktop-pdf .hidden.md\\:block {
-        display: block !important;
-      }
-      .force-desktop-pdf .block.md\\:hidden {
-        display: none !important;
-      }
-      .force-desktop-pdf .overflow-x-auto {
-        overflow-x: visible !important;
-      }
-      .force-desktop-pdf .min-w-\\[600px\\] {
-        min-width: 0 !important;
-      }
-      .force-desktop-pdf .flex-col.sm\\:flex-row {
-        flex-direction: row !important;
-        justify-content: space-between !important;
-        align-items: flex-end !important;
-      }
-      .force-desktop-pdf .text-center.sm\\:text-left {
-        text-align: left !important;
-      }
-      .force-desktop-pdf .justify-center.sm\\:justify-start {
-        justify-content: flex-start !important;
-      }
-      .force-desktop-pdf .w-full.sm\\:w-auto {
-        width: auto !important;
-      }
-      .force-desktop-pdf .w-full.max-w-\\[260px\\].sm\\:w-64 {
-        width: 16rem !important;
-      }
-      .force-desktop-pdf .sm\\:mt-10 {
-        margin-top: 2.5rem !important;
-      }
-    `;
-    document.head.appendChild(styleEl);
+    } catch (e) {
+      console.warn("Font loading wait skipped:", e);
+    }
+
+    // Patch the iframe's content window computed styles as well to resolve OKLCH color parsing inside the iframe context
+    let restoreIframeWindowStyles = () => {};
+    if (iframe.contentWindow) {
+      restoreIframeWindowStyles = patchGetComputedStyle(iframe.contentWindow);
+    }
 
     try {
-      // 1. Clone the report element
+      const sandboxRoot = iframeDoc.getElementById("sandbox-root");
+      if (!sandboxRoot) {
+        throw new Error("Sandbox container root was not initialized correctly.");
+      }
+
+      // Clone original element
       const clone = reportElement.cloneNode(true) as HTMLDivElement;
       
-      // 2. Set static design overrides for pixel-perfect standard portrait layout
+      // Override responsive classes by styling the cloned root node explicitly
       clone.style.width = "840px";
-      clone.style.height = "auto";
-      clone.style.margin = "0";
+      clone.style.maxWidth = "840px";
+      clone.style.margin = "0 auto";
       clone.style.boxShadow = "none";
       clone.style.backgroundColor = "#ffffff";
-
-      // 3. Force full desktop classes to replace responsive collapsed equivalents
-      forceDesktopLayout(clone);
+      clone.style.fontFamily = "'Hind Siliguri', 'Inter', sans-serif";
       
-      // Append clone to off-screen wrapper and DOM
-      wrapper.appendChild(clone);
-      document.body.appendChild(wrapper);
+      // Append clone to sandbox
+      sandboxRoot.appendChild(clone);
 
-      // 3.5 Copy Canvas pixel buffers. Since cloneNode does not duplicate canvas drawing buffers,
-      // we must copy the QR code canvas' pixels from the original canvas to the cloned canvas manually.
+      // Copy canvas pixel buffer for interactive QR code canvases
       const originalCanvases = Array.from(reportElement.querySelectorAll("canvas"));
       const clonedCanvases = Array.from(clone.querySelectorAll("canvas"));
       originalCanvases.forEach((origCanvas, idx) => {
@@ -408,10 +411,10 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
         }
       });
 
-      // Wait a moment for dynamic SVGs / QR canvas and style evaluations
-      await new Promise((resolve) => setTimeout(resolve, 350));
+      // Wait a moment for layout reflow and rendering styles inside the sandboxed iframe
+      await new Promise((resolve) => setTimeout(resolve, 800));
 
-      // Wait for all images in clone to load completely before capturing
+      // Resolve and wait for all images inside the clone container to fully load
       const images = Array.from(clone.querySelectorAll("img"));
       await Promise.all(
         images.map((img) => {
@@ -423,19 +426,21 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
         })
       );
 
-      // Render with 3.0 scale (ultra high-definition crisp output)
+      // Render with 3.0 scale for crisp, high-definition output
       const renderScale = 3.0;
-
-      // 4. Render canvas from full-size desktop clone
       const canvas = await html2canvas(clone, {
-        scale: renderScale, 
+        scale: renderScale,
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: 1024, // Direct rendering engine to draw using a 1024px wide browser viewport
+        windowHeight: 1400,
       });
 
-      // 5. Generate high-quality portrait PDF conforming exactly to A4 boundaries
-      const imgData = canvas.toDataURL("image/jpeg", 1.0); // 100% Quality
+      // Generate the landscape/portrait PDF conforming exactly to A4 proportions
+      const imgData = canvas.toDataURL("image/jpeg", 1.0); // 100% Crisp JPG quality
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
@@ -444,7 +449,7 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
 
       const pdfWidth = 210;
       const pdfHeight = 297;
-      const margin = 4; // Minimal margin to maximize card size on A4 sheet (matching user image)
+      const margin = 4; // Compact margin matching print layout
 
       const printableWidth = pdfWidth - (margin * 2); // 202mm
       const printableHeight = pdfHeight - (margin * 2); // 289mm
@@ -459,35 +464,30 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
       let yOffset = margin;
 
       if (finalImgHeight > printableHeight) {
-        // Shrink width slightly to maintain exact height constraints within margins limits
         finalImgHeight = printableHeight;
         finalImgWidth = printableHeight / contentRatio;
         xOffset = margin + (printableWidth - finalImgWidth) / 2;
       } else {
-        // Perfectly center vertically inside the margins printable area
         yOffset = margin + (printableHeight - finalImgHeight) / 2;
       }
 
       pdf.addImage(imgData, "JPEG", xOffset, yOffset, finalImgWidth, finalImgHeight);
 
-      // Save using compliant format: StudentName_BNIE_Verification_Report.pdf
+      // Save using standard clean naming convention
       const sanitizedName = student.name.trim().replace(/\s+/g, "_");
       const filename = `${sanitizedName}_BNIE_Verification_Report.pdf`;
       pdf.save(filename);
 
     } catch (error) {
-      console.error("Failed to generate PDF:", error);
-      alert("An error occurred during PDF generation. Please use the Print feature as a workaround.");
+      console.error("Failed to generate PDF inside sandbox:", error);
+      alert("An error occurred during PDF generation. Please use the 'Print Report' feature as a stable fallback.");
     } finally {
-      // Clean up DOM wrapper & custom style tag
-      if (wrapper.parentNode) {
-        document.body.removeChild(wrapper);
+      // Cleanup DOM resources completely
+      if (iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
       }
-      const injectedStyle = document.getElementById("force-desktop-pdf-styles");
-      if (injectedStyle) {
-        injectedStyle.parentNode?.removeChild(injectedStyle);
-      }
-      restoreGetComputedStyle();
+      restoreMainWindowStyles();
+      restoreIframeWindowStyles();
       setIsGeneratingPDF(false);
     }
   };
@@ -552,20 +552,13 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
           <svg className="w-[450px] h-[450px]" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="40" fill="none" stroke="#006a4e" strokeWidth="1.5" />
             <circle cx="50" cy="50" r="30" fill="none" stroke="#f42a41" strokeWidth="1.5" />
-            <text x="50" y="48" fill="#006a4e" fontSize="5" fontWeight="black" textAnchor="middle">
-              BNIE VERIFIED
-            </text>
-            <text x="50" y="54" fill="#f42a41" fontSize="3.5" fontWeight="bold" textAnchor="middle">
-              OFFICIAL LEGER REGISTRY
-            </text>
           </svg>
         </div>
 
         {/* Certificate Frame/Header */}
-        <div className="text-center border-b-2 border-gray-300 pb-4 mb-6 relative flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="text-center border-b-2 border-gray-300 pb-4 mb-6 relative flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
           <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center shrink-0">
-            <Logo size={60} className="object-contain sm:hidden" />
-            <Logo size={76} className="object-contain hidden sm:block" />
+            <Logo size={70} className="object-contain" />
           </div>
           <div className="flex-1 text-center px-1 sm:px-4">
             <span className="text-[9px] sm:text-[10px] text-gray-500 font-extrabold uppercase tracking-widest block leading-none mb-1">
@@ -581,80 +574,80 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
               Certificate Verification Report
             </div>
           </div>
-          <div className="hidden sm:flex w-20 h-20 items-center justify-center shrink-0 opacity-0 select-none pointer-events-none">
-            <Logo size={76} />
-          </div>
+          <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 pointer-events-none select-none opacity-0" aria-hidden="true"></div>
         </div>
 
         {/* Candidate Profile and QR Column Layout */}
         <div className="grid grid-cols-12 gap-4 md:gap-6 mb-6 items-stretch relative">
           
-          {/* Left Column: Responsive Column Table */}
+          {/* Left Column: Stable Grid-Layout Table */}
           <div className="col-span-12 md:col-span-9 space-y-3">
             <h4 className="text-[11px] font-black text-gray-900 uppercase tracking-widest border-l-4 border-[#006a4e] pl-2 mb-2">
               Candidate Academic Profile
             </h4>
             
-            <table className="w-full border-collapse border border-gray-300 text-xs">
-              <tbody className="flex flex-col sm:table-row-group">
-                <tr className="flex flex-col sm:table-row border-b sm:border-b-0 border-gray-200">
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-full sm:w-[22%]">Student Name</td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-extrabold text-gray-950 text-xs sm:text-[13px] uppercase w-full sm:w-auto" colSpan={3}>{student.name}</td>
-                </tr>
-                <tr className="flex flex-col sm:table-row border-b sm:border-b-0 border-gray-200">
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-full sm:w-[22%]">Father's Name</td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-800 w-full sm:w-auto" colSpan={3}>{student.fatherName}</td>
-                </tr>
-                <tr className="flex flex-col sm:table-row border-b sm:border-b-0 border-gray-200">
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-full sm:w-[22%]">Mother's Name</td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-800 w-full sm:w-auto" colSpan={3}>{student.motherName}</td>
-                </tr>
-                <tr className="flex flex-col sm:table-row border-b sm:border-b-0 border-gray-200">
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-full sm:w-[22%]">Date of Birth</td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-800 w-full sm:w-[28%]">
-                    {new Date(student.dob).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric"
-                    })}
-                  </td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-full sm:w-[22%]">Session</td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-800 font-mono w-full sm:w-[28%]">{student.session}</td>
-                </tr>
-                <tr className="flex flex-col sm:table-row border-b sm:border-b-0 border-gray-200">
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-full sm:w-[22%]">Program / Course</td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-extrabold text-[#006a4e] w-full sm:w-[28%]">
-                    {student.category === "Diploma" ? "Diploma in Engineering" : `${student.category} Program`}
-                  </td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-full sm:w-[22%]">Group / Dept</td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-extrabold text-gray-900 w-full sm:w-[28%]">{student.group}</td>
-                </tr>
-                <tr className="flex flex-col sm:table-row border-b sm:border-b-0 border-gray-200">
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-full sm:w-[22%]">Roll Number</td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-black text-[#006a4e] font-mono text-xs sm:text-[13px] w-full sm:w-[28%]">{student.rollNumber}</td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-full sm:w-[22%]">Registration No</td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-900 font-mono w-full sm:w-[28%]">{student.registrationNumber}</td>
-                </tr>
-                <tr className="flex flex-col sm:table-row border-b sm:border-b-0 border-gray-200">
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-full sm:w-[22%]">Certificate No</td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-800 font-mono text-[10px] sm:text-[11px] w-full sm:w-[28%]">{student.certificateSerialNumber}</td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-full sm:w-[22%]">Passing Year</td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-800 font-mono w-full sm:w-[28%]">{student.passingYear}</td>
-                </tr>
-                <tr className="flex flex-col sm:table-row border-b sm:border-b-0 border-gray-200">
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-full sm:w-[22%]">Examination Year</td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-800 font-mono w-full sm:w-[28%]">{student.passingYear}</td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-full sm:w-[22%]">GPA / CGPA</td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-black text-[#006a4e] text-xs sm:text-sm font-mono w-full sm:w-[28%]">{student.finalGpa.toFixed(2)}</td>
-                </tr>
-                <tr className="flex flex-col sm:table-row">
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-full sm:w-[22%]">Result Status</td>
-                  <td className="border-b sm:border border-gray-300 px-3 py-1.5 font-extrabold text-emerald-800 bg-emerald-50 w-full sm:w-auto" colSpan={3}>
-                    {student.finalGpa > 0.00 ? "PASSED" : "FAILED"}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <div className="border border-gray-300 rounded-lg overflow-x-auto shadow-2xs">
+              <table className="w-full border-collapse text-xs min-w-[600px] sm:min-w-0 text-left">
+                <tbody>
+                  <tr className="border-b border-gray-300">
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Student Name</td>
+                    <td className="px-3 py-1.5 font-extrabold text-gray-950 text-xs sm:text-[13px] uppercase" colSpan={3}>{student.name}</td>
+                  </tr>
+                  <tr className="border-b border-gray-300">
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Father's Name</td>
+                    <td className="px-3 py-1.5 font-bold text-gray-800" colSpan={3}>{student.fatherName}</td>
+                  </tr>
+                  <tr className="border-b border-gray-300">
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Mother's Name</td>
+                    <td className="px-3 py-1.5 font-bold text-gray-800" colSpan={3}>{student.motherName}</td>
+                  </tr>
+                  <tr className="border-b border-gray-300">
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Date of Birth</td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-800 w-[28%] whitespace-nowrap">
+                      {new Date(student.dob).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "long",
+                        year: "numeric"
+                      })}
+                    </td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Session</td>
+                    <td className="px-3 py-1.5 font-bold text-gray-800 font-mono w-[28%] whitespace-nowrap">{student.session}</td>
+                  </tr>
+                  <tr className="border-b border-gray-300">
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Program / Course</td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-extrabold text-[#006a4e] w-[28%]">
+                      {student.category === "Diploma" ? "Diploma in Engineering" : `${student.category} Program`}
+                    </td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Group / Dept</td>
+                    <td className="px-3 py-1.5 font-extrabold text-gray-900 w-[28%]">{student.group}</td>
+                  </tr>
+                  <tr className="border-b border-gray-300">
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Roll Number</td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-black text-[#006a4e] font-mono text-xs sm:text-[13px] w-[28%] whitespace-nowrap">{student.rollNumber}</td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Registration No</td>
+                    <td className="px-3 py-1.5 font-bold text-gray-900 font-mono w-[28%] whitespace-nowrap">{student.registrationNumber}</td>
+                  </tr>
+                  <tr className="border-b border-gray-300">
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Certificate No</td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-800 font-mono text-[10px] sm:text-[11px] w-[28%] whitespace-nowrap">{student.certificateSerialNumber}</td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Passing Year</td>
+                    <td className="px-3 py-1.5 font-bold text-gray-800 font-mono w-[28%] whitespace-nowrap">{student.passingYear}</td>
+                  </tr>
+                  <tr className="border-b border-gray-300">
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Examination Year</td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-800 font-mono w-[28%] whitespace-nowrap">{student.passingYear}</td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">GPA / CGPA</td>
+                    <td className="px-3 py-1.5 font-black text-[#006a4e] text-xs sm:text-sm font-mono w-[28%] whitespace-nowrap">{student.finalGpa.toFixed(2)}</td>
+                  </tr>
+                  <tr>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Result Status</td>
+                    <td className="px-3 py-1.5 font-extrabold text-emerald-800 bg-emerald-50/40" colSpan={3}>
+                      {student.finalGpa > 0.00 ? "PASSED" : "FAILED"}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Right Column: Photo and QR Code side-by-side on mobile, stacked on desktop */}
@@ -721,16 +714,16 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
                   const subMarks = sub.marks !== undefined ? sub.marks : "—";
                   return (
                     <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="py-2 px-3 text-center font-mono font-semibold text-gray-600 border-r border-gray-200 print-compact-py">{subCode}</td>
+                      <td className="py-2 px-3 text-center font-mono font-semibold text-gray-600 border-r border-gray-200 print-compact-py whitespace-nowrap">{subCode}</td>
                       <td className="py-2 px-3 font-bold text-gray-800 border-r border-gray-200 print-compact-py">
                         {sub.subjectName}
                       </td>
-                      <td className="py-2 px-3 text-center font-mono font-semibold text-gray-700 border-r border-gray-200 print-compact-py">{subMarks}</td>
-                      <td className="py-2 px-3 text-center font-mono font-bold text-gray-900 border-r border-gray-200 print-compact-py">
+                      <td className="py-2 px-3 text-center font-mono font-semibold text-gray-700 border-r border-gray-200 print-compact-py whitespace-nowrap">{subMarks}</td>
+                      <td className="py-2 px-3 text-center font-mono font-bold text-gray-900 border-r border-gray-200 print-compact-py whitespace-nowrap">
                         {sub.gradePoint.toFixed(2)}
                       </td>
-                      <td className="py-2 px-3 text-center print-compact-py">
-                        <span className={`inline-block text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-sm ${
+                      <td className="py-2 px-3 text-center print-compact-py whitespace-nowrap">
+                        <span className={`inline-block text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap ${
                           sub.gradePoint >= 5.0 ? "bg-emerald-100 text-emerald-800" :
                           sub.gradePoint >= 4.0 ? "bg-green-100 text-green-800" :
                           sub.gradePoint >= 3.5 ? "bg-blue-100 text-blue-800" :
@@ -748,17 +741,17 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
                 
                 {/* Result Summary Row */}
                 <tr className="bg-emerald-50/30 font-bold border-t-2 border-emerald-600">
-                  <td colSpan={2} className="py-2 px-3 text-xs text-[#006a4e] uppercase font-bold border-r border-gray-200">
+                  <td colSpan={2} className="py-2 px-3 text-xs text-[#006a4e] uppercase font-bold border-r border-gray-200 whitespace-nowrap">
                     Cumulative Grade Point Average (CGPA / GPA)
                   </td>
-                  <td className="py-2 px-3 text-center font-mono text-xs text-gray-700 border-r border-gray-200">
+                  <td className="py-2 px-3 text-center font-mono text-xs text-gray-700 border-r border-gray-200 whitespace-nowrap">
                     {student.totalMarks !== undefined ? `${student.totalMarks} Total` : "—"}
                   </td>
-                  <td className="py-2 px-3 text-center font-mono text-sm text-[#006a4e] font-black border-r border-gray-200">
+                  <td className="py-2 px-3 text-center font-mono text-sm text-[#006a4e] font-black border-r border-gray-200 whitespace-nowrap">
                     {student.finalGpa.toFixed(2)}
                   </td>
-                  <td className="py-2 px-3 text-center">
-                    <span className="text-[10px] bg-[#006a4e] text-white font-bold px-3 py-0.5 rounded-full shadow-2xs">
+                  <td className="py-2 px-3 text-center whitespace-nowrap">
+                    <span className="text-[10px] bg-[#006a4e] text-white font-bold px-3 py-0.5 rounded-full shadow-2xs whitespace-nowrap">
                       {getLetterGrade(student.finalGpa)}
                     </span>
                   </td>
