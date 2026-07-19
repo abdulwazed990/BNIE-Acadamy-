@@ -58,10 +58,13 @@ export default function VerificationForm({ students, onVerifySuccess, isDbLoadin
     setCaptchaError("");
   };
 
-  // Handle URL tokens and generate captcha on initial load
+  // Generate math captcha on mount only to prevent resetting the user's input/equation during database background sync
   useEffect(() => {
     generateCaptcha();
+  }, []);
 
+  // Handle URL tokens when students database or loading state changes
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token") || params.get("id");
 
@@ -95,6 +98,22 @@ export default function VerificationForm({ students, onVerifySuccess, isDbLoadin
     }
   }, [students, isDbLoading]);
 
+  // Real-time category matching: as soon as they type Roll & Registration, auto-select Category
+  useEffect(() => {
+    if (rollNumber.trim() && registrationNumber.trim()) {
+      const cleanRoll = rollNumber.trim();
+      const cleanReg = registrationNumber.trim();
+      const matched = students.find(
+        (s) =>
+          s.rollNumber.trim() === cleanRoll &&
+          s.registrationNumber.trim() === cleanReg
+      );
+      if (matched && matched.category !== category) {
+        setCategory(matched.category);
+      }
+    }
+  }, [rollNumber, registrationNumber, students, category]);
+
   const clearToken = () => {
     const url = new URL(window.location.href);
     url.searchParams.delete("token");
@@ -126,12 +145,29 @@ export default function VerificationForm({ students, onVerifySuccess, isDbLoadin
     }
 
     // 2. Search Student Record
-    const matched = students.find(
+    const cleanRoll = rollNumber.trim();
+    const cleanReg = registrationNumber.trim();
+
+    // Check with selected category first
+    let matched = students.find(
       (s) =>
-        s.rollNumber.trim() === rollNumber.trim() &&
-        s.registrationNumber.trim() === registrationNumber.trim() &&
+        s.rollNumber.trim() === cleanRoll &&
+        s.registrationNumber.trim() === cleanReg &&
         s.category === category
     );
+
+    // If not found with the selected category, search globally by Roll & Reg across all categories
+    if (!matched) {
+      const matchedAnyCategory = students.find(
+        (s) =>
+          s.rollNumber.trim() === cleanRoll &&
+          s.registrationNumber.trim() === cleanReg
+      );
+      if (matchedAnyCategory) {
+        setCategory(matchedAnyCategory.category);
+        matched = matchedAnyCategory;
+      }
+    }
 
     if (matched) {
       onVerifySuccess(matched);
