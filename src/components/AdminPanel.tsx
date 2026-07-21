@@ -160,14 +160,59 @@ export default function AdminPanel({
     setIsFormOpen(true);
   };
 
-  // Base64 Photo Uploader
+  // Compress image before saving to database (converts huge camera photos into tiny ~15KB JPEGs)
+  const compressImage = (base64Str: string, maxWidth = 150, maxHeight = 180): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        // Maintain correct portrait aspect ratio
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", 0.7)); // compress to highly efficient JPEG (70% quality)
+        } else {
+          resolve(base64Str);
+        }
+      };
+      img.onerror = () => {
+        resolve(base64Str);
+      };
+      img.src = base64Str;
+    });
+  };
+
+  // Base64 Photo Uploader with automatic compression
   const handlePhotoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         if (typeof reader.result === "string") {
-          setFormPhoto(reader.result);
+          try {
+            const compressed = await compressImage(reader.result);
+            setFormPhoto(compressed);
+          } catch (err) {
+            console.warn("Image compression failed, using original size:", err);
+            setFormPhoto(reader.result);
+          }
         }
       };
       reader.readAsDataURL(file);

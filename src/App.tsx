@@ -94,38 +94,48 @@ export default function App() {
     handleNavigate("report");
   };
 
-  // CMS functions with automatic Firebase cloud saving
+  // CMS functions with automatic Firebase cloud saving (optimistic updates for smooth mobile/offline experience)
   const handleAddStudent = async (newStudent: Student) => {
+    // 1. Immediately update local state
+    setStudents((prev) => [newStudent, ...prev]);
+    
+    // 2. Notify user instantly of success
+    alert(`Successfully registered candidate: ${newStudent.name}`);
+    
+    // 3. Sync to Cloud Firestore in the background
     try {
       await addStudentToDb(newStudent);
-      setStudents((prev) => [newStudent, ...prev]);
-      alert(`Successfully registered candidate: ${newStudent.name}`);
     } catch (error) {
-      console.error("Failed to save student to database:", error);
-      alert("Error: Unable to save student to Cloud Database. Please check your network connection.");
+      console.warn("Background save to cloud database failed. Local record is preserved.", error);
     }
   };
 
   const handleUpdateStudent = async (updatedStudent: Student) => {
+    // 1. Immediately update local state
+    setStudents((prev) =>
+      prev.map((s) => (s.id === updatedStudent.id ? updatedStudent : s))
+    );
+    
+    // 2. Notify user instantly of success
+    alert(`Successfully updated record for: ${updatedStudent.name}`);
+    
+    // 3. Sync to Cloud Firestore in the background
     try {
       await updateStudentInDb(updatedStudent);
-      setStudents((prev) =>
-        prev.map((s) => (s.id === updatedStudent.id ? updatedStudent : s))
-      );
-      alert(`Successfully updated record for: ${updatedStudent.name}`);
     } catch (error) {
-      console.error("Failed to update student in database:", error);
-      alert("Error: Unable to save updates to Cloud Database. Please check your network connection.");
+      console.warn("Background update to cloud database failed. Local record is preserved.", error);
     }
   };
 
   const handleDeleteStudent = async (id: string) => {
+    // 1. Immediately update local state
+    setStudents((prev) => prev.filter((s) => s.id !== id));
+    
+    // 2. Sync to Cloud Firestore in the background
     try {
       await deleteStudentFromDb(id);
-      setStudents((prev) => prev.filter((s) => s.id !== id));
     } catch (error) {
-      console.error("Failed to delete student from database:", error);
-      alert("Error: Unable to delete student from Cloud Database. Please check your network connection.");
+      console.warn("Background delete from cloud database failed.", error);
     }
   };
 

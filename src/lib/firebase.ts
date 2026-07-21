@@ -33,10 +33,10 @@ const STUDENTS_COLLECTION = "students";
  */
 export async function seedDatabaseIfEmpty(): Promise<Student[]> {
   try {
-    // Add a fast 2.5s connection timeout so we don't keep the user waiting for a long network freeze
+    // Add a stable 15s connection timeout so we don't keep the user waiting forever, but give enough time for mobile connections
     const getDocsPromise = getDocs(collection(db, STUDENTS_COLLECTION));
     const timeoutPromise = new Promise<never>((_, reject) => 
-      setTimeout(() => reject(new Error("Firestore backend connection timed out")), 2500)
+      setTimeout(() => reject(new Error("Firestore backend connection timed out")), 15000)
     );
     
     const querySnapshot = await Promise.race([getDocsPromise, timeoutPromise]);
@@ -71,7 +71,7 @@ export async function fetchAllStudents(): Promise<Student[]> {
   try {
     const getDocsPromise = getDocs(collection(db, STUDENTS_COLLECTION));
     const timeoutPromise = new Promise<never>((_, reject) => 
-      setTimeout(() => reject(new Error("Firestore backend connection timed out")), 2500)
+      setTimeout(() => reject(new Error("Firestore backend connection timed out")), 15000)
     );
     
     const querySnapshot = await Promise.race([getDocsPromise, timeoutPromise]);
