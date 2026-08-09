@@ -2,10 +2,9 @@ import { Cpu, Home, Settings, Zap, HardDrive, Car, Beaker, Scissors, ShieldAlert
 import { motion } from "motion/react";
 
 const STREAMS = [
+  { name: "Electrical & Electronics Engineering (Code 667)", icon: Zap, desc: "Electrical circuits, power distribution, DC/AC machines, industrial electronics, PLC, microcontrollers, and renewable energy." },
   { name: "Civil Engineering", icon: Home, desc: "Structural designing, surveying, concrete tech, and green infrastructure planning." },
   { name: "Mechanical Engineering", icon: Settings, desc: "Thermodynamics, fluid mechanics, CAD modelling, and industrial manufacturing systems." },
-  { name: "Electrical Engineering", icon: Zap, desc: "Power grid systems, transformer design, electrical machines, and distribution lines." },
-  { name: "Electronics Engineering", icon: Cpu, desc: "Semiconductors, microcontrollers, embedded systems, and telecommunication devices." },
   { name: "Computer Engineering", icon: HardDrive, desc: "Software architecture, database setups, network routing, and server administration." },
   { name: "Automobile Engineering", icon: Car, desc: "Engine performance, hybrid drivetrains, automotive chassis design, and diagnostics." },
   { name: "Chemical Engineering", icon: Beaker, desc: "Industrial chemistry, polymers, mass transfer, and refinery operation dynamics." },

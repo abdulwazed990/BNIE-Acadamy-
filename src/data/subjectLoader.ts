@@ -90,6 +90,63 @@ export function getSubjectCode(subjectName: string): string {
   return code.toString();
 }
 
+export const ELECTRICAL_ELECTRONICS_ENGINEERING_SUBJECTS: SubjectGrade[] = [
+  // FIRST YEAR
+  { subjectCode: "61011", subjectName: "Engineering Drawing", credit: 2, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65812", subjectName: "Physical Education & Life Skill Development", credit: 1, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65911", subjectName: "Mathematics-I", credit: 4, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65913", subjectName: "Chemistry", credit: 4, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66711", subjectName: "Basic Electricity", credit: 4, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66713", subjectName: "Electrical Engineering Materials", credit: 2, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66811", subjectName: "Basic Electronics", credit: 3, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66721", subjectName: "Electrical Circuits-I", credit: 4, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66722", subjectName: "Electrical Appliances", credit: 3, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66611", subjectName: "Computer Application", credit: 2, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65921", subjectName: "Mathematics-II", credit: 4, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65912", subjectName: "Physics-I", credit: 4, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65711", subjectName: "Bangla", credit: 4, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65712", subjectName: "English", credit: 2, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+
+  // SECOND YEAR
+  { subjectCode: "66731", subjectName: "Electrical Circuits-II", credit: 4, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66732", subjectName: "Advance Electricity", credit: 3, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66733", subjectName: "Electrical Engineering Drawing", credit: 1, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65931", subjectName: "Mathematics-III", credit: 4, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65922", subjectName: "Physics-II", credit: 4, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65722", subjectName: "Communicative English", credit: 2, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65811", subjectName: "Social Science", credit: 3, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66741", subjectName: "Electrical Installation Planning & Estimating", credit: 4, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66742", subjectName: "DC Machines", credit: 4, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66845", subjectName: "Industrial Electronics", credit: 3, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "67045", subjectName: "Applied Mechanics", credit: 3, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66631", subjectName: "Programming Essentials", credit: 3, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65841", subjectName: "Business Organization & Communication", credit: 2, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+
+  // THIRD YEAR
+  { subjectCode: "66751", subjectName: "Electrical & Electronic Measurement-I", credit: 4, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66752", subjectName: "Generation of Electrical Power", credit: 4, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66753", subjectName: "Renewable Energy", credit: 3, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66856", subjectName: "Digital Electronics & Microprocessor", credit: 3, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "69054", subjectName: "Environmental Studies", credit: 2, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65851", subjectName: "Accounting Theory & Practice", credit: 3, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66761", subjectName: "Alternating Current Machines-I", credit: 4, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66762", subjectName: "Electrical & Electronic Measurement-II", credit: 3, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66763", subjectName: "Transmission and Distribution of Electrical Power-I", credit: 4, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66867", subjectName: "Communication Engineering", credit: 3, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66868", subjectName: "Micro Controller & PLC", credit: 3, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65852", subjectName: "Industrial Management", credit: 2, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+
+  // FOURTH YEAR
+  { subjectCode: "66771", subjectName: "Alternating Current Machines-II", credit: 4, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66772", subjectName: "Electrical Engineering Project", credit: 2, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66773", subjectName: "Switch Gear & Protection", credit: 4, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66774", subjectName: "Transmission and Distribution of Electrical Power-II", credit: 4, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66775", subjectName: "Testing and Maintenance of Electrical Equipment", credit: 2, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66863", subjectName: "Instrumentation and Process Control", credit: 3, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65853", subjectName: "Innovation & Entrepreneurship", credit: 2, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66781", subjectName: "Electrical Technology Industrial Training", credit: 6, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 }
+];
+
 export function getFixedSubjectList(category: Category, group: Group, religion: Religion): string[] {
   if (category === Category.SSC) {
     const coreSSC = [
@@ -182,6 +239,10 @@ export function getFixedSubjectList(category: Category, group: Group, religion: 
   }
 
   if (category === Category.DIPLOMA) {
+    if (group === Group.ELECTRICAL_ELECTRONICS_ENGINEERING) {
+      return ELECTRICAL_ELECTRONICS_ENGINEERING_SUBJECTS.map((s) => s.subjectName);
+    }
+
     if (group === Group.COMPUTER_TECHNOLOGY) {
       return [
         "Engineering Mathematics-I",
@@ -217,12 +278,16 @@ export function getFixedSubjectList(category: Category, group: Group, religion: 
 }
 
 export function generateEmptySubjectGrades(category: Category, group: Group, religion: Religion): SubjectGrade[] {
+  if (category === Category.DIPLOMA && group === Group.ELECTRICAL_ELECTRONICS_ENGINEERING) {
+    return ELECTRICAL_ELECTRONICS_ENGINEERING_SUBJECTS.map((s) => ({ ...s }));
+  }
+
   const list = getFixedSubjectList(category, group, religion);
   return list.map((subjectName) => ({
     subjectName,
     subjectCode: getSubjectCode(subjectName),
     marks: 85, // Default to A+ (85 marks)
-    gradePoint: 5.0
+    gradePoint: category === Category.DIPLOMA ? 4.0 : 5.0
   }));
 }
 

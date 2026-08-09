@@ -91,6 +91,12 @@ diplomaGrades[8].gradePoint = 5.0;
 diplomaGrades[9].gradePoint = 5.0;
 diplomaGrades[10].gradePoint = 5.0;
 
+const eeeGrades = generateEmptySubjectGrades(Category.DIPLOMA, Group.ELECTRICAL_ELECTRONICS_ENGINEERING, Religion.ISLAM);
+eeeGrades.forEach((g) => {
+  g.gradePoint = 3.85;
+  g.marks = 82;
+});
+
 export const DEFAULT_STUDENTS: Student[] = [
   {
     id: "stud_1",
@@ -151,6 +157,26 @@ export const DEFAULT_STUDENTS: Student[] = [
     photoUrl: PASSPORT_AVATARS.male2,
     subjects: diplomaGrades,
     finalGpa: 4.68 // auto calculated in client, but hardcoded here for seed
+  },
+  {
+    id: "stud_4",
+    category: Category.DIPLOMA,
+    group: Group.ELECTRICAL_ELECTRONICS_ENGINEERING,
+    religion: Religion.ISLAM,
+    name: "Mahmudul Hasan Siddique",
+    fatherName: "Kamrul Hasan Siddique",
+    motherName: "Salma Begum",
+    dob: "2003-08-18",
+    rollNumber: "667101",
+    registrationNumber: "1502938471",
+    instituteName: "Dhaka Polytechnic Institute, Dhaka",
+    session: "2020-2024",
+    passingYear: "2024",
+    certificateSerialNumber: "BNIE-EEE-2024-66701",
+    issueDate: "2024-09-10",
+    photoUrl: PASSPORT_AVATARS.male1,
+    subjects: eeeGrades,
+    finalGpa: 3.85
   }
 ];
 

@@ -1,5 +1,5 @@
 import { useState, FormEvent, ChangeEvent } from "react";
-import { Category, Group, Religion, Student, SubjectGrade, calculateFinalGpa, getGradePointFromMarks, generateSecureToken } from "../types";
+import { Category, Group, Religion, Student, SubjectGrade, calculateFinalGpa, getGradePointFromMarks, generateSecureToken, getDiplomaLetterGrade, getDiplomaGradePointFromMarks, calculateDiplomaGpa } from "../types";
 import { getFixedSubjectList, generateEmptySubjectGrades, getSubjectCode, getSubjectImage } from "../data/subjectLoader";
 import { PASSPORT_AVATARS } from "../data/defaultStudents";
 import Logo from "./Logo";
@@ -84,8 +84,23 @@ export default function AdminPanel({
     newReligion: Religion,
     currentSubjects: SubjectGrade[] = []
   ) => {
+    if (newCategory === Category.DIPLOMA && newGroup === Group.ELECTRICAL_ELECTRONICS_ENGINEERING) {
+      const emptyEEE = generateEmptySubjectGrades(newCategory, newGroup, newReligion);
+      const updatedEEE = emptyEEE.map((sub) => {
+        const match = currentSubjects.find((s) => s.subjectCode === sub.subjectCode || s.subjectName === sub.subjectName);
+        return {
+          ...sub,
+          marks: match && match.marks !== undefined ? match.marks : sub.marks,
+          gradePoint: match ? match.gradePoint : sub.gradePoint
+        };
+      });
+      setFormSubjects(updatedEEE);
+      return;
+    }
+
     // Determine the new required subject titles
     const requiredSubjectNames = getFixedSubjectList(newCategory, newGroup, newReligion);
+    const defaultGp = newCategory === Category.DIPLOMA ? 4.0 : 5.0;
     
     // Attempt to map existing grade points/marks to the new list to preserve what was entered
     const updatedSubjects: SubjectGrade[] = requiredSubjectNames.map((name) => {
@@ -94,7 +109,7 @@ export default function AdminPanel({
         subjectName: name,
         subjectCode: getSubjectCode(name),
         marks: match && match.marks !== undefined ? match.marks : 85,
-        gradePoint: match ? match.gradePoint : 5.0 // default to 5.0 (A+) if new subject
+        gradePoint: match ? match.gradePoint : defaultGp // default to max grade point for category
       };
     });
 
@@ -148,8 +163,9 @@ export default function AdminPanel({
     setQuickGpaInput("");
     setQuickMarksInput("");
     
-    // Ensure existing subjects have proper subjectCode and marks
+    // Ensure existing subjects have proper subjectCode, marks, credit, and year
     const mappedSubjects = student.subjects.map((sub) => ({
+      ...sub,
       subjectName: sub.subjectName,
       subjectCode: sub.subjectCode || getSubjectCode(sub.subjectName),
       marks: sub.marks !== undefined ? sub.marks : (sub.gradePoint >= 5.0 ? 85 : sub.gradePoint >= 4.0 ? 74 : sub.gradePoint >= 3.5 ? 64 : sub.gradePoint >= 3.0 ? 54 : sub.gradePoint >= 2.0 ? 44 : sub.gradePoint >= 1.0 ? 35 : 25),
@@ -223,16 +239,23 @@ export default function AdminPanel({
   const handleSaveStudent = (e: FormEvent) => {
     e.preventDefault();
 
+    const is4PointScale = formCategory === Category.DIPLOMA;
+    const maxScale = is4PointScale ? 4.00 : 5.00;
+
     // Validate GPA entries
     for (const sub of formSubjects) {
-      if (isNaN(sub.gradePoint) || sub.gradePoint < 0 || sub.gradePoint > 5.0) {
-        alert(`Please enter a valid GPA for "${sub.subjectName}" (0.00 to 5.00).`);
+      if (isNaN(sub.gradePoint) || sub.gradePoint < 0 || sub.gradePoint > maxScale) {
+        if (is4PointScale) {
+          alert("Invalid CGPA. Diploma CGPA must be between 0.00 and 4.00.");
+        } else {
+          alert(`Please enter a valid GPA for "${sub.subjectName}" (0.00 to 5.00).`);
+        }
         return;
       }
     }
 
     // Auto calculate CGPA and total marks
-    const finalGpa = calculateFinalGpa(formSubjects);
+    const finalGpa = is4PointScale ? calculateDiplomaGpa(formSubjects) : calculateFinalGpa(formSubjects);
     const totalMarks = formSubjects.reduce((sum, sub) => sum + (sub.marks || 0), 0);
 
     // Retrieve or generate a secure verification token for this student
@@ -289,20 +312,36 @@ export default function AdminPanel({
 
   // Update a single subject's grade point and automatically update marks
   const handleSubjectGradeChange = (index: number, val: string) => {
+    const is4PointScale = formCategory === Category.DIPLOMA;
+    const maxScale = is4PointScale ? 4.00 : 5.00;
+
     let parsed = parseFloat(val);
     if (val === "" || isNaN(parsed)) parsed = 0;
     if (parsed < 0) parsed = 0;
-    if (parsed > 5.0) parsed = 5.0;
+    if (parsed > maxScale) parsed = maxScale;
     
     const updated = [...formSubjects];
     let marks = updated[index].marks || 85;
-    if (parsed >= 5.0) marks = 85;
-    else if (parsed >= 4.0) marks = 74;
-    else if (parsed >= 3.5) marks = 64;
-    else if (parsed >= 3.0) marks = 54;
-    else if (parsed >= 2.0) marks = 44;
-    else if (parsed >= 1.0) marks = 35;
-    else marks = 25;
+    if (is4PointScale) {
+      if (parsed >= 4.00) marks = 85;
+      else if (parsed >= 3.75) marks = 76;
+      else if (parsed >= 3.50) marks = 71;
+      else if (parsed >= 3.25) marks = 66;
+      else if (parsed >= 3.00) marks = 61;
+      else if (parsed >= 2.75) marks = 56;
+      else if (parsed >= 2.50) marks = 51;
+      else if (parsed >= 2.25) marks = 46;
+      else if (parsed >= 2.00) marks = 41;
+      else marks = 25;
+    } else {
+      if (parsed >= 5.0) marks = 85;
+      else if (parsed >= 4.0) marks = 74;
+      else if (parsed >= 3.5) marks = 64;
+      else if (parsed >= 3.0) marks = 54;
+      else if (parsed >= 2.0) marks = 44;
+      else if (parsed >= 1.0) marks = 35;
+      else marks = 25;
+    }
 
     updated[index] = {
       ...updated[index],
@@ -314,13 +353,15 @@ export default function AdminPanel({
 
   // Update a single subject's marks in form state and automatically calculate GP
   const handleSubjectMarksChange = (index: number, val: string) => {
+    const is4PointScale = formCategory === Category.DIPLOMA;
+
     let parsed = parseInt(val);
     if (isNaN(parsed) || val === "") parsed = 0;
     if (parsed < 0) parsed = 0;
     if (parsed > 100) parsed = 100;
     
     const updated = [...formSubjects];
-    const gp = getGradePointFromMarks(parsed);
+    const gp = is4PointScale ? getDiplomaGradePointFromMarks(parsed) : getGradePointFromMarks(parsed);
     updated[index] = {
       ...updated[index],
       marks: parsed,
@@ -331,51 +372,63 @@ export default function AdminPanel({
 
   // Automatic distribution of entered GPA/CGPA across all subjects
   const handleDistributeByGpa = () => {
+    const isDiploma = formCategory === Category.DIPLOMA;
+    const maxScale = isDiploma ? 4.00 : 5.00;
     const totalGpa = parseFloat(quickGpaInput);
-    if (isNaN(totalGpa) || totalGpa < 0 || totalGpa > 5.00) {
-      alert("Please enter a valid Total GPA (0.00 to 5.00) to distribute.");
+
+    if (isNaN(totalGpa) || totalGpa < 0 || totalGpa > maxScale) {
+      if (isDiploma) {
+        alert("Invalid CGPA. Diploma CGPA must be between 0.00 and 4.00.");
+      } else {
+        alert("Please enter a valid Total GPA (0.00 to 5.00) to distribute.");
+      }
       return;
     }
     
     const numSubjects = formSubjects.length;
     if (numSubjects === 0) return;
     
-    const totalPoints = totalGpa * numSubjects;
     let distributedPoints = Array(numSubjects).fill(totalGpa);
     
     // Add small realistic variation if totalGpa is not extremely high or low
-    if (totalGpa > 1.0 && totalGpa < 5.0) {
+    if (totalGpa > 1.0 && totalGpa < maxScale) {
       for (let i = 0; i < numSubjects; i++) {
-        const offset = (i % 2 === 0 ? 1 : -1) * (0.5 + (i % 3) * 0.25);
-        distributedPoints[i] = Math.max(1.0, Math.min(5.0, distributedPoints[i] + offset));
+        const offset = (i % 2 === 0 ? 1 : -1) * (0.3 + (i % 3) * 0.15);
+        distributedPoints[i] = Math.max(1.0, Math.min(maxScale, distributedPoints[i] + offset));
       }
     }
-    
-    // Adjust to make sure the sum is exactly totalPoints
-    let currentSum = distributedPoints.reduce((a, b) => a + b, 0);
-    let diff = totalPoints - currentSum;
-    
-    let iter = 0;
-    while (Math.abs(diff) > 0.001 && iter < 100) {
-      const step = diff / numSubjects;
-      for (let i = 0; i < numSubjects; i++) {
-        distributedPoints[i] = Math.max(0.0, Math.min(5.0, distributedPoints[i] + step));
-      }
-      currentSum = distributedPoints.reduce((a, b) => a + b, 0);
-      diff = totalPoints - currentSum;
-      iter++;
-    }
-    
-    // Guarantee exact mathematical sum
-    currentSum = distributedPoints.reduce((a, b) => a + b, 0);
-    let finalDiff = totalPoints - currentSum;
-    if (Math.abs(finalDiff) > 0.0001) {
-      for (let i = 0; i < numSubjects; i++) {
-        const potential = distributedPoints[i] + finalDiff;
-        if (potential >= 0 && potential <= 5.0) {
-          distributedPoints[i] = potential;
-          break;
+
+    const isCreditWeighted = isDiploma && formSubjects.some(s => s.credit !== undefined && s.credit > 0);
+
+    if (isCreditWeighted) {
+      const totalCredits = formSubjects.reduce((sum, s) => sum + (s.credit || 1), 0);
+      const targetWeightedSum = totalGpa * totalCredits;
+      let currentWeightedSum = formSubjects.reduce((sum, s, idx) => sum + (distributedPoints[idx] * (s.credit || 1)), 0);
+      let diff = targetWeightedSum - currentWeightedSum;
+
+      let iter = 0;
+      while (Math.abs(diff) > 0.001 && iter < 100) {
+        const step = diff / totalCredits;
+        for (let i = 0; i < numSubjects; i++) {
+          distributedPoints[i] = Math.max(0.0, Math.min(maxScale, distributedPoints[i] + step));
         }
+        currentWeightedSum = formSubjects.reduce((sum, s, idx) => sum + (distributedPoints[idx] * (s.credit || 1)), 0);
+        diff = targetWeightedSum - currentWeightedSum;
+        iter++;
+      }
+    } else {
+      const totalPoints = totalGpa * numSubjects;
+      let currentSum = distributedPoints.reduce((a, b) => a + b, 0);
+      let diff = totalPoints - currentSum;
+      let iter = 0;
+      while (Math.abs(diff) > 0.001 && iter < 100) {
+        const step = diff / numSubjects;
+        for (let i = 0; i < numSubjects; i++) {
+          distributedPoints[i] = Math.max(0.0, Math.min(maxScale, distributedPoints[i] + step));
+        }
+        currentSum = distributedPoints.reduce((a, b) => a + b, 0);
+        diff = totalPoints - currentSum;
+        iter++;
       }
     }
     
@@ -383,13 +436,26 @@ export default function AdminPanel({
     const updated = formSubjects.map((sub, i) => {
       const gp = Math.round(distributedPoints[i] * 100) / 100;
       let marks = 85;
-      if (gp >= 5.0) marks = 85;
-      else if (gp >= 4.0) marks = 74;
-      else if (gp >= 3.5) marks = 64;
-      else if (gp >= 3.0) marks = 54;
-      else if (gp >= 2.0) marks = 44;
-      else if (gp >= 1.0) marks = 36;
-      else marks = 25;
+      if (isDiploma) {
+        if (gp >= 4.00) marks = 85;
+        else if (gp >= 3.75) marks = 76;
+        else if (gp >= 3.50) marks = 71;
+        else if (gp >= 3.25) marks = 66;
+        else if (gp >= 3.00) marks = 61;
+        else if (gp >= 2.75) marks = 56;
+        else if (gp >= 2.50) marks = 51;
+        else if (gp >= 2.25) marks = 46;
+        else if (gp >= 2.00) marks = 41;
+        else marks = 25;
+      } else {
+        if (gp >= 5.0) marks = 85;
+        else if (gp >= 4.0) marks = 74;
+        else if (gp >= 3.5) marks = 64;
+        else if (gp >= 3.0) marks = 54;
+        else if (gp >= 2.0) marks = 44;
+        else if (gp >= 1.0) marks = 36;
+        else marks = 25;
+      }
       
       return {
         ...sub,
@@ -783,6 +849,7 @@ export default function AdminPanel({
                       >
                         <option value={Group.ENGINEERING}>Engineering Streams</option>
                         <option value={Group.COMPUTER_TECHNOLOGY}>Computer Technology</option>
+                        <option value={Group.ELECTRICAL_ELECTRONICS_ENGINEERING}>Electrical & Electronics Engineering</option>
                       </select>
                     ) : (
                       <select
@@ -1049,14 +1116,16 @@ export default function AdminPanel({
                   <div className="grid grid-cols-2 gap-3 pt-1">
                     {/* Distribute by GPA */}
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-gray-600 block">Total GPA (0.00 - 5.00)</label>
+                      <label className="text-[10px] font-bold text-gray-600 block">
+                        {formCategory === Category.DIPLOMA ? "Total CGPA (0.00 – 4.00)" : "Total GPA (0.00 – 5.00)"}
+                      </label>
                       <div className="flex gap-1">
                         <input
                           type="number"
                           step="0.01"
                           min="0.00"
-                          max="5.00"
-                          placeholder="e.g. 4.59"
+                          max={formCategory === Category.DIPLOMA ? "4.00" : "5.00"}
+                          placeholder={formCategory === Category.DIPLOMA ? "e.g. 3.50" : "e.g. 4.59"}
                           value={quickGpaInput}
                           onChange={(e) => setQuickGpaInput(e.target.value)}
                           className="w-full bg-white border border-gray-300 rounded-lg px-2 py-1 text-xs font-mono font-bold text-gray-850"
@@ -1099,24 +1168,27 @@ export default function AdminPanel({
                   <div className="grid grid-cols-12 gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider px-3 pb-1 border-b border-gray-100">
                     <div className="col-span-6">Subject (Name & Code)</div>
                     <div className="col-span-2 text-center">Marks</div>
-                    <div className="col-span-2 text-center">GPA</div>
+                    <div className="col-span-2 text-center">{formCategory === Category.DIPLOMA ? "CGPA / GP" : "GPA"}</div>
                     <div className="col-span-2 text-center">Grade</div>
                   </div>
                   {formSubjects.map((sub, index) => {
-                    const letterGrade = sub.gradePoint >= 5.0 ? "A+" :
-                                       sub.gradePoint >= 4.0 ? "A" :
-                                       sub.gradePoint >= 3.5 ? "A-" :
-                                       sub.gradePoint >= 3.0 ? "B" :
-                                       sub.gradePoint >= 2.0 ? "C" :
-                                       sub.gradePoint >= 1.0 ? "D" : "F";
+                    const is4PointScale = formCategory === Category.DIPLOMA;
+                    const letterGrade = is4PointScale ? getDiplomaLetterGrade(sub.gradePoint) : (
+                      sub.gradePoint >= 5.0 ? "A+" :
+                      sub.gradePoint >= 4.0 ? "A" :
+                      sub.gradePoint >= 3.5 ? "A-" :
+                      sub.gradePoint >= 3.0 ? "B" :
+                      sub.gradePoint >= 2.0 ? "C" :
+                      sub.gradePoint >= 1.0 ? "D" : "F"
+                    );
                     
-                    const badgeColor = letterGrade === "A+" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                    const badgeColor = (letterGrade === "A+" || letterGrade === "A") ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
                                        letterGrade === "F" ? "bg-red-50 text-red-700 border-red-200" :
                                        "bg-gray-100 text-gray-700 border-gray-200";
 
                     return (
                       <div 
-                        key={sub.subjectName}
+                        key={`${sub.subjectName}-${index}`}
                         className="bg-gray-50 border border-gray-100 p-2.5 rounded-xl grid grid-cols-12 gap-2 items-center hover:border-[#006a4e]/20 hover:bg-white hover:shadow-sm transition-all"
                       >
                         {/* Subject detail */}
@@ -1133,6 +1205,8 @@ export default function AdminPanel({
                             </p>
                             <span className="text-[10px] font-mono text-gray-400 font-semibold">
                               Code: <span className="text-gray-600">{sub.subjectCode || getSubjectCode(sub.subjectName)}</span>
+                              {sub.year && <span className="ml-1 text-[9px] bg-emerald-100 text-emerald-800 px-1 py-0.2 rounded">{sub.year}</span>}
+                              {sub.credit && <span className="ml-1 text-[9px] bg-blue-100 text-blue-800 px-1 py-0.2 rounded">{sub.credit} Cr</span>}
                             </span>
                           </div>
                         </div>
@@ -1157,7 +1231,7 @@ export default function AdminPanel({
                             type="number"
                             step="0.01"
                             min="0.00"
-                            max="5.00"
+                            max={is4PointScale ? "4.00" : "5.00"}
                             required
                             value={sub.gradePoint}
                             onChange={(e) => handleSubjectGradeChange(index, e.target.value)}
@@ -1180,12 +1254,14 @@ export default function AdminPanel({
                 <div className="grid grid-cols-2 gap-3 pt-1">
                   <div className="bg-[#006a4e]/5 border border-[#006a4e]/20 rounded-xl p-3 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wider block">Estimated GPA</span>
+                      <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wider block">
+                        Estimated {formCategory === Category.DIPLOMA ? "CGPA" : "GPA"}
+                      </span>
                       <span className="text-[9px] text-gray-400 font-normal block font-semibold">Auto-recalculated</span>
                     </div>
                     <div className="text-right">
                       <span className="text-lg font-black font-mono text-[#006a4e]">
-                        {calculateFinalGpa(formSubjects).toFixed(2)}
+                        {(formCategory === Category.DIPLOMA ? calculateDiplomaGpa(formSubjects) : calculateFinalGpa(formSubjects)).toFixed(2)}
                       </span>
                     </div>
                   </div>

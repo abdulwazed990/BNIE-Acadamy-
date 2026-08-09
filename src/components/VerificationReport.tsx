@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Student, getLetterGrade } from "../types";
+import { Student, getLetterGrade, getDiplomaLetterGrade } from "../types";
 import { ArrowLeft, Printer, Award, Calendar, Clock, CheckCircle2, FileDown } from "lucide-react";
 import { motion } from "motion/react";
 import { QRCodeCanvas } from "qrcode.react";
@@ -692,73 +692,136 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
         </div>
 
         {/* Detailed Subject Transcript Grade Sheet */}
-        <div className="space-y-2 mb-6">
+        <div className="space-y-2 mb-4">
           <h4 className="text-[11px] font-black text-gray-900 uppercase tracking-widest border-l-4 border-[#006a4e] pl-2 mb-2">
-            Subject-wise Grade Transcript
+            Subject-wise Grade Transcript {student.category === "Diploma" ? "(4-Year Diploma Course — GPA Scale 4.00)" : ""}
           </h4>
 
-          <div className="border border-gray-300 rounded-lg overflow-x-auto shadow-2xs">
-            <table className="w-full min-w-[600px] sm:min-w-0 text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-gray-100 border-b border-gray-300 text-gray-700 font-bold uppercase tracking-wider text-[10px]">
-                  <th className="py-1.5 px-3 w-28 text-center border-r border-gray-200">Subject Code</th>
-                  <th className="py-1.5 px-3 border-r border-gray-200">Subject Name</th>
-                  <th className="py-1.5 px-3 text-center w-24 border-r border-gray-200">Marks</th>
-                  <th className="py-1.5 px-3 text-center w-32 border-r border-gray-200">Grade Point (GP)</th>
-                  <th className="py-1.5 px-3 text-center w-28">Letter Grade</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {student.subjects.map((sub, idx) => {
-                  const subCode = sub.subjectCode || "—";
-                  const subMarks = sub.marks !== undefined ? sub.marks : "—";
+          {student.category === "Diploma" && student.subjects.some((s) => s.year !== undefined) ? (
+            <div>
+              {/* 4 Horizontally Side-by-Side Year Columns */}
+              <div className="grid grid-cols-4 gap-1.5 border border-gray-300 rounded-lg p-1.5 bg-white">
+                {["FIRST YEAR", "SECOND YEAR", "THIRD YEAR", "FOURTH YEAR"].map((yr) => {
+                  const yearSubjects = student.subjects.filter((s) => s.year === yr);
                   return (
-                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="py-2 px-3 text-center font-mono font-semibold text-gray-600 border-r border-gray-200 print-compact-py whitespace-nowrap">{subCode}</td>
-                      <td className="py-2 px-3 font-bold text-gray-800 border-r border-gray-200 print-compact-py">
-                        {sub.subjectName}
-                      </td>
-                      <td className="py-2 px-3 text-center font-mono font-semibold text-gray-700 border-r border-gray-200 print-compact-py whitespace-nowrap">{subMarks}</td>
-                      <td className="py-2 px-3 text-center font-mono font-bold text-gray-900 border-r border-gray-200 print-compact-py whitespace-nowrap">
-                        {sub.gradePoint.toFixed(2)}
-                      </td>
-                      <td className="py-2 px-3 text-center print-compact-py whitespace-nowrap">
-                        <span className={`inline-block text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap ${
-                          sub.gradePoint >= 5.0 ? "bg-emerald-100 text-emerald-800" :
-                          sub.gradePoint >= 4.0 ? "bg-green-100 text-green-800" :
-                          sub.gradePoint >= 3.5 ? "bg-blue-100 text-blue-800" :
-                          sub.gradePoint >= 3.0 ? "bg-cyan-100 text-cyan-800" :
-                          sub.gradePoint >= 2.0 ? "bg-amber-100 text-amber-800" :
-                          sub.gradePoint >= 1.0 ? "bg-orange-100 text-orange-800" :
-                          "bg-red-100 text-red-800"
-                        }`}>
-                          {getLetterGrade(sub.gradePoint)}
-                        </span>
-                      </td>
-                    </tr>
+                    <div key={yr} className="border border-gray-200 rounded p-1 bg-gray-50/30 flex flex-col justify-between">
+                      <div>
+                        <div className="bg-[#006a4e] text-white font-black text-[9px] text-center uppercase py-0.5 mb-1 rounded-xs tracking-wider">
+                          {yr}
+                        </div>
+                        <table className="w-full text-left border-collapse text-[8px]">
+                          <thead>
+                            <tr className="border-b border-gray-300 text-gray-600 font-bold uppercase text-[7px] bg-gray-100">
+                              <th className="py-0.5 px-0.5">Code</th>
+                              <th className="py-0.5 px-0.5">Subject</th>
+                              <th className="py-0.5 px-0.5 text-center">Cr</th>
+                              <th className="py-0.5 px-0.5 text-center">GP</th>
+                              <th className="py-0.5 px-0.5 text-center">G</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {yearSubjects.map((sub, idx) => (
+                              <tr key={idx} className="hover:bg-white">
+                                <td className="py-0.5 px-0.5 font-mono text-[7px] text-gray-500 whitespace-nowrap">{sub.subjectCode}</td>
+                                <td className="py-0.5 px-0.5 font-bold text-gray-800 leading-tight text-[8px]" title={sub.subjectName}>
+                                  {sub.subjectName}
+                                </td>
+                                <td className="py-0.5 px-0.5 text-center font-mono text-[7px] text-gray-600">{sub.credit || "—"}</td>
+                                <td className="py-0.5 px-0.5 text-center font-mono font-bold text-[#006a4e] text-[8px]">{sub.gradePoint.toFixed(2)}</td>
+                                <td className="py-0.5 px-0.5 text-center font-bold text-[7.5px] text-gray-900">{getDiplomaLetterGrade(sub.gradePoint)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   );
                 })}
-                
-                {/* Result Summary Row */}
-                <tr className="bg-emerald-50/30 font-bold border-t-2 border-emerald-600">
-                  <td colSpan={2} className="py-2 px-3 text-xs text-[#006a4e] uppercase font-bold border-r border-gray-200 whitespace-nowrap">
-                    Cumulative Grade Point Average (CGPA / GPA)
-                  </td>
-                  <td className="py-2 px-3 text-center font-mono text-xs text-gray-700 border-r border-gray-200 whitespace-nowrap">
-                    {student.totalMarks !== undefined ? `${student.totalMarks} Total` : "—"}
-                  </td>
-                  <td className="py-2 px-3 text-center font-mono text-sm text-[#006a4e] font-black border-r border-gray-200 whitespace-nowrap">
-                    {student.finalGpa.toFixed(2)}
-                  </td>
-                  <td className="py-2 px-3 text-center whitespace-nowrap">
-                    <span className="text-[10px] bg-[#006a4e] text-white font-bold px-3 py-0.5 rounded-full shadow-2xs whitespace-nowrap">
-                      {getLetterGrade(student.finalGpa)}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+              </div>
+
+              {/* CGPA Summary Banner for Diploma */}
+              <div className="mt-2 bg-emerald-50/80 border-2 border-[#006a4e] rounded-lg p-2 flex flex-wrap items-center justify-between gap-2 font-sans">
+                <div className="flex items-center space-x-1.5">
+                  <Award className="w-4 h-4 text-[#006a4e]" />
+                  <span className="text-[11px] font-black text-gray-900 uppercase tracking-wider">
+                    Diploma Cumulative Grade Point Average (CGPA) — Max 4.00
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3 font-mono">
+                  <span className="text-[11px] text-gray-700 font-bold">
+                    Total Marks: <span className="text-gray-950 font-black">{student.totalMarks || "—"}</span>
+                  </span>
+                  <span className="text-xs font-black text-[#006a4e] bg-white border border-[#006a4e] px-2 py-0.5 rounded-md shadow-2xs">
+                    CGPA: {student.finalGpa.toFixed(2)} / 4.00
+                  </span>
+                  <span className="text-xs bg-[#006a4e] text-white font-extrabold px-2 py-0.5 rounded-md shadow-2xs">
+                    Grade: {getDiplomaLetterGrade(student.finalGpa)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="border border-gray-300 rounded-lg overflow-x-auto shadow-2xs">
+              <table className="w-full min-w-[600px] sm:min-w-0 text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-gray-100 border-b border-gray-300 text-gray-700 font-bold uppercase tracking-wider text-[10px]">
+                    <th className="py-1.5 px-3 w-28 text-center border-r border-gray-200">Subject Code</th>
+                    <th className="py-1.5 px-3 border-r border-gray-200">Subject Name</th>
+                    <th className="py-1.5 px-3 text-center w-24 border-r border-gray-200">Marks</th>
+                    <th className="py-1.5 px-3 text-center w-32 border-r border-gray-200">Grade Point (GP)</th>
+                    <th className="py-1.5 px-3 text-center w-28">Letter Grade</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {student.subjects.map((sub, idx) => {
+                    const subCode = sub.subjectCode || "—";
+                    const subMarks = sub.marks !== undefined ? sub.marks : "—";
+                    const is4Scale = student.category === "Diploma";
+                    const letterGrade = is4Scale ? getDiplomaLetterGrade(sub.gradePoint) : getLetterGrade(sub.gradePoint);
+                    return (
+                      <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="py-2 px-3 text-center font-mono font-semibold text-gray-600 border-r border-gray-200 print-compact-py whitespace-nowrap">{subCode}</td>
+                        <td className="py-2 px-3 font-bold text-gray-800 border-r border-gray-200 print-compact-py">
+                          {sub.subjectName}
+                        </td>
+                        <td className="py-2 px-3 text-center font-mono font-semibold text-gray-700 border-r border-gray-200 print-compact-py whitespace-nowrap">{subMarks}</td>
+                        <td className="py-2 px-3 text-center font-mono font-bold text-gray-900 border-r border-gray-200 print-compact-py whitespace-nowrap">
+                          {sub.gradePoint.toFixed(2)}
+                        </td>
+                        <td className="py-2 px-3 text-center print-compact-py whitespace-nowrap">
+                          <span className={`inline-block text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap ${
+                            letterGrade === "A+" || letterGrade === "A" ? "bg-emerald-100 text-emerald-800" :
+                            letterGrade === "F" ? "bg-red-100 text-red-800" :
+                            "bg-blue-100 text-blue-800"
+                          }`}>
+                            {letterGrade}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  
+                  {/* Result Summary Row */}
+                  <tr className="bg-emerald-50/30 font-bold border-t-2 border-emerald-600">
+                    <td colSpan={2} className="py-2 px-3 text-xs text-[#006a4e] uppercase font-bold border-r border-gray-200 whitespace-nowrap">
+                      Cumulative Grade Point Average (CGPA / GPA)
+                    </td>
+                    <td className="py-2 px-3 text-center font-mono text-xs text-gray-700 border-r border-gray-200 whitespace-nowrap">
+                      {student.totalMarks !== undefined ? `${student.totalMarks} Total` : "—"}
+                    </td>
+                    <td className="py-2 px-3 text-center font-mono text-sm text-[#006a4e] font-black border-r border-gray-200 whitespace-nowrap">
+                      {student.finalGpa.toFixed(2)}
+                    </td>
+                    <td className="py-2 px-3 text-center whitespace-nowrap">
+                      <span className="text-[10px] bg-[#006a4e] text-white font-bold px-3 py-0.5 rounded-full shadow-2xs whitespace-nowrap">
+                        {student.category === "Diploma" ? getDiplomaLetterGrade(student.finalGpa) : getLetterGrade(student.finalGpa)}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Verification Status Banner */}
