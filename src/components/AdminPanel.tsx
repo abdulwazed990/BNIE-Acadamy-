@@ -514,12 +514,14 @@ export default function AdminPanel({
   // Filters students based on search and category tab
   const filteredStudents = students.filter((s) => {
     const matchCategory = activeCategory === "ALL" || s.category === activeCategory;
-    const searchLower = searchQuery.toLowerCase();
+    const searchLower = searchQuery.toLowerCase().trim();
     const matchSearch = 
+      !searchLower ||
       s.name.toLowerCase().includes(searchLower) ||
-      s.rollNumber.includes(searchLower) ||
-      s.registrationNumber.includes(searchLower) ||
-      s.instituteName.toLowerCase().includes(searchLower);
+      s.rollNumber.toLowerCase().includes(searchLower) ||
+      s.registrationNumber.toLowerCase().includes(searchLower) ||
+      s.instituteName.toLowerCase().includes(searchLower) ||
+      (s.certificateSerialNumber && s.certificateSerialNumber.toLowerCase().includes(searchLower));
     return matchCategory && matchSearch;
   });
 
@@ -944,24 +946,28 @@ export default function AdminPanel({
                 {/* Roll & Reg numbers */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-1">Roll Number</label>
+                    <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-1">
+                      Roll Number {formCategory === Category.DIPLOMA ? "(Alphanumeric / Numbers allowed)" : ""}
+                    </label>
                     <input
                       type="text"
                       required
-                      placeholder="6-digit Roll"
+                      placeholder={formCategory === Category.DIPLOMA ? "e.g. ABC12345 or 666102" : "e.g. 102938"}
                       value={formRoll}
-                      onChange={(e) => setFormRoll(e.target.value.replace(/\D/g, ""))}
+                      onChange={(e) => setFormRoll(e.target.value.replace(/[^a-zA-Z0-9\-_/]/g, ""))}
                       className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium font-mono"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-1">Registration Number</label>
+                    <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-1">
+                      Registration Number {formCategory === Category.DIPLOMA ? "(Alphanumeric / Numbers allowed)" : ""}
+                    </label>
                     <input
                       type="text"
                       required
-                      placeholder="10-digit Reg No"
+                      placeholder={formCategory === Category.DIPLOMA ? "e.g. REG98234 or 1502938499" : "e.g. 2019384756"}
                       value={formReg}
-                      onChange={(e) => setFormReg(e.target.value.replace(/\D/g, ""))}
+                      onChange={(e) => setFormReg(e.target.value.replace(/[^a-zA-Z0-9\-_/]/g, ""))}
                       className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium font-mono"
                     />
                   </div>

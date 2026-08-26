@@ -160,14 +160,14 @@ export default function VerificationForm({ students, onVerifySuccess, isDbLoadin
     }
 
     // 2. Search Student Record
-    const cleanRoll = rollNumber.trim();
-    const cleanReg = registrationNumber.trim();
+    const cleanRoll = rollNumber.trim().toLowerCase();
+    const cleanReg = registrationNumber.trim().toLowerCase();
 
     // Check with selected category first
     let matched = students.find(
       (s) =>
-        s.rollNumber.trim() === cleanRoll &&
-        s.registrationNumber.trim() === cleanReg &&
+        s.rollNumber.trim().toLowerCase() === cleanRoll &&
+        s.registrationNumber.trim().toLowerCase() === cleanReg &&
         s.category === category
     );
 
@@ -175,8 +175,8 @@ export default function VerificationForm({ students, onVerifySuccess, isDbLoadin
     if (!matched) {
       const matchedAnyCategory = students.find(
         (s) =>
-          s.rollNumber.trim() === cleanRoll &&
-          s.registrationNumber.trim() === cleanReg
+          s.rollNumber.trim().toLowerCase() === cleanRoll &&
+          s.registrationNumber.trim().toLowerCase() === cleanReg
       );
       if (matchedAnyCategory) {
         setCategory(matchedAnyCategory.category);
@@ -326,10 +326,10 @@ export default function VerificationForm({ students, onVerifySuccess, isDbLoadin
                 type="text"
                 required
                 disabled={isTokenLoaded}
-                placeholder="e.g. 102938"
+                placeholder={category === Category.DIPLOMA ? "e.g. ABC12345 or 666102" : "e.g. 102938"}
                 value={rollNumber}
                 onChange={(e) => {
-                  setRollNumber(e.target.value.replace(/\D/g, ""));
+                  setRollNumber(e.target.value.replace(/[^a-zA-Z0-9\-_/]/g, ""));
                   setSearchError("");
                 }}
                 className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-hidden focus:border-[#006a4e] focus:ring-1 focus:ring-[#006a4e] disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed font-semibold font-mono"
@@ -345,10 +345,10 @@ export default function VerificationForm({ students, onVerifySuccess, isDbLoadin
                 type="text"
                 required
                 disabled={isTokenLoaded}
-                placeholder="e.g. 2019384756"
+                placeholder={category === Category.DIPLOMA ? "e.g. REG98234 or 1502938499" : "e.g. 2019384756"}
                 value={registrationNumber}
                 onChange={(e) => {
-                  setRegistrationNumber(e.target.value.replace(/\D/g, ""));
+                  setRegistrationNumber(e.target.value.replace(/[^a-zA-Z0-9\-_/]/g, ""));
                   setSearchError("");
                 }}
                 className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-hidden focus:border-[#006a4e] focus:ring-1 focus:ring-[#006a4e] disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed font-semibold font-mono"
