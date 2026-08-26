@@ -84,9 +84,9 @@ export default function AdminPanel({
     newReligion: Religion,
     currentSubjects: SubjectGrade[] = []
   ) => {
-    if (newCategory === Category.DIPLOMA && newGroup === Group.ELECTRICAL_ELECTRONICS_ENGINEERING) {
-      const emptyEEE = generateEmptySubjectGrades(newCategory, newGroup, newReligion);
-      const updatedEEE = emptyEEE.map((sub) => {
+    if (newCategory === Category.DIPLOMA && (newGroup === Group.ELECTRICAL_ELECTRONICS_ENGINEERING || newGroup === Group.COMPUTER_TECHNOLOGY || newGroup === Group.COMPUTER_SCIENCE)) {
+      const emptyPreset = generateEmptySubjectGrades(newCategory, newGroup, newReligion);
+      const updatedPreset = emptyPreset.map((sub) => {
         const match = currentSubjects.find((s) => s.subjectCode === sub.subjectCode || s.subjectName === sub.subjectName);
         return {
           ...sub,
@@ -94,7 +94,7 @@ export default function AdminPanel({
           gradePoint: match ? match.gradePoint : sub.gradePoint
         };
       });
-      setFormSubjects(updatedEEE);
+      setFormSubjects(updatedPreset);
       return;
     }
 
@@ -848,7 +848,7 @@ export default function AdminPanel({
                         className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium"
                       >
                         <option value={Group.ENGINEERING}>Engineering Streams</option>
-                        <option value={Group.COMPUTER_TECHNOLOGY}>Computer Technology</option>
+                        <option value={Group.COMPUTER_TECHNOLOGY}>Computer Science & Technology</option>
                         <option value={Group.ELECTRICAL_ELECTRONICS_ENGINEERING}>Electrical & Electronics Engineering</option>
                       </select>
                     ) : (

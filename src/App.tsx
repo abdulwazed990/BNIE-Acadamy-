@@ -76,7 +76,9 @@ export default function App() {
   // Handle auto-routing for QR code scans
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("token") || params.get("id")) {
+    const path = window.location.pathname.toLowerCase();
+    const hasVerifyPath = path.includes("/verify") || path.includes("/certificate") || path.includes("/record");
+    if (params.get("token") || params.get("id") || params.get("roll") || params.get("serial") || hasVerifyPath) {
       setCurrentPage("verify");
     }
   }, []);

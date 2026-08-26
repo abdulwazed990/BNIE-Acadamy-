@@ -66,7 +66,16 @@ export default function VerificationForm({ students, onVerifySuccess, isDbLoadin
   // Handle URL tokens when students database or loading state changes
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const token = params.get("token") || params.get("id");
+    let token = params.get("token") || params.get("id") || params.get("serial") || params.get("roll");
+
+    // Also check pathname (e.g. /verify/APO-TEST-001 or /verify/stud_1 or /certificate/666102)
+    if (!token) {
+      const parts = window.location.pathname.split("/").filter(Boolean);
+      const verifyIdx = parts.findIndex(p => p.toLowerCase() === "verify" || p.toLowerCase() === "certificate" || p.toLowerCase() === "record");
+      if (verifyIdx >= 0 && parts[verifyIdx + 1]) {
+        token = decodeURIComponent(parts[verifyIdx + 1]);
+      }
+    }
 
     if (token) {
       // If the database is still loading, wait and don't evaluate error yet
@@ -74,8 +83,14 @@ export default function VerificationForm({ students, onVerifySuccess, isDbLoadin
         return;
       }
 
+      const cleanToken = token.trim().toLowerCase();
       const matched = students.find(
-        (s) => s.secureToken === token || s.id === token
+        (s) =>
+          (s.secureToken && s.secureToken.toLowerCase() === cleanToken) ||
+          s.id.toLowerCase() === cleanToken ||
+          s.rollNumber.toLowerCase() === cleanToken ||
+          s.registrationNumber.toLowerCase() === cleanToken ||
+          (s.certificateSerialNumber && s.certificateSerialNumber.toLowerCase() === cleanToken)
       );
 
       if (matched) {

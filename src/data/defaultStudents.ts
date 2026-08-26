@@ -97,6 +97,12 @@ eeeGrades.forEach((g) => {
   g.marks = 82;
 });
 
+const csGrades = generateEmptySubjectGrades(Category.DIPLOMA, Group.COMPUTER_TECHNOLOGY, Religion.ISLAM);
+csGrades.forEach((g) => {
+  g.gradePoint = 3.90;
+  g.marks = 86;
+});
+
 export const DEFAULT_STUDENTS: Student[] = [
   {
     id: "stud_1",
@@ -177,6 +183,26 @@ export const DEFAULT_STUDENTS: Student[] = [
     photoUrl: PASSPORT_AVATARS.male1,
     subjects: eeeGrades,
     finalGpa: 3.85
+  },
+  {
+    id: "stud_5",
+    category: Category.DIPLOMA,
+    group: Group.COMPUTER_TECHNOLOGY,
+    religion: Religion.ISLAM,
+    name: "Arifur Rahman Chowdhury",
+    fatherName: "Mokhlesur Rahman Chowdhury",
+    motherName: "Fatema Chowdhury",
+    dob: "2003-10-12",
+    rollNumber: "666102",
+    registrationNumber: "1502938499",
+    instituteName: "Dhaka Polytechnic Institute, Dhaka",
+    session: "2020-2024",
+    passingYear: "2024",
+    certificateSerialNumber: "BNIE-CST-2024-66602",
+    issueDate: "2024-09-12",
+    photoUrl: PASSPORT_AVATARS.male2,
+    subjects: csGrades,
+    finalGpa: 3.90
   }
 ];
 
