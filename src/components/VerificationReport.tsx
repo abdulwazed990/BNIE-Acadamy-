@@ -694,7 +694,7 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
         {/* Detailed Subject Transcript Grade Sheet */}
         <div className="space-y-2 mb-4">
           <h4 className="text-[11px] font-black text-gray-900 uppercase tracking-widest border-l-4 border-[#006a4e] pl-2 mb-2">
-            Subject-wise Grade Transcript {student.category === "Diploma" ? (student.group === "Air Condition and Maintenance" ? "(1-Year Professional Diploma — Scale 4.00)" : "(Diploma Course — Scale 4.00)") : ""}
+            Subject-wise Grade Transcript {student.category === "Diploma" ? (student.group === "Air Condition and Maintenance" ? "(2-Year Diploma — Scale 4.00)" : "(Diploma Course — Scale 4.00)") : ""}
           </h4>
 
           {student.category === "Diploma" && student.subjects.some((s) => s.year !== undefined) ? (

@@ -572,44 +572,7 @@ export const DIPLOMA_COURSES: Course[] = [
     ]
   },
 
-  // ==================== 1-YEAR PROGRAMS (10 courses) ====================
-  {
-    id: "acm-1y",
-    name: "Air Condition and Maintenance",
-    bengaliName: "এয়ার কন্ডিশন অ্যান্ড মেইনটেন্যান্স",
-    shortDescription: "1-year comprehensive diploma covering domestic & commercial refrigeration, AC systems, compressor servicing, and electrical troubleshooting.",
-    fullDescription: "A premier 1-Year Diploma program comprising 13 specialized technical subjects divided into First 6 Months (7 Subjects) and Second 6 Months (6 Subjects). Prepares students with practical refrigeration, HVAC mechanics, compressor maintenance, and electronic diagnostic expertise.",
-    duration: "1 Year",
-    durationCategory: "1-Year",
-    category: "Vocational",
-    enrollmentFee: 3000,
-    totalFee: 26000,
-    certificateType: "Diploma in Air Condition and Maintenance",
-    eligibility: "SSC or HSC equivalent passed",
-    careerOpportunities: ["HVAC Maintenance Technician", "AC System Specialist", "Refrigeration Mechanic", "Industrial Chiller Technician"],
-    curriculum: [
-      "ACM-101 — Basic Refrigeration Fundamentals",
-      "ACM-102 — Basic Electricity and Electrical Safety",
-      "ACM-103 — Refrigeration Tools and Workshop Practice",
-      "ACM-104 — Refrigerants and Refrigeration Components",
-      "ACM-105 — Air Conditioning Fundamentals",
-      "ACM-106 — Installation and Piping Techniques",
-      "ACM-107 — Practical Workshop-I",
-      "ACM-201 — Domestic Air Conditioning Systems",
-      "ACM-202 — Commercial Air Conditioning Systems",
-      "ACM-203 — Compressor and Condenser Maintenance",
-      "ACM-204 — Electrical Control and Troubleshooting",
-      "ACM-205 — Air Conditioning Servicing and Maintenance",
-      "ACM-206 — Fault Diagnosis and Repair Workshop-II"
-    ],
-    imageUrl: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=600",
-    admissionRequirements: [
-      "Photocopy of SSC or HSC Certificate",
-      "Two passport size photographs",
-      "National ID / Birth Certificate copy"
-    ],
-    isFeatured: true
-  },
+  // ==================== 1-YEAR PROGRAMS (9 courses) ====================
   {
     id: "it-1y",
     name: "Information Technology",
@@ -850,7 +813,44 @@ export const DIPLOMA_COURSES: Course[] = [
     ]
   },
 
-  // ==================== 2-YEAR PROGRAMS (10 courses) ====================
+  // ==================== 2-YEAR PROGRAMS (11 courses) ====================
+  {
+    id: "acm-2y",
+    name: "Air Condition and Maintenance",
+    bengaliName: "এয়ার কন্ডিশন অ্যান্ড মেইনটেন্যান্স (২ বছর মেয়াদী)",
+    shortDescription: "2-year comprehensive diploma covering domestic & commercial refrigeration, AC systems, compressor servicing, and electrical troubleshooting.",
+    fullDescription: "A premier 2-Year Diploma program comprising 13 specialized technical subjects across 2 Academic Years / Sessions (e.g. Session 2020-2021, Passing Year 2022). Prepares students with practical refrigeration, HVAC mechanics, compressor maintenance, and electronic diagnostic expertise.",
+    duration: "2 Years",
+    durationCategory: "2-Year",
+    category: "Vocational",
+    enrollmentFee: 3500,
+    totalFee: 36000,
+    certificateType: "2-Year Diploma in Air Condition and Maintenance",
+    eligibility: "SSC or HSC equivalent passed",
+    careerOpportunities: ["HVAC Maintenance Technician", "AC System Specialist", "Refrigeration Mechanic", "Industrial Chiller Technician"],
+    curriculum: [
+      "ACM-101 — Basic Refrigeration Fundamentals",
+      "ACM-102 — Basic Electricity and Electrical Safety",
+      "ACM-103 — Refrigeration Tools and Workshop Practice",
+      "ACM-104 — Refrigerants and Refrigeration Components",
+      "ACM-105 — Air Conditioning Fundamentals",
+      "ACM-106 — Installation and Piping Techniques",
+      "ACM-107 — Practical Workshop-I",
+      "ACM-201 — Domestic Air Conditioning Systems",
+      "ACM-202 — Commercial Air Conditioning Systems",
+      "ACM-203 — Compressor and Condenser Maintenance",
+      "ACM-204 — Electrical Control and Troubleshooting",
+      "ACM-205 — Air Conditioning Servicing and Maintenance",
+      "ACM-206 — Fault Diagnosis and Repair Workshop-II"
+    ],
+    imageUrl: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=600",
+    admissionRequirements: [
+      "Photocopy of SSC or HSC Certificate",
+      "Two passport size photographs",
+      "National ID / Birth Certificate copy"
+    ],
+    isFeatured: true
+  },
   {
     id: "ce-2y",
     name: "Computer Engineering",
