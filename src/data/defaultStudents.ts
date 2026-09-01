@@ -97,10 +97,11 @@ eeeGrades.forEach((g) => {
   g.marks = 82;
 });
 
-const csGrades = generateEmptySubjectGrades(Category.DIPLOMA, Group.COMPUTER_TECHNOLOGY, Religion.ISLAM);
-csGrades.forEach((g) => {
-  g.gradePoint = 3.90;
-  g.marks = 86;
+const acmGrades = generateEmptySubjectGrades(Category.DIPLOMA, Group.AIR_CONDITION_MAINTENANCE, Religion.ISLAM);
+acmGrades.forEach((g, idx) => {
+  const sampleMarks = [88, 85, 90, 82, 86, 84, 92, 87, 85, 89, 88, 86, 90];
+  g.marks = sampleMarks[idx % 13];
+  g.gradePoint = 4.00;
 });
 
 export const DEFAULT_STUDENTS: Student[] = [
@@ -187,22 +188,22 @@ export const DEFAULT_STUDENTS: Student[] = [
   {
     id: "stud_5",
     category: Category.DIPLOMA,
-    group: Group.COMPUTER_TECHNOLOGY,
+    group: Group.AIR_CONDITION_MAINTENANCE,
     religion: Religion.ISLAM,
-    name: "Arifur Rahman Chowdhury",
-    fatherName: "Mokhlesur Rahman Chowdhury",
-    motherName: "Fatema Chowdhury",
+    name: "Tariqul Islam Rashed",
+    fatherName: "Mokhlesur Rahman",
+    motherName: "Fatema Begum",
     dob: "2003-10-12",
-    rollNumber: "666102",
-    registrationNumber: "1502938499",
-    instituteName: "Dhaka Polytechnic Institute, Dhaka",
-    session: "2020-2024",
+    rollNumber: "ACM1029",
+    registrationNumber: "REG90182736",
+    instituteName: "Bangladesh National Institute of Education, Dhaka",
+    session: "2023-2024",
     passingYear: "2024",
-    certificateSerialNumber: "BNIE-CST-2024-66602",
+    certificateSerialNumber: "BNIE-ACM-2024-88102",
     issueDate: "2024-09-12",
     photoUrl: PASSPORT_AVATARS.male2,
-    subjects: csGrades,
-    finalGpa: 3.90
+    subjects: acmGrades,
+    finalGpa: 4.00
   }
 ];
 

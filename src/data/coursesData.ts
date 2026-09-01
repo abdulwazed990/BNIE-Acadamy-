@@ -574,31 +574,39 @@ export const DIPLOMA_COURSES: Course[] = [
 
   // ==================== 1-YEAR PROGRAMS (10 courses) ====================
   {
-    id: "cs-1y",
-    name: "Computer Science",
-    bengaliName: "কম্পিউটার সায়েন্স",
-    shortDescription: "One-year deep dive into data structures, algorithms, object-oriented programming, and databases.",
-    fullDescription: "A comprehensive program designed to build algorithmic thinking. Gain deep software knowledge, learn database optimization, and construct full projects.",
+    id: "acm-1y",
+    name: "Air Condition and Maintenance",
+    bengaliName: "এয়ার কন্ডিশন অ্যান্ড মেইনটেন্যান্স",
+    shortDescription: "1-year comprehensive diploma covering domestic & commercial refrigeration, AC systems, compressor servicing, and electrical troubleshooting.",
+    fullDescription: "A premier 1-Year Diploma program comprising 13 specialized technical subjects divided into First 6 Months (7 Subjects) and Second 6 Months (6 Subjects). Prepares students with practical refrigeration, HVAC mechanics, compressor maintenance, and electronic diagnostic expertise.",
     duration: "1 Year",
     durationCategory: "1-Year",
-    category: "Technology",
+    category: "Vocational",
     enrollmentFee: 3000,
-    totalFee: 24000,
-    certificateType: "Professional Diploma in Computer Science",
-    eligibility: "HSC passed (Science/Math background highly preferred)",
-    careerOpportunities: ["Software Engineer Associate", "Junior Developer", "Database Administrator"],
+    totalFee: 26000,
+    certificateType: "Diploma in Air Condition and Maintenance",
+    eligibility: "SSC or HSC equivalent passed",
+    careerOpportunities: ["HVAC Maintenance Technician", "AC System Specialist", "Refrigeration Mechanic", "Industrial Chiller Technician"],
     curriculum: [
-      "Programming Fundamentals using C/C++",
-      "Data Structures and Core Algorithmic concepts",
-      "Object Oriented Programming (Java or Python)",
-      "Relational Database Systems and SQL query design",
-      "Web Applications architecture and deployment"
+      "ACM-101 — Basic Refrigeration Fundamentals",
+      "ACM-102 — Basic Electricity and Electrical Safety",
+      "ACM-103 — Refrigeration Tools and Workshop Practice",
+      "ACM-104 — Refrigerants and Refrigeration Components",
+      "ACM-105 — Air Conditioning Fundamentals",
+      "ACM-106 — Installation and Piping Techniques",
+      "ACM-107 — Practical Workshop-I",
+      "ACM-201 — Domestic Air Conditioning Systems",
+      "ACM-202 — Commercial Air Conditioning Systems",
+      "ACM-203 — Compressor and Condenser Maintenance",
+      "ACM-204 — Electrical Control and Troubleshooting",
+      "ACM-205 — Air Conditioning Servicing and Maintenance",
+      "ACM-206 — Fault Diagnosis and Repair Workshop-II"
     ],
-    imageUrl: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600",
+    imageUrl: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=600",
     admissionRequirements: [
-      "Photocopy of HSC Certificate with Math",
-      "Two passport photographs",
-      "Pass on-campus basic diagnostic test"
+      "Photocopy of SSC or HSC Certificate",
+      "Two passport size photographs",
+      "National ID / Birth Certificate copy"
     ],
     isFeatured: true
   },

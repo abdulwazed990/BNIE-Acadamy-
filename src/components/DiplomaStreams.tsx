@@ -1,7 +1,8 @@
-import { Cpu, Home, Settings, Zap, HardDrive, Car, Beaker, Scissors, ShieldAlert } from "lucide-react";
+import { Cpu, Home, Settings, Zap, HardDrive, Car, Beaker, Scissors, ShieldAlert, Wind } from "lucide-react";
 import { motion } from "motion/react";
 
 const STREAMS = [
+  { name: "Air Condition and Maintenance (1-Year Diploma)", icon: Wind, desc: "Refrigeration fundamentals, HVAC systems, compressor servicing, electronic troubleshooting, and fault repair (13 subjects across 2 semesters)." },
   { name: "Electrical & Electronics Engineering (Code 667)", icon: Zap, desc: "Electrical circuits, power distribution, DC/AC machines, industrial electronics, PLC, microcontrollers, and renewable energy." },
   { name: "Civil Engineering", icon: Home, desc: "Structural designing, surveying, concrete tech, and green infrastructure planning." },
   { name: "Mechanical Engineering", icon: Settings, desc: "Thermodynamics, fluid mechanics, CAD modelling, and industrial manufacturing systems." },

@@ -9,8 +9,7 @@ export enum Group {
   HUMANITIES = "Humanities",
   BUSINESS_STUDIES = "Business Studies",
   ENGINEERING = "Engineering",
-  COMPUTER_SCIENCE = "Computer Science",
-  COMPUTER_TECHNOLOGY = "Computer Science & Technology",
+  AIR_CONDITION_MAINTENANCE = "Air Condition and Maintenance",
   ELECTRICAL_ELECTRONICS_ENGINEERING = "Electrical & Electronics Engineering"
 }
 

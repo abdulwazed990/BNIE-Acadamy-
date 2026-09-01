@@ -18,9 +18,9 @@ export function getReligionSubjectName(religion: Religion): string {
 export function getSubjectCode(subjectName: string): string {
   const clean = subjectName.toLowerCase().trim();
 
-  // 1. Direct match with preset Computer Science & EEE subjects
-  const matchCS = COMPUTER_SCIENCE_SUBJECTS.find(s => s.subjectName.toLowerCase().trim() === clean);
-  if (matchCS && matchCS.subjectCode) return matchCS.subjectCode;
+  // 1. Direct match with preset Air Condition and Maintenance & EEE subjects
+  const matchACM = AIR_CONDITION_MAINTENANCE_SUBJECTS.find(s => s.subjectName.toLowerCase().trim() === clean);
+  if (matchACM && matchACM.subjectCode) return matchACM.subjectCode;
 
   const matchEEE = ELECTRICAL_ELECTRONICS_ENGINEERING_SUBJECTS.find(s => s.subjectName.toLowerCase().trim() === clean);
   if (matchEEE && matchEEE.subjectCode) return matchEEE.subjectCode;
@@ -97,63 +97,23 @@ export function getSubjectCode(subjectName: string): string {
   return code.toString();
 }
 
-export const COMPUTER_SCIENCE_SUBJECTS: SubjectGrade[] = [
-  // FIRST YEAR
-  { subjectCode: "61011", subjectName: "Engineering Drawing", credit: 2, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "65911", subjectName: "Mathematics-I", credit: 4, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "65912", subjectName: "Physics-I", credit: 4, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "65913", subjectName: "Chemistry", credit: 4, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "65711", subjectName: "Bangla", credit: 4, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "65712", subjectName: "English", credit: 2, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66611", subjectName: "Computer Application", credit: 2, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66711", subjectName: "Basic Electricity", credit: 4, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66811", subjectName: "Basic Electronics", credit: 3, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66612", subjectName: "Computer Fundamentals", credit: 3, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66621", subjectName: "Programming Fundamentals", credit: 3, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "65921", subjectName: "Mathematics-II", credit: 4, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "65922", subjectName: "Physics-II", credit: 4, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "65812", subjectName: "Physical Education & Life Skill Development", credit: 1, year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+export const AIR_CONDITION_MAINTENANCE_SUBJECTS: SubjectGrade[] = [
+  // FIRST 6 MONTHS (7 SUBJECTS)
+  { subjectCode: "ACM-101", subjectName: "Basic Refrigeration Fundamentals", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ACM-102", subjectName: "Basic Electricity and Electrical Safety", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ACM-103", subjectName: "Refrigeration Tools and Workshop Practice", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ACM-104", subjectName: "Refrigerants and Refrigeration Components", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ACM-105", subjectName: "Air Conditioning Fundamentals", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ACM-106", subjectName: "Installation and Piping Techniques", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ACM-107", subjectName: "Practical Workshop-I", marks: 85, gradePoint: 4.00 },
 
-  // SECOND YEAR
-  { subjectCode: "65931", subjectName: "Mathematics-III", credit: 4, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "65722", subjectName: "Communicative English", credit: 2, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "65811", subjectName: "Social Science", credit: 3, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66631", subjectName: "Data Structure", credit: 3, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66632", subjectName: "Object Oriented Programming", credit: 3, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66641", subjectName: "Database Management System", credit: 3, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66642", subjectName: "Computer Architecture", credit: 3, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66831", subjectName: "Digital Electronics", credit: 3, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66643", subjectName: "Web Design & Development", credit: 3, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66644", subjectName: "Computer Networking", credit: 3, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "65841", subjectName: "Business Organization & Communication", credit: 2, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66645", subjectName: "Operating System", credit: 3, year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
-
-  // THIRD YEAR
-  { subjectCode: "66651", subjectName: "Software Engineering", credit: 3, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66652", subjectName: "System Analysis & Design", credit: 3, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66653", subjectName: "Advanced Database Management", credit: 3, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66661", subjectName: "Computer Networks", credit: 3, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66861", subjectName: "Microprocessor & Microcontroller", credit: 3, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66662", subjectName: "Data Communication", credit: 3, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66663", subjectName: "Web Programming", credit: 3, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66664", subjectName: "Object Oriented Analysis & Design", credit: 3, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66665", subjectName: "E-Commerce", credit: 2, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66666", subjectName: "Computer Graphics", credit: 3, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "65951", subjectName: "Statistics", credit: 2, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "65853", subjectName: "Entrepreneurship Development", credit: 2, year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
-
-  // FOURTH YEAR
-  { subjectCode: "66671", subjectName: "Advanced Programming", credit: 3, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66672", subjectName: "Network Administration", credit: 3, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66673", subjectName: "Cyber Security Fundamentals", credit: 3, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66674", subjectName: "Software Development", credit: 3, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66675", subjectName: "Mobile Application Development", credit: 3, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66676", subjectName: "Artificial Intelligence Fundamentals", credit: 3, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66677", subjectName: "Cloud Computing Fundamentals", credit: 3, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "65861", subjectName: "Project Management", credit: 2, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66681", subjectName: "Industrial Training", credit: 6, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66682", subjectName: "Final Project", credit: 3, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
-  { subjectCode: "66683", subjectName: "Project Presentation", credit: 1, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 }
+  // SECOND 6 MONTHS (6 SUBJECTS) - TOTAL 13 SUBJECTS
+  { subjectCode: "ACM-201", subjectName: "Domestic Air Conditioning Systems", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ACM-202", subjectName: "Commercial Air Conditioning Systems", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ACM-203", subjectName: "Compressor and Condenser Maintenance", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ACM-204", subjectName: "Electrical Control and Troubleshooting", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ACM-205", subjectName: "Air Conditioning Servicing and Maintenance", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ACM-206", subjectName: "Fault Diagnosis and Repair Workshop-II", marks: 85, gradePoint: 4.00 }
 ];
 
 export const ELECTRICAL_ELECTRONICS_ENGINEERING_SUBJECTS: SubjectGrade[] = [
@@ -305,12 +265,12 @@ export function getFixedSubjectList(category: Category, group: Group, religion: 
   }
 
   if (category === Category.DIPLOMA) {
-    if (group === Group.ELECTRICAL_ELECTRONICS_ENGINEERING) {
-      return ELECTRICAL_ELECTRONICS_ENGINEERING_SUBJECTS.map((s) => s.subjectName);
+    if (group === Group.AIR_CONDITION_MAINTENANCE) {
+      return AIR_CONDITION_MAINTENANCE_SUBJECTS.map((s) => s.subjectName);
     }
 
-    if (group === Group.COMPUTER_TECHNOLOGY || group === Group.COMPUTER_SCIENCE) {
-      return COMPUTER_SCIENCE_SUBJECTS.map((s) => s.subjectName);
+    if (group === Group.ELECTRICAL_ELECTRONICS_ENGINEERING) {
+      return ELECTRICAL_ELECTRONICS_ENGINEERING_SUBJECTS.map((s) => s.subjectName);
     }
 
     // Default general engineering
@@ -334,11 +294,11 @@ export function getFixedSubjectList(category: Category, group: Group, religion: 
 
 export function generateEmptySubjectGrades(category: Category, group: Group, religion: Religion): SubjectGrade[] {
   if (category === Category.DIPLOMA) {
+    if (group === Group.AIR_CONDITION_MAINTENANCE) {
+      return AIR_CONDITION_MAINTENANCE_SUBJECTS.map((s) => ({ ...s }));
+    }
     if (group === Group.ELECTRICAL_ELECTRONICS_ENGINEERING) {
       return ELECTRICAL_ELECTRONICS_ENGINEERING_SUBJECTS.map((s) => ({ ...s }));
-    }
-    if (group === Group.COMPUTER_TECHNOLOGY || group === Group.COMPUTER_SCIENCE) {
-      return COMPUTER_SCIENCE_SUBJECTS.map((s) => ({ ...s }));
     }
   }
 
