@@ -22,12 +22,12 @@ export default function DiplomaStreams() {
               Diploma in Engineering Streams
             </h3>
             <p className="text-gray-500 text-sm mt-1">
-              A 4-year professional credential equipping students with specialized technical expertise and practical laboratory mastery.
+              ১ বছর থেকে ৪ বছর মেয়াদী প্রফেশনাল ডিপ্লোমা ইঞ্জিনিয়ারিং কারিকুলাম — বাস্তবমুখী ল্যাবরেটরি ও ইন্ডাস্ট্রিয়াল ট্রেনিং।
             </p>
           </div>
           <div className="flex items-center space-x-2 bg-[#006a4e]/5 text-[#006a4e] px-3.5 py-1.5 rounded-lg border border-[#006a4e]/20 text-xs font-semibold uppercase tracking-wider">
             <ShieldAlert className="w-3.5 h-3.5 text-[#f42a41]" />
-            <span>4-Year National Curriculum</span>
+            <span>1 to 4 Year National Curricula</span>
           </div>
         </div>
 

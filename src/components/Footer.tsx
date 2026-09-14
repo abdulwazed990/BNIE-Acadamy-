@@ -13,13 +13,21 @@ export default function Footer({ onNavigate }: FooterProps) {
           <div className="space-y-3">
             <div className="flex items-center space-x-3">
               <Logo size={48} className="hover:scale-105 transition-transform" />
-              <span className="font-bold text-gray-950 text-sm tracking-tight">
-                BNIE Bangladesh
-              </span>
+              <div>
+                <span className="font-bold text-gray-950 text-sm tracking-tight block">
+                  বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট
+                </span>
+                <span className="text-[11px] text-gray-600 font-medium block">
+                  Bangladesh National Institute of Education (BNIE)
+                </span>
+              </div>
             </div>
-            <p className="text-xs text-gray-500 leading-relaxed max-w-sm">
-              Established under the authority of the Ministry of Education to provide premium technical, vocational, and professional certification programs for students nationwide.
+            <p className="text-xs text-gray-600 leading-relaxed max-w-sm">
+              গণপ্রজাতন্ত্রী বাংলাদেশ সরকার অনুমোদিত একটি স্বায়ত্তশাসিত জাতীয় শিক্ষা প্রতিষ্ঠান। এস.এস.সি, এইচ.এস.সি, ভোকেশনাল এবং ১ বছর থেকে ৪ বছর মেয়াদী পলিটেকনিক ডিপ্লোমা সনদ ও কেন্দ্রীয় ডিজিটাল ভেরিফিকেশন পোর্টাল।
             </p>
+            <div className="inline-block bg-emerald-50 text-[#006a4e] border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded">
+              Govt. Approved &amp; Accredited Institute
+            </div>
           </div>
 
           {/* Quick Links */}
@@ -39,6 +47,14 @@ export default function Footer({ onNavigate }: FooterProps) {
                 </li>
                 <li>
                   <button
+                    onClick={() => onNavigate("accreditation")}
+                    className="text-xs text-[#006a4e] hover:underline font-bold transition-colors cursor-pointer"
+                  >
+                    Govt. Approval (সরকারি অনুমোদন)
+                  </button>
+                </li>
+                <li>
+                  <button
                     onClick={() => onNavigate("verify")}
                     className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer font-medium"
                   >
@@ -47,12 +63,7 @@ export default function Footer({ onNavigate }: FooterProps) {
                 </li>
                 <li>
                   <button
-                    onClick={() => {
-                      onNavigate("home");
-                      setTimeout(() => {
-                        document.getElementById("services-section")?.scrollIntoView({ behavior: "smooth" });
-                      }, 100);
-                    }}
+                    onClick={() => onNavigate("services")}
                     className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer"
                   >
                     Our Services
@@ -68,7 +79,7 @@ export default function Footer({ onNavigate }: FooterProps) {
               <ul className="space-y-2">
                 <li>
                   <button
-                    onClick={() => alert("Privacy Policy:\nThis portal respects standard data protection laws of the People's Republic of Bangladesh. Educational records are encrypted and secured for verification queries.")}
+                    onClick={() => onNavigate("privacy")}
                     className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer"
                   >
                     Privacy Policy
@@ -76,7 +87,7 @@ export default function Footer({ onNavigate }: FooterProps) {
                 </li>
                 <li>
                   <button
-                    onClick={() => alert("Terms & Conditions:\nThis verification registry is issued for official candidate validation only. Any unauthorized alteration or forgery of digital or print records is punishable under the laws of Bangladesh.")}
+                    onClick={() => onNavigate("terms")}
                     className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer"
                   >
                     Terms & Conditions
@@ -84,7 +95,7 @@ export default function Footer({ onNavigate }: FooterProps) {
                 </li>
                 <li>
                   <button
-                    onClick={() => alert("Help Center:\nFor inquiries regarding unresolved certificates, please contact: info@bisd.gov.bd with your Roll and Registration details.")}
+                    onClick={() => onNavigate("help")}
                     className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer"
                   >
                     Help Center
@@ -99,13 +110,10 @@ export default function Footer({ onNavigate }: FooterProps) {
               </h4>
               <ul className="space-y-2">
                 <li className="text-xs text-gray-500">
-                  Phone: <span className="font-semibold text-gray-800">+880-2-55123456</span>
+                  Phone: <span className="font-semibold text-gray-800 font-number digit-clear tracking-wider">+880 9658-417741</span>
                 </li>
                 <li className="text-xs text-gray-500">
-                  Hotline: <span className="font-semibold text-gray-800">+880-9610-123456</span>
-                </li>
-                <li className="text-xs text-gray-500">
-                  Email: <span className="font-semibold text-gray-800">info@bisd.gov.bd</span>
+                  Email: <span className="font-semibold text-gray-800">bnieeducationbd@gmail.com</span>
                 </li>
                 <li 
                   onClick={() => onNavigate("admin-login")}

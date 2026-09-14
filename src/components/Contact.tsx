@@ -24,33 +24,20 @@ export default function Contact() {
 
               <div className="space-y-3">
                 <a
-                  href="tel:+880255123456"
+                  href="tel:+8809658417741"
                   className="flex items-center space-x-3 p-2.5 rounded-xl border border-gray-100 hover:border-[#006a4e]/20 hover:bg-emerald-50/20 transition-all group"
                 >
                   <div className="p-2 rounded-lg bg-[#006a4e]/10 text-[#006a4e] group-hover:bg-[#006a4e] group-hover:text-white transition-all">
                     <Phone className="w-4 h-4 stroke-[2]" />
                   </div>
                   <div>
-                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Phone</p>
-                    <p className="text-xs font-bold text-gray-900">+880-2-55123456</p>
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Hotline Helpline</p>
+                    <p className="text-xs sm:text-sm font-bold text-gray-900 font-number digit-clear tracking-wider">+880 9658-417741</p>
                   </div>
                 </a>
 
                 <a
-                  href="tel:+8809610123456"
-                  className="flex items-center space-x-3 p-2.5 rounded-xl border border-gray-100 hover:border-[#006a4e]/20 hover:bg-emerald-50/20 transition-all group"
-                >
-                  <div className="p-2 rounded-lg bg-[#006a4e]/10 text-[#006a4e] group-hover:bg-[#006a4e] group-hover:text-white transition-all">
-                    <Phone className="w-4 h-4 stroke-[2]" />
-                  </div>
-                  <div>
-                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Hotline</p>
-                    <p className="text-xs font-bold text-gray-900">+880-9610-123456</p>
-                  </div>
-                </a>
-
-                <a
-                  href="mailto:info@bisd.gov.bd"
+                  href="mailto:bnieeducationbd@gmail.com"
                   className="flex items-center space-x-3 p-2.5 rounded-xl border border-gray-100 hover:border-[#006a4e]/20 hover:bg-emerald-50/20 transition-all group"
                 >
                   <div className="p-2 rounded-lg bg-[#006a4e]/10 text-[#006a4e] group-hover:bg-[#006a4e] group-hover:text-white transition-all">
@@ -58,20 +45,7 @@ export default function Contact() {
                   </div>
                   <div>
                     <p className="text-[9px] text-gray-400 uppercase font-semibold">Email</p>
-                    <p className="text-xs font-bold text-gray-900">info@bisd.gov.bd</p>
-                  </div>
-                </a>
-
-                <a
-                  href="mailto:support@bisd.gov.bd"
-                  className="flex items-center space-x-3 p-2.5 rounded-xl border border-gray-100 hover:border-[#006a4e]/20 hover:bg-emerald-50/20 transition-all group"
-                >
-                  <div className="p-2 rounded-lg bg-[#006a4e]/10 text-[#006a4e] group-hover:bg-[#006a4e] group-hover:text-white transition-all">
-                    <Mail className="w-4 h-4 stroke-[2]" />
-                  </div>
-                  <div>
-                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Support Email</p>
-                    <p className="text-xs font-bold text-gray-900">support@bisd.gov.bd</p>
+                    <p className="text-xs font-bold text-gray-900">bnieeducationbd@gmail.com</p>
                   </div>
                 </a>
               </div>

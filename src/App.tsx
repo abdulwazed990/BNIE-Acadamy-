@@ -11,6 +11,11 @@ import VerificationReport from "./components/VerificationReport";
 import AdminPanel from "./components/AdminPanel";
 import DiplomaCourses from "./components/DiplomaCourses";
 import Specializations from "./components/Specializations";
+import PrivacyPolicy from "./components/PrivacyPolicy";
+import TermsAndConditions from "./components/TermsAndConditions";
+import HelpCenter from "./components/HelpCenter";
+import ServicesPage from "./components/ServicesPage";
+import GovernmentAccreditation from "./components/GovernmentAccreditation";
 import Logo from "./components/Logo";
 import { Student } from "./types";
 import { DEFAULT_STUDENTS } from "./data/defaultStudents";
@@ -20,7 +25,7 @@ import {
   updateStudentInDb, 
   deleteStudentFromDb 
 } from "./lib/firebase";
-import { ChevronRight, Home, ShieldCheck, Database, Award, ArrowLeft, Menu, X, BookOpen, RefreshCw } from "lucide-react";
+import { ChevronRight, Home, ShieldCheck, Database, Award, ArrowLeft, Menu, X, BookOpen, RefreshCw, Briefcase, Landmark } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export default function App() {
@@ -214,6 +219,24 @@ export default function App() {
               <span>Diploma Courses</span>
             </button>
             <button
+              onClick={() => handleNavigate("services")}
+              className={`text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors flex items-center space-x-1 ${
+                currentPage === "services" ? "text-[#006a4e]" : "text-gray-600 hover:text-[#006a4e]"
+              }`}
+            >
+              <Briefcase className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Our Services</span>
+            </button>
+            <button
+              onClick={() => handleNavigate("accreditation")}
+              className={`text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors flex items-center space-x-1 ${
+                currentPage === "accreditation" ? "text-[#006a4e]" : "text-gray-600 hover:text-[#006a4e]"
+              }`}
+            >
+              <Landmark className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Govt. Approval</span>
+            </button>
+            <button
               onClick={() => handleNavigate("verify")}
               className={`text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors flex items-center space-x-1 ${
                 currentPage === "verify" ? "text-[#006a4e]" : "text-gray-600 hover:text-[#006a4e]"
@@ -265,6 +288,20 @@ export default function App() {
               <span>Diploma Courses</span>
             </button>
             <button
+              onClick={() => handleNavigate("services")}
+              className="w-full text-left text-xs font-bold uppercase tracking-wider py-2 text-gray-700 hover:text-[#006a4e] flex items-center space-x-2"
+            >
+              <Briefcase className="w-4 h-4 text-[#006a4e]" />
+              <span>Our Services</span>
+            </button>
+            <button
+              onClick={() => handleNavigate("accreditation")}
+              className="w-full text-left text-xs font-bold uppercase tracking-wider py-2 text-gray-700 hover:text-[#006a4e] flex items-center space-x-2"
+            >
+              <Landmark className="w-4 h-4 text-[#006a4e]" />
+              <span>Govt. Approval (সরকারি অনুমোদন)</span>
+            </button>
+            <button
               onClick={() => handleNavigate("verify")}
               className="w-full text-left text-xs font-bold uppercase tracking-wider py-2 text-[#006a4e] flex items-center space-x-2"
             >
@@ -276,7 +313,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Main Educational Banner Header */}
-      <Header />
+      <Header onNavigate={handleNavigate} />
 
       {/* Page Content Body (Dynamic Router) */}
       <main className="flex-1">
@@ -291,7 +328,12 @@ export default function App() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
             >
-              <Hero onVerifyClick={() => handleNavigate("verify")} onCoursesClick={() => handleNavigate("courses")} />
+              <Hero 
+                onVerifyClick={() => handleNavigate("verify")} 
+                onCoursesClick={() => handleNavigate("courses")} 
+                onAccreditationClick={() => handleNavigate("accreditation")}
+              />
+              <GovernmentAccreditation />
               <VocationalSpecialization />
               <DiplomaStreams />
               <MissionAndServices />
@@ -325,6 +367,100 @@ export default function App() {
               transition={{ duration: 0.25 }}
             >
               <DiplomaCourses
+                onBackToHome={() => handleNavigate("home")}
+                onNavigateToVerify={() => handleNavigate("verify")}
+              />
+              <Contact />
+            </motion.div>
+          )}
+
+          {/* OUR SERVICES PAGE ROUTE */}
+          {currentPage === "services" && (
+            <motion.div
+              key="services"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25 }}
+            >
+              <ServicesPage
+                onBackToHome={() => handleNavigate("home")}
+                onNavigateToVerify={() => handleNavigate("verify")}
+                onNavigateToCourses={() => handleNavigate("courses")}
+                onNavigateToSpecializations={() => handleNavigate("specializations")}
+                onNavigateToHelp={() => handleNavigate("help")}
+              />
+              <Contact />
+            </motion.div>
+          )}
+
+          {/* GOVERNMENT ACCREDITATION PAGE ROUTE */}
+          {currentPage === "accreditation" && (
+            <motion.div
+              key="accreditation"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25 }}
+            >
+              <div className="py-6 px-4 max-w-7xl mx-auto">
+                <button
+                  onClick={() => handleNavigate("home")}
+                  className="inline-flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer group mb-2"
+                >
+                  <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                  <span>Return to Home Portal</span>
+                </button>
+              </div>
+              <GovernmentAccreditation />
+              <Contact />
+            </motion.div>
+          )}
+
+          {/* PRIVACY POLICY PAGE ROUTE */}
+          {currentPage === "privacy" && (
+            <motion.div
+              key="privacy"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25 }}
+            >
+              <PrivacyPolicy
+                onBackToHome={() => handleNavigate("home")}
+                onNavigateToContact={() => handleNavigate("help")}
+              />
+              <Contact />
+            </motion.div>
+          )}
+
+          {/* TERMS & CONDITIONS PAGE ROUTE */}
+          {currentPage === "terms" && (
+            <motion.div
+              key="terms"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25 }}
+            >
+              <TermsAndConditions
+                onBackToHome={() => handleNavigate("home")}
+                onNavigateToVerify={() => handleNavigate("verify")}
+              />
+              <Contact />
+            </motion.div>
+          )}
+
+          {/* HELP CENTER PAGE ROUTE */}
+          {currentPage === "help" && (
+            <motion.div
+              key="help"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25 }}
+            >
+              <HelpCenter
                 onBackToHome={() => handleNavigate("home")}
                 onNavigateToVerify={() => handleNavigate("verify")}
               />

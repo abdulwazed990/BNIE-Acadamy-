@@ -623,21 +623,21 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
                   </tr>
                   <tr className="border-b border-gray-300">
                     <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Roll Number</td>
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-black text-[#006a4e] font-mono text-xs sm:text-[13px] w-[28%] whitespace-nowrap">{student.rollNumber}</td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-black text-[#006a4e] font-number digit-clear text-xs sm:text-[13px] w-[28%] whitespace-nowrap">{student.rollNumber}</td>
                     <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Registration No</td>
-                    <td className="px-3 py-1.5 font-bold text-gray-900 font-mono w-[28%] whitespace-nowrap">{student.registrationNumber}</td>
+                    <td className="px-3 py-1.5 font-bold text-gray-900 font-number digit-clear w-[28%] whitespace-nowrap">{student.registrationNumber}</td>
                   </tr>
                   <tr className="border-b border-gray-300">
                     <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Certificate No</td>
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-800 font-mono text-[10px] sm:text-[11px] w-[28%] whitespace-nowrap">{student.certificateSerialNumber}</td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-800 font-number digit-clear text-[10px] sm:text-[11px] w-[28%] whitespace-nowrap">{student.certificateSerialNumber}</td>
                     <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Passing Year</td>
-                    <td className="px-3 py-1.5 font-bold text-gray-800 font-mono w-[28%] whitespace-nowrap">{student.passingYear}</td>
+                    <td className="px-3 py-1.5 font-bold text-gray-800 font-number digit-clear w-[28%] whitespace-nowrap">{student.passingYear}</td>
                   </tr>
                   <tr className="border-b border-gray-300">
                     <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Examination Year</td>
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-800 font-mono w-[28%] whitespace-nowrap">{student.passingYear}</td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-800 font-number digit-clear w-[28%] whitespace-nowrap">{student.passingYear}</td>
                     <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">GPA / CGPA</td>
-                    <td className="px-3 py-1.5 font-black text-[#006a4e] text-xs sm:text-sm font-mono w-[28%] whitespace-nowrap">{student.finalGpa.toFixed(2)}</td>
+                    <td className="px-3 py-1.5 font-black text-[#006a4e] text-xs sm:text-sm font-number digit-clear w-[28%] whitespace-nowrap">{student.finalGpa.toFixed(2)}</td>
                   </tr>
                   <tr>
                     <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Result Status</td>
@@ -747,7 +747,7 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
                     Diploma Cumulative Grade Point Average (CGPA) — Max 4.00
                   </span>
                 </div>
-                <div className="flex items-center space-x-3 font-mono">
+                <div className="flex items-center space-x-3 font-number digit-clear">
                   <span className="text-[11px] text-gray-700 font-bold">
                     Total Marks: <span className="text-gray-950 font-black">{student.totalMarks || "—"}</span>
                   </span>
