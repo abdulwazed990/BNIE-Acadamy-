@@ -40,6 +40,7 @@ export interface Student {
   dob: string; // YYYY-MM-DD
   rollNumber: string;
   registrationNumber: string;
+  section?: string; // e.g. "A", "B", "Day", "Shift-1"
   instituteName: string;
   session: string;
   passingYear: string;

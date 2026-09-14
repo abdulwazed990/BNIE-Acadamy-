@@ -66,7 +66,14 @@ export default function VerificationForm({ students, onVerifySuccess, isDbLoadin
   // Handle URL tokens when students database or loading state changes
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    let token = params.get("token") || params.get("id") || params.get("serial") || params.get("roll");
+    let token = params.get("token") || params.get("id") || params.get("serial");
+    const paramRoll = params.get("roll");
+    const paramReg = params.get("reg");
+
+    // If both roll and reg are provided (e.g. from Digital ID QR scan)
+    if (!token && paramRoll) {
+      token = paramRoll;
+    }
 
     // Also check pathname (e.g. /verify/APO-TEST-001 or /verify/stud_1 or /certificate/666102)
     if (!token) {
@@ -84,14 +91,22 @@ export default function VerificationForm({ students, onVerifySuccess, isDbLoadin
       }
 
       const cleanToken = token.trim().toLowerCase();
-      const matched = students.find(
-        (s) =>
+      let matched = students.find((s) => {
+        // If paramRoll and paramReg are explicitly provided
+        if (paramRoll && paramReg) {
+          return (
+            s.rollNumber.trim().toLowerCase() === paramRoll.trim().toLowerCase() &&
+            s.registrationNumber.trim().toLowerCase() === paramReg.trim().toLowerCase()
+          );
+        }
+        return (
           (s.secureToken && s.secureToken.toLowerCase() === cleanToken) ||
           s.id.toLowerCase() === cleanToken ||
           s.rollNumber.toLowerCase() === cleanToken ||
           s.registrationNumber.toLowerCase() === cleanToken ||
           (s.certificateSerialNumber && s.certificateSerialNumber.toLowerCase() === cleanToken)
-      );
+        );
+      });
 
       if (matched) {
         setCategory(matched.category);

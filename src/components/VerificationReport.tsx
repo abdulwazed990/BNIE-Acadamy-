@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Student, getLetterGrade, getDiplomaLetterGrade } from "../types";
-import { ArrowLeft, Printer, Award, Calendar, Clock, CheckCircle2, FileDown } from "lucide-react";
+import { ArrowLeft, Printer, Award, Calendar, Clock, CheckCircle2, FileDown, IdCard } from "lucide-react";
 import { motion } from "motion/react";
 import { QRCodeCanvas } from "qrcode.react";
 import Logo from "./Logo";
+import DigitalIdModal from "./DigitalIdModal";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 
@@ -257,6 +258,7 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
     return { date: dateStr, time: timeStr };
   });
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [isDigitalIdModalOpen, setIsDigitalIdModalOpen] = useState(false);
 
   useEffect(() => {
     const updateDateTime = () => {
@@ -505,11 +507,21 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
           <span>Back to Verification Console</span>
         </button>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+          {/* Prominent Download Digital ID Button */}
+          <button
+            type="button"
+            onClick={() => setIsDigitalIdModalOpen(true)}
+            className="inline-flex items-center space-x-2 text-xs font-bold text-white bg-linear-to-r from-[#006a4e] via-[#005a42] to-[#004d38] hover:from-[#005a42] hover:to-[#00402e] px-4 sm:px-5 py-2.5 rounded-xl transition-all shadow-md hover:shadow-lg cursor-pointer border border-emerald-600/40 ring-2 ring-emerald-500/20 active:scale-[0.98]"
+          >
+            <IdCard className="w-4 h-4 text-emerald-300" />
+            <span>Download Digital ID</span>
+          </button>
+
           <button
             onClick={handleDownloadPDF}
             disabled={isGeneratingPDF}
-            className="inline-flex items-center space-x-2 text-xs font-bold text-white bg-[#f42a41] hover:bg-[#d11d31] px-5 py-2.5 rounded-xl transition-all shadow-md cursor-pointer border border-[#f42a41] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center space-x-2 text-xs font-bold text-white bg-[#f42a41] hover:bg-[#d11d31] px-4 sm:px-5 py-2.5 rounded-xl transition-all shadow-md cursor-pointer border border-[#f42a41] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
           >
             {isGeneratingPDF ? (
               <>
@@ -529,9 +541,9 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
 
           <button
             onClick={handlePrint}
-            className="hidden sm:inline-flex items-center space-x-2 text-xs font-bold text-white bg-[#006a4e] hover:bg-[#00563f] px-5 py-2.5 rounded-xl transition-all shadow-md cursor-pointer border border-[#00563f]"
+            className="hidden sm:inline-flex items-center space-x-2 text-xs font-bold text-gray-800 bg-white hover:bg-gray-50 px-4 sm:px-5 py-2.5 rounded-xl transition-all shadow-xs cursor-pointer border border-gray-300 active:scale-[0.98]"
           >
-            <Printer className="w-4 h-4" />
+            <Printer className="w-4 h-4 text-gray-600" />
             <span>Print Report (A4)</span>
           </button>
         </div>
@@ -618,8 +630,14 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
                     <td className="border-r border-gray-300 px-3 py-1.5 font-extrabold text-[#006a4e] w-[28%]">
                       {student.category === "Diploma" ? "Diploma in Engineering" : `${student.category} Program`}
                     </td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Section</td>
+                    <td className="px-3 py-1.5 font-black text-[#006a4e] font-number digit-clear w-[28%] whitespace-nowrap">{student.section || "A"}</td>
+                  </tr>
+                  <tr className="border-b border-gray-300">
                     <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Group / Dept</td>
-                    <td className="px-3 py-1.5 font-extrabold text-gray-900 w-[28%]">{student.group}</td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-extrabold text-gray-900 w-[28%]">{student.group}</td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Passing Year</td>
+                    <td className="px-3 py-1.5 font-bold text-gray-800 font-number digit-clear w-[28%] whitespace-nowrap">{student.passingYear}</td>
                   </tr>
                   <tr className="border-b border-gray-300">
                     <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Roll Number</td>
@@ -630,20 +648,16 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
                   <tr className="border-b border-gray-300">
                     <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Certificate No</td>
                     <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-800 font-number digit-clear text-[10px] sm:text-[11px] w-[28%] whitespace-nowrap">{student.certificateSerialNumber}</td>
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Passing Year</td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Examination Year</td>
                     <td className="px-3 py-1.5 font-bold text-gray-800 font-number digit-clear w-[28%] whitespace-nowrap">{student.passingYear}</td>
                   </tr>
                   <tr className="border-b border-gray-300">
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Examination Year</td>
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-800 font-number digit-clear w-[28%] whitespace-nowrap">{student.passingYear}</td>
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">GPA / CGPA</td>
-                    <td className="px-3 py-1.5 font-black text-[#006a4e] text-xs sm:text-sm font-number digit-clear w-[28%] whitespace-nowrap">{student.finalGpa.toFixed(2)}</td>
-                  </tr>
-                  <tr>
                     <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Result Status</td>
-                    <td className="px-3 py-1.5 font-extrabold text-emerald-800 bg-emerald-50/40" colSpan={3}>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-extrabold text-emerald-800 bg-emerald-50/40 w-[28%]">
                       {student.finalGpa > 0.00 ? "PASSED" : "FAILED"}
                     </td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">GPA / CGPA</td>
+                    <td className="px-3 py-1.5 font-black text-[#006a4e] text-xs sm:text-sm font-number digit-clear w-[28%] whitespace-nowrap">{student.finalGpa.toFixed(2)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -863,6 +877,13 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
         </div>
 
       </motion.div>
+
+      {/* Student Digital ID Card Modal */}
+      <DigitalIdModal
+        student={student}
+        isOpen={isDigitalIdModalOpen}
+        onClose={() => setIsDigitalIdModalOpen(false)}
+      />
     </div>
   );
 }

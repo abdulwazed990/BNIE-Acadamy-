@@ -49,6 +49,7 @@ export default function AdminPanel({
   const [formDob, setFormDob] = useState("");
   const [formRoll, setFormRoll] = useState("");
   const [formReg, setFormReg] = useState("");
+  const [formSection, setFormSection] = useState("A");
   const [formInstitute, setFormInstitute] = useState("");
   const [formSession, setFormSession] = useState("");
   const [formPassingYear, setFormPassingYear] = useState("");
@@ -128,6 +129,7 @@ export default function AdminPanel({
     setFormDob("");
     setFormRoll("");
     setFormReg("");
+    setFormSection("A");
     setFormInstitute("Bangladesh National Institute of Education");
     setFormSession("2022-2023");
     setFormPassingYear("2024");
@@ -154,6 +156,7 @@ export default function AdminPanel({
     setFormDob(student.dob);
     setFormRoll(student.rollNumber);
     setFormReg(student.registrationNumber);
+    setFormSection(student.section || "A");
     setFormInstitute(student.instituteName);
     setFormSession(student.session);
     setFormPassingYear(student.passingYear);
@@ -278,6 +281,7 @@ export default function AdminPanel({
       dob: formDob,
       rollNumber: formRoll.trim(),
       registrationNumber: formReg.trim(),
+      section: formSection.trim() || "A",
       instituteName: formInstitute.trim(),
       session: formSession.trim(),
       passingYear: formPassingYear.trim(),
@@ -943,8 +947,8 @@ export default function AdminPanel({
                   </div>
                 </div>
 
-                {/* Roll & Reg numbers */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Roll, Reg & Section */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-1">
                       Roll Number {formCategory === Category.DIPLOMA ? "(Alphanumeric / Numbers allowed)" : ""}
@@ -968,6 +972,18 @@ export default function AdminPanel({
                       placeholder={formCategory === Category.DIPLOMA ? "e.g. REG98234 or 1502938499" : "e.g. 2019384756"}
                       value={formReg}
                       onChange={(e) => setFormReg(e.target.value.replace(/[^a-zA-Z0-9\-_/]/g, ""))}
+                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-1">
+                      Section
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. A, B, Day"
+                      value={formSection}
+                      onChange={(e) => setFormSection(e.target.value)}
                       className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium font-mono"
                     />
                   </div>
