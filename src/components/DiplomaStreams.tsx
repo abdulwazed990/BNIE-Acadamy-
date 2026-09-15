@@ -2,6 +2,7 @@ import { Cpu, Home, Settings, Zap, HardDrive, Car, Beaker, Scissors, ShieldAlert
 import { motion } from "motion/react";
 
 const STREAMS = [
+  { name: "Electronics Technology (4-Year Diploma)", icon: Cpu, desc: "Analog & digital electronics, microprocessors, communication engineering, embedded systems, power electronics, and industrial training (23 subjects across 4 academic years)." },
   { name: "Air Condition and Maintenance (2-Year Diploma)", icon: Wind, desc: "Refrigeration fundamentals, HVAC systems, compressor servicing, electronic troubleshooting, and fault repair (13 subjects across 2 academic sessions)." },
   { name: "Electrical & Electronics Engineering (Code 667)", icon: Zap, desc: "Electrical circuits, power distribution, DC/AC machines, industrial electronics, PLC, microcontrollers, and renewable energy." },
   { name: "Civil Engineering", icon: Home, desc: "Structural designing, surveying, concrete tech, and green infrastructure planning." },

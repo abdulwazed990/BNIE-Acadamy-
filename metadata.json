@@ -1,6 +1,6 @@
 {
   "name": "Bangladesh National Institute of Education",
-  "description": "বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট (BNIE) — Bangladesh National Institute of Education is a Government Approved Autonomous Educational Institution offering verified SSC, HSC, Vocational and 2-Year Diploma certifications in Bangladesh.",
+  "description": "বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট (BNIE) — Bangladesh National Institute of Education is a Government Approved Autonomous Educational Institution offering verified SSC, HSC, Vocational and 1-Year to 4-Year Polytechnic Diploma certifications in Bangladesh.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

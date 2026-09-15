@@ -10,7 +10,8 @@ export enum Group {
   BUSINESS_STUDIES = "Business Studies",
   ENGINEERING = "Engineering",
   AIR_CONDITION_MAINTENANCE = "Air Condition and Maintenance",
-  ELECTRICAL_ELECTRONICS_ENGINEERING = "Electrical & Electronics Engineering"
+  ELECTRICAL_ELECTRONICS_ENGINEERING = "Electrical & Electronics Engineering",
+  ELECTRONICS_TECHNOLOGY = "Electronics Technology"
 }
 
 export enum Religion {
@@ -40,7 +41,6 @@ export interface Student {
   dob: string; // YYYY-MM-DD
   rollNumber: string;
   registrationNumber: string;
-  section?: string; // e.g. "A", "B", "Day", "Shift-1"
   instituteName: string;
   session: string;
   passingYear: string;

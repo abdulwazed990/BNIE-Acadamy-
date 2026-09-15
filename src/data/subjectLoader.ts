@@ -18,7 +18,10 @@ export function getReligionSubjectName(religion: Religion): string {
 export function getSubjectCode(subjectName: string): string {
   const clean = subjectName.toLowerCase().trim();
 
-  // 1. Direct match with preset Air Condition and Maintenance & EEE subjects
+  // 1. Direct match with preset Electronics Technology, Air Condition and Maintenance & EEE subjects
+  const matchET = ELECTRONICS_TECHNOLOGY_SUBJECTS.find(s => s.subjectName.toLowerCase().trim() === clean);
+  if (matchET && matchET.subjectCode) return matchET.subjectCode;
+
   const matchACM = AIR_CONDITION_MAINTENANCE_SUBJECTS.find(s => s.subjectName.toLowerCase().trim() === clean);
   if (matchACM && matchACM.subjectCode) return matchACM.subjectCode;
 
@@ -173,6 +176,40 @@ export const ELECTRICAL_ELECTRONICS_ENGINEERING_SUBJECTS: SubjectGrade[] = [
   { subjectCode: "66781", subjectName: "Electrical Technology Industrial Training", credit: 6, year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 }
 ];
 
+// Complete 4-Year Electronics Technology Subject Configuration (23 Subjects)
+export const ELECTRONICS_TECHNOLOGY_SUBJECTS: SubjectGrade[] = [
+  // FIRST YEAR — 6 SUBJECTS
+  { subjectCode: "66811", subjectName: "Basic Electronics", year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65911", subjectName: "Mathematics-I", year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65912", subjectName: "Physics-I", year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65913", subjectName: "Chemistry", year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66611", subjectName: "Computer Application", year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "61011", subjectName: "Engineering Drawing", year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+
+  // SECOND YEAR — 6 SUBJECTS
+  { subjectCode: "66821", subjectName: "Electronic Devices and Circuits", year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66822", subjectName: "Digital Electronics", year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66823", subjectName: "Electrical Circuits", year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66824", subjectName: "Electronic Measurements and Instruments", year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66825", subjectName: "Electronic Workshop Practice", year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "65921", subjectName: "Mathematics-II", year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+
+  // THIRD YEAR — 6 SUBJECTS
+  { subjectCode: "66831", subjectName: "Analog Electronics", year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66832", subjectName: "Microprocessor and Microcontroller", year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66833", subjectName: "Communication Engineering", year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66834", subjectName: "Industrial Electronics", year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66835", subjectName: "Digital Communication", year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66836", subjectName: "Computer Networking", year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+
+  // FOURTH YEAR — 5 SUBJECTS
+  { subjectCode: "66841", subjectName: "Power Electronics", year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66842", subjectName: "Control System", year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66843", subjectName: "Embedded Systems", year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66844", subjectName: "Electronics Project", year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "66845", subjectName: "Industrial Training", year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 }
+];
+
 export function getFixedSubjectList(category: Category, group: Group, religion: Religion): string[] {
   if (category === Category.SSC) {
     const coreSSC = [
@@ -265,6 +302,10 @@ export function getFixedSubjectList(category: Category, group: Group, religion: 
   }
 
   if (category === Category.DIPLOMA) {
+    if (group === Group.ELECTRONICS_TECHNOLOGY || (group as string) === "Electronics Technology") {
+      return ELECTRONICS_TECHNOLOGY_SUBJECTS.map((s) => s.subjectName);
+    }
+
     if (group === Group.AIR_CONDITION_MAINTENANCE) {
       return AIR_CONDITION_MAINTENANCE_SUBJECTS.map((s) => s.subjectName);
     }
@@ -294,6 +335,9 @@ export function getFixedSubjectList(category: Category, group: Group, religion: 
 
 export function generateEmptySubjectGrades(category: Category, group: Group, religion: Religion): SubjectGrade[] {
   if (category === Category.DIPLOMA) {
+    if (group === Group.ELECTRONICS_TECHNOLOGY || (group as string) === "Electronics Technology") {
+      return ELECTRONICS_TECHNOLOGY_SUBJECTS.map((s) => ({ ...s }));
+    }
     if (group === Group.AIR_CONDITION_MAINTENANCE) {
       return AIR_CONDITION_MAINTENANCE_SUBJECTS.map((s) => ({ ...s }));
     }

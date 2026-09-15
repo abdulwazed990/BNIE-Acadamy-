@@ -104,6 +104,13 @@ acmGrades.forEach((g, idx) => {
   g.gradePoint = 4.00;
 });
 
+const electronicsGrades = generateEmptySubjectGrades(Category.DIPLOMA, Group.ELECTRONICS_TECHNOLOGY, Religion.ISLAM);
+electronicsGrades.forEach((g, idx) => {
+  const sampleMarks = [85, 82, 88, 79, 90, 84, 86, 88, 83, 85, 92, 87, 81, 84, 89, 86, 88, 90, 85, 83, 87, 89, 91];
+  g.marks = sampleMarks[idx % sampleMarks.length];
+  g.gradePoint = 3.82;
+});
+
 export const DEFAULT_STUDENTS: Student[] = [
   {
     id: "stud_1",
@@ -116,7 +123,6 @@ export const DEFAULT_STUDENTS: Student[] = [
     dob: "2008-05-14",
     rollNumber: "102938",
     registrationNumber: "2019384756",
-    section: "A",
     instituteName: "Dhaka Government Vocational High School",
     session: "2022-2023",
     passingYear: "2024",
@@ -137,7 +143,6 @@ export const DEFAULT_STUDENTS: Student[] = [
     dob: "2006-11-23",
     rollNumber: "203948",
     registrationNumber: "3019284756",
-    section: "B",
     instituteName: "Chattogram Government Commerce College",
     session: "2022-2024",
     passingYear: "2024",
@@ -158,7 +163,6 @@ export const DEFAULT_STUDENTS: Student[] = [
     dob: "2004-03-09",
     rollNumber: "405968",
     registrationNumber: "5019283746",
-    section: "A",
     instituteName: "Bangladesh National Institute of Education, Dhaka",
     session: "2020-2024",
     passingYear: "2024",
@@ -179,7 +183,6 @@ export const DEFAULT_STUDENTS: Student[] = [
     dob: "2003-08-18",
     rollNumber: "667101",
     registrationNumber: "1502938471",
-    section: "Day",
     instituteName: "Dhaka Polytechnic Institute, Dhaka",
     session: "2020-2024",
     passingYear: "2024",
@@ -200,7 +203,6 @@ export const DEFAULT_STUDENTS: Student[] = [
     dob: "2003-10-12",
     rollNumber: "ACM1029",
     registrationNumber: "REG90182736",
-    section: "Shift-1",
     instituteName: "Bangladesh National Institute of Education, Dhaka",
     session: "2020-2021",
     passingYear: "2022",
@@ -209,6 +211,26 @@ export const DEFAULT_STUDENTS: Student[] = [
     photoUrl: PASSPORT_AVATARS.male2,
     subjects: acmGrades,
     finalGpa: 4.00
+  },
+  {
+    id: "stud_6",
+    category: Category.DIPLOMA,
+    group: Group.ELECTRONICS_TECHNOLOGY,
+    religion: Religion.ISLAM,
+    name: "Sajjad Hossain Emon",
+    fatherName: "Delwar Hossain",
+    motherName: "Shahnaz Parveen",
+    dob: "2003-04-15",
+    rollNumber: "ET88291",
+    registrationNumber: "1602938492",
+    instituteName: "Dhaka Polytechnic Institute, Dhaka",
+    session: "2020-2024",
+    passingYear: "2024",
+    certificateSerialNumber: "BNIE-DIP-ET-2024-0821",
+    issueDate: "2024-09-15",
+    photoUrl: PASSPORT_AVATARS.male2,
+    subjects: electronicsGrades,
+    finalGpa: 3.82
   }
 ];
 

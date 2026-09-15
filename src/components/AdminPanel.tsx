@@ -49,7 +49,6 @@ export default function AdminPanel({
   const [formDob, setFormDob] = useState("");
   const [formRoll, setFormRoll] = useState("");
   const [formReg, setFormReg] = useState("");
-  const [formSection, setFormSection] = useState("A");
   const [formInstitute, setFormInstitute] = useState("");
   const [formSession, setFormSession] = useState("");
   const [formPassingYear, setFormPassingYear] = useState("");
@@ -85,7 +84,7 @@ export default function AdminPanel({
     newReligion: Religion,
     currentSubjects: SubjectGrade[] = []
   ) => {
-    if (newCategory === Category.DIPLOMA && (newGroup === Group.ELECTRICAL_ELECTRONICS_ENGINEERING || newGroup === Group.AIR_CONDITION_MAINTENANCE)) {
+    if (newCategory === Category.DIPLOMA && (newGroup === Group.ELECTRONICS_TECHNOLOGY || newGroup === Group.ELECTRICAL_ELECTRONICS_ENGINEERING || newGroup === Group.AIR_CONDITION_MAINTENANCE)) {
       const emptyPreset = generateEmptySubjectGrades(newCategory, newGroup, newReligion);
       const updatedPreset = emptyPreset.map((sub) => {
         const match = currentSubjects.find((s) => s.subjectCode === sub.subjectCode || s.subjectName === sub.subjectName);
@@ -129,7 +128,6 @@ export default function AdminPanel({
     setFormDob("");
     setFormRoll("");
     setFormReg("");
-    setFormSection("A");
     setFormInstitute("Bangladesh National Institute of Education");
     setFormSession("2022-2023");
     setFormPassingYear("2024");
@@ -156,7 +154,6 @@ export default function AdminPanel({
     setFormDob(student.dob);
     setFormRoll(student.rollNumber);
     setFormReg(student.registrationNumber);
-    setFormSection(student.section || "A");
     setFormInstitute(student.instituteName);
     setFormSession(student.session);
     setFormPassingYear(student.passingYear);
@@ -281,7 +278,6 @@ export default function AdminPanel({
       dob: formDob,
       rollNumber: formRoll.trim(),
       registrationNumber: formReg.trim(),
-      section: formSection.trim() || "A",
       instituteName: formInstitute.trim(),
       session: formSession.trim(),
       passingYear: formPassingYear.trim(),
@@ -823,9 +819,14 @@ export default function AdminPanel({
                         // Default groups for categories
                         let newGroup = formGroup;
                         if (newCat === Category.DIPLOMA) {
-                          newGroup = Group.ENGINEERING;
-                          setFormGroup(Group.ENGINEERING);
-                        } else if (formGroup === Group.ENGINEERING) {
+                          newGroup = Group.ELECTRONICS_TECHNOLOGY;
+                          setFormGroup(Group.ELECTRONICS_TECHNOLOGY);
+                        } else if (
+                          formGroup === Group.ELECTRONICS_TECHNOLOGY ||
+                          formGroup === Group.ENGINEERING ||
+                          formGroup === Group.AIR_CONDITION_MAINTENANCE ||
+                          formGroup === Group.ELECTRICAL_ELECTRONICS_ENGINEERING
+                        ) {
                           newGroup = Group.SCIENCE;
                           setFormGroup(Group.SCIENCE);
                         }
@@ -853,6 +854,7 @@ export default function AdminPanel({
                         }}
                         className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium"
                       >
+                        <option value={Group.ELECTRONICS_TECHNOLOGY}>Electronics Technology</option>
                         <option value={Group.AIR_CONDITION_MAINTENANCE}>Air Condition and Maintenance</option>
                         <option value={Group.ENGINEERING}>Engineering Streams</option>
                         <option value={Group.ELECTRICAL_ELECTRONICS_ENGINEERING}>Electrical & Electronics Engineering</option>
@@ -947,8 +949,8 @@ export default function AdminPanel({
                   </div>
                 </div>
 
-                {/* Roll, Reg & Section */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Roll & Reg numbers */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-1">
                       Roll Number {formCategory === Category.DIPLOMA ? "(Alphanumeric / Numbers allowed)" : ""}
@@ -972,18 +974,6 @@ export default function AdminPanel({
                       placeholder={formCategory === Category.DIPLOMA ? "e.g. REG98234 or 1502938499" : "e.g. 2019384756"}
                       value={formReg}
                       onChange={(e) => setFormReg(e.target.value.replace(/[^a-zA-Z0-9\-_/]/g, ""))}
-                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-1">
-                      Section
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. A, B, Day"
-                      value={formSection}
-                      onChange={(e) => setFormSection(e.target.value)}
                       className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium font-mono"
                     />
                   </div>
@@ -1193,83 +1183,166 @@ export default function AdminPanel({
                     <div className="col-span-2 text-center">{formCategory === Category.DIPLOMA ? "CGPA / GP" : "GPA"}</div>
                     <div className="col-span-2 text-center">Grade</div>
                   </div>
-                  {formSubjects.map((sub, index) => {
-                    const is4PointScale = formCategory === Category.DIPLOMA;
-                    const letterGrade = is4PointScale ? getDiplomaLetterGrade(sub.gradePoint) : (
-                      sub.gradePoint >= 5.0 ? "A+" :
-                      sub.gradePoint >= 4.0 ? "A" :
-                      sub.gradePoint >= 3.5 ? "A-" :
-                      sub.gradePoint >= 3.0 ? "B" :
-                      sub.gradePoint >= 2.0 ? "C" :
-                      sub.gradePoint >= 1.0 ? "D" : "F"
-                    );
-                    
-                    const badgeColor = (letterGrade === "A+" || letterGrade === "A") ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-                                       letterGrade === "F" ? "bg-red-50 text-red-700 border-red-200" :
-                                       "bg-gray-100 text-gray-700 border-gray-200";
+                  {formSubjects.some((s) => s.year !== undefined) ? (
+                    ["FIRST YEAR", "SECOND YEAR", "THIRD YEAR", "FOURTH YEAR"].map((yr) => {
+                      const yearItems = formSubjects
+                        .map((sub, index) => ({ sub, index }))
+                        .filter((item) => item.sub.year === yr);
+                      
+                      if (yearItems.length === 0) return null;
 
-                    return (
-                      <div 
-                        key={`${sub.subjectName}-${index}`}
-                        className="bg-gray-50 border border-gray-100 p-2.5 rounded-xl grid grid-cols-12 gap-2 items-center hover:border-[#006a4e]/20 hover:bg-white hover:shadow-sm transition-all"
-                      >
-                        {/* Subject detail */}
-                        <div className="col-span-6 pr-1 flex items-center space-x-2">
-                          <img 
-                            src={getSubjectImage(sub.subjectName)} 
-                            alt={sub.subjectName} 
-                            className="w-7 h-7 rounded-md object-cover bg-gray-150 shrink-0 border border-gray-200"
-                            referrerPolicy="no-referrer"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[11px] font-bold text-gray-800 line-clamp-1">
-                              {sub.subjectName}
-                            </p>
-                            <span className="text-[10px] font-mono text-gray-400 font-semibold">
-                              Code: <span className="text-gray-600">{sub.subjectCode || getSubjectCode(sub.subjectName)}</span>
-                              {sub.year && <span className="ml-1 text-[9px] bg-emerald-100 text-emerald-800 px-1 py-0.2 rounded">{sub.year}</span>}
-                              {sub.credit && <span className="ml-1 text-[9px] bg-blue-100 text-blue-800 px-1 py-0.2 rounded">{sub.credit} Cr</span>}
+                      return (
+                        <div key={yr} className="space-y-2 pt-1">
+                          <div className="bg-[#006a4e]/10 border border-[#006a4e]/20 rounded-lg px-3 py-1.5 flex items-center justify-between mt-2 first:mt-0 font-sans">
+                            <span className="text-[11px] font-black text-[#006a4e] uppercase tracking-wider">
+                              {yr} — {yearItems.length} SUBJECTS
+                            </span>
+                            <span className="text-[9px] bg-white border border-[#006a4e]/30 text-[#006a4e] font-bold px-2 py-0.5 rounded">
+                              Scale 4.00
+                            </span>
+                          </div>
+                          {yearItems.map(({ sub, index }) => {
+                            const letterGrade = getDiplomaLetterGrade(sub.gradePoint);
+                            const badgeColor = (letterGrade === "A+" || letterGrade === "A") ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                                               letterGrade === "F" ? "bg-red-50 text-red-700 border-red-200" :
+                                               "bg-gray-100 text-gray-700 border-gray-200";
+
+                            return (
+                              <div 
+                                key={`${sub.subjectName}-${index}`}
+                                className="bg-gray-50 border border-gray-100 p-2.5 rounded-xl grid grid-cols-12 gap-2 items-center hover:border-[#006a4e]/20 hover:bg-white hover:shadow-sm transition-all"
+                              >
+                                {/* Subject detail */}
+                                <div className="col-span-6 pr-1 flex items-center space-x-2">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-[11px] font-bold text-gray-800 line-clamp-1">
+                                      {sub.subjectName}
+                                    </p>
+                                    <span className="text-[10px] font-mono text-gray-400 font-semibold">
+                                      Code: <span className="text-gray-600 font-bold">{sub.subjectCode || getSubjectCode(sub.subjectName)}</span>
+                                      {sub.year && <span className="ml-1 text-[9px] bg-emerald-100 text-emerald-800 font-sans px-1 py-0.2 rounded font-semibold">{sub.year}</span>}
+                                      {sub.credit && <span className="ml-1 text-[9px] bg-blue-100 text-blue-800 px-1 py-0.2 rounded font-semibold">{sub.credit} Cr</span>}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Marks Input */}
+                                <div className="col-span-2">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    required
+                                    value={sub.marks !== undefined ? sub.marks : ""}
+                                    onChange={(e) => handleSubjectMarksChange(index, e.target.value)}
+                                    className="w-full bg-white border border-gray-300 rounded-lg px-1 py-1 text-xs text-center font-bold font-mono focus:border-[#006a4e] focus:ring-1 focus:ring-[#006a4e] text-gray-900"
+                                    placeholder="Marks"
+                                  />
+                                </div>
+
+                                {/* GPA Input */}
+                                <div className="col-span-2">
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0.00"
+                                    max="4.00"
+                                    required
+                                    value={sub.gradePoint}
+                                    onChange={(e) => handleSubjectGradeChange(index, e.target.value)}
+                                    className="w-full bg-white border border-gray-300 rounded-lg px-1 py-1 text-xs text-center font-bold font-mono focus:border-[#006a4e] focus:ring-1 focus:ring-[#006a4e] text-gray-900"
+                                  />
+                                </div>
+
+                                {/* Letter Grade */}
+                                <div className="col-span-2 flex justify-center">
+                                  <span className={`text-[10px] font-black border px-2 py-0.5 rounded-md min-w-8 text-center shrink-0 ${badgeColor}`}>
+                                    {letterGrade}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    formSubjects.map((sub, index) => {
+                      const is4PointScale = formCategory === Category.DIPLOMA;
+                      const letterGrade = is4PointScale ? getDiplomaLetterGrade(sub.gradePoint) : (
+                        sub.gradePoint >= 5.0 ? "A+" :
+                        sub.gradePoint >= 4.0 ? "A" :
+                        sub.gradePoint >= 3.5 ? "A-" :
+                        sub.gradePoint >= 3.0 ? "B" :
+                        sub.gradePoint >= 2.0 ? "C" :
+                        sub.gradePoint >= 1.0 ? "D" : "F"
+                      );
+                      
+                      const badgeColor = (letterGrade === "A+" || letterGrade === "A") ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                                         letterGrade === "F" ? "bg-red-50 text-red-700 border-red-200" :
+                                         "bg-gray-100 text-gray-700 border-gray-200";
+
+                      return (
+                        <div 
+                          key={`${sub.subjectName}-${index}`}
+                          className="bg-gray-50 border border-gray-100 p-2.5 rounded-xl grid grid-cols-12 gap-2 items-center hover:border-[#006a4e]/20 hover:bg-white hover:shadow-sm transition-all"
+                        >
+                          {/* Subject detail */}
+                          <div className="col-span-6 pr-1 flex items-center space-x-2">
+                            <img 
+                              src={getSubjectImage(sub.subjectName)} 
+                              alt={sub.subjectName} 
+                              className="w-7 h-7 rounded-md object-cover bg-gray-150 shrink-0 border border-gray-200"
+                              referrerPolicy="no-referrer"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[11px] font-bold text-gray-800 line-clamp-1">
+                                {sub.subjectName}
+                              </p>
+                              <span className="text-[10px] font-mono text-gray-400 font-semibold">
+                                Code: <span className="text-gray-600">{sub.subjectCode || getSubjectCode(sub.subjectName)}</span>
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Marks Input */}
+                          <div className="col-span-2">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              required
+                              value={sub.marks !== undefined ? sub.marks : ""}
+                              onChange={(e) => handleSubjectMarksChange(index, e.target.value)}
+                              className="w-full bg-white border border-gray-300 rounded-lg px-1 py-1 text-xs text-center font-bold font-mono focus:border-[#006a4e] focus:ring-1 focus:ring-[#006a4e] text-gray-900"
+                              placeholder="Marks"
+                            />
+                          </div>
+
+                          {/* GPA Input */}
+                          <div className="col-span-2">
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0.00"
+                              max={is4PointScale ? "4.00" : "5.00"}
+                              required
+                              value={sub.gradePoint}
+                              onChange={(e) => handleSubjectGradeChange(index, e.target.value)}
+                              className="w-full bg-white border border-gray-300 rounded-lg px-1 py-1 text-xs text-center font-bold font-mono focus:border-[#006a4e] focus:ring-1 focus:ring-[#006a4e] text-gray-900"
+                            />
+                          </div>
+
+                          {/* Letter Grade */}
+                          <div className="col-span-2 flex justify-center">
+                            <span className={`text-[10px] font-black border px-2 py-0.5 rounded-md min-w-8 text-center shrink-0 ${badgeColor}`}>
+                              {letterGrade}
                             </span>
                           </div>
                         </div>
-
-                        {/* Marks Input */}
-                        <div className="col-span-2">
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            required
-                            value={sub.marks !== undefined ? sub.marks : ""}
-                            onChange={(e) => handleSubjectMarksChange(index, e.target.value)}
-                            className="w-full bg-white border border-gray-300 rounded-lg px-1 py-1 text-xs text-center font-bold font-mono focus:border-[#006a4e] focus:ring-1 focus:ring-[#006a4e] text-gray-900"
-                            placeholder="Marks"
-                          />
-                        </div>
-
-                        {/* GPA Input */}
-                        <div className="col-span-2">
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0.00"
-                            max={is4PointScale ? "4.00" : "5.00"}
-                            required
-                            value={sub.gradePoint}
-                            onChange={(e) => handleSubjectGradeChange(index, e.target.value)}
-                            className="w-full bg-white border border-gray-300 rounded-lg px-1 py-1 text-xs text-center font-bold font-mono focus:border-[#006a4e] focus:ring-1 focus:ring-[#006a4e] text-gray-900"
-                          />
-                        </div>
-
-                        {/* Letter Grade */}
-                        <div className="col-span-2 flex justify-center">
-                          <span className={`text-[10px] font-black border px-2 py-0.5 rounded-md min-w-8 text-center shrink-0 ${badgeColor}`}>
-                            {letterGrade}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
                 </div>
 
                 {/* Dynamic GPA & Marks Estimation Board */}
