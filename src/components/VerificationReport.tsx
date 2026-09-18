@@ -640,8 +640,12 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
                   <tr className="border-b border-gray-300">
                     <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Examination Year</td>
                     <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-800 font-number digit-clear w-[28%] whitespace-nowrap">{student.passingYear}</td>
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">GPA / CGPA</td>
-                    <td className="px-3 py-1.5 font-black text-[#006a4e] text-xs sm:text-sm font-number digit-clear w-[28%] whitespace-nowrap">{student.finalGpa.toFixed(2)}</td>
+                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">
+                      {student.category === "Diploma" ? "CGPA" : "GPA / CGPA"}
+                    </td>
+                    <td className="px-3 py-1.5 font-black text-[#006a4e] text-xs sm:text-sm font-number digit-clear w-[28%] whitespace-nowrap">
+                      {student.category === "Diploma" ? `CGPA: ${student.finalGpa.toFixed(2)} / 4.00` : student.finalGpa.toFixed(2)}
+                    </td>
                   </tr>
                   <tr>
                     <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Result Status</td>
@@ -791,7 +795,7 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
                     {student.totalMarks !== undefined ? `${student.totalMarks} Total` : "—"}
                   </td>
                   <td className="py-2 px-3 text-center font-mono text-sm text-[#006a4e] font-black border-r border-gray-200 whitespace-nowrap">
-                    {student.finalGpa.toFixed(2)}
+                    {student.category === "Diploma" ? `CGPA: ${student.finalGpa.toFixed(2)} / 4.00` : student.finalGpa.toFixed(2)}
                   </td>
                   <td className="py-2 px-3 text-center whitespace-nowrap">
                     <span className="text-[10px] bg-[#006a4e] text-white font-bold px-3 py-0.5 rounded-full shadow-2xs whitespace-nowrap">

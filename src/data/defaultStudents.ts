@@ -111,6 +111,13 @@ electronicsGrades.forEach((g, idx) => {
   g.gradePoint = 3.82;
 });
 
+const mechanicalGrades = generateEmptySubjectGrades(Category.DIPLOMA, Group.MECHANICAL_ENGINEERING, Religion.ISLAM);
+mechanicalGrades.forEach((g, idx) => {
+  const sampleMarks = [86, 84, 88, 82, 89, 85, 87, 83, 88, 90, 84, 86, 89, 87, 85, 88, 86, 91, 84, 88, 87, 92, 90];
+  g.marks = sampleMarks[idx % sampleMarks.length];
+  g.gradePoint = 3.88;
+});
+
 export const DEFAULT_STUDENTS: Student[] = [
   {
     id: "stud_1",
@@ -231,6 +238,26 @@ export const DEFAULT_STUDENTS: Student[] = [
     photoUrl: PASSPORT_AVATARS.male2,
     subjects: electronicsGrades,
     finalGpa: 3.82
+  },
+  {
+    id: "stud_7",
+    category: Category.DIPLOMA,
+    group: Group.MECHANICAL_ENGINEERING,
+    religion: Religion.ISLAM,
+    name: "Mahfuzur Rahman Shuvo",
+    fatherName: "Anisur Rahman",
+    motherName: "Hosne Ara Begum",
+    dob: "2003-08-20",
+    rollNumber: "ME77412",
+    registrationNumber: "1703849201",
+    instituteName: "Dhaka Polytechnic Institute, Dhaka",
+    session: "2020-2024",
+    passingYear: "2024",
+    certificateSerialNumber: "BNIE-DIP-ME-2024-1104",
+    issueDate: "2024-09-15",
+    photoUrl: PASSPORT_AVATARS.male1,
+    subjects: mechanicalGrades,
+    finalGpa: 3.88
   }
 ];
 

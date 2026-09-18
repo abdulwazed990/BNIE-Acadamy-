@@ -11,7 +11,8 @@ export enum Group {
   ENGINEERING = "Engineering",
   AIR_CONDITION_MAINTENANCE = "Air Condition and Maintenance",
   ELECTRICAL_ELECTRONICS_ENGINEERING = "Electrical & Electronics Engineering",
-  ELECTRONICS_TECHNOLOGY = "Electronics Technology"
+  ELECTRONICS_TECHNOLOGY = "Electronics Technology",
+  MECHANICAL_ENGINEERING = "Mechanical Engineering"
 }
 
 export enum Religion {

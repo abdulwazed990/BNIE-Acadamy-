@@ -18,7 +18,10 @@ export function getReligionSubjectName(religion: Religion): string {
 export function getSubjectCode(subjectName: string): string {
   const clean = subjectName.toLowerCase().trim();
 
-  // 1. Direct match with preset Electronics Technology, Air Condition and Maintenance & EEE subjects
+  // 1. Direct match with preset Mechanical Engineering, Electronics Technology, Air Condition and Maintenance & EEE subjects
+  const matchME = MECHANICAL_ENGINEERING_SUBJECTS.find(s => s.subjectName.toLowerCase().trim() === clean);
+  if (matchME && matchME.subjectCode) return matchME.subjectCode;
+
   const matchET = ELECTRONICS_TECHNOLOGY_SUBJECTS.find(s => s.subjectName.toLowerCase().trim() === clean);
   if (matchET && matchET.subjectCode) return matchET.subjectCode;
 
@@ -210,6 +213,40 @@ export const ELECTRONICS_TECHNOLOGY_SUBJECTS: SubjectGrade[] = [
   { subjectCode: "66845", subjectName: "Industrial Training", year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 }
 ];
 
+// Complete 4-Year Mechanical Engineering Subject Configuration (23 Subjects)
+export const MECHANICAL_ENGINEERING_SUBJECTS: SubjectGrade[] = [
+  // FIRST YEAR — 6 SUBJECTS
+  { subjectCode: "ME-101", subjectName: "Engineering Drawing", year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-102", subjectName: "Mathematics-I", year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-103", subjectName: "Physics-I", year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-104", subjectName: "Chemistry", year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-105", subjectName: "Basic Workshop Practice", year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-106", subjectName: "Basic Electricity", year: "FIRST YEAR", marks: 85, gradePoint: 4.00 },
+
+  // SECOND YEAR — 6 SUBJECTS
+  { subjectCode: "ME-201", subjectName: "Mathematics-II", year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-202", subjectName: "Engineering Mechanics", year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-203", subjectName: "Mechanical Engineering Drawing", year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-204", subjectName: "Machine Shop Practice", year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-205", subjectName: "Materials Science and Engineering", year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-206", subjectName: "Thermodynamics", year: "SECOND YEAR", marks: 85, gradePoint: 4.00 },
+
+  // THIRD YEAR — 6 SUBJECTS
+  { subjectCode: "ME-301", subjectName: "Fluid Mechanics", year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-302", subjectName: "Manufacturing Process", year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-303", subjectName: "Strength of Materials", year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-304", subjectName: "Theory of Machines", year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-305", subjectName: "Heat Transfer", year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-306", subjectName: "Metrology and Measurement", year: "THIRD YEAR", marks: 85, gradePoint: 4.00 },
+
+  // FOURTH YEAR — 5 SUBJECTS
+  { subjectCode: "ME-401", subjectName: "Machine Design", year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-402", subjectName: "Power Plant Engineering", year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-403", subjectName: "Industrial Management and Maintenance", year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-404", subjectName: "Mechanical Engineering Project", year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 },
+  { subjectCode: "ME-405", subjectName: "Industrial Training", year: "FOURTH YEAR", marks: 85, gradePoint: 4.00 }
+];
+
 export function getFixedSubjectList(category: Category, group: Group, religion: Religion): string[] {
   if (category === Category.SSC) {
     const coreSSC = [
@@ -302,6 +339,10 @@ export function getFixedSubjectList(category: Category, group: Group, religion: 
   }
 
   if (category === Category.DIPLOMA) {
+    if (group === Group.MECHANICAL_ENGINEERING || (group as string) === "Mechanical Engineering") {
+      return MECHANICAL_ENGINEERING_SUBJECTS.map((s) => s.subjectName);
+    }
+
     if (group === Group.ELECTRONICS_TECHNOLOGY || (group as string) === "Electronics Technology") {
       return ELECTRONICS_TECHNOLOGY_SUBJECTS.map((s) => s.subjectName);
     }
@@ -335,6 +376,9 @@ export function getFixedSubjectList(category: Category, group: Group, religion: 
 
 export function generateEmptySubjectGrades(category: Category, group: Group, religion: Religion): SubjectGrade[] {
   if (category === Category.DIPLOMA) {
+    if (group === Group.MECHANICAL_ENGINEERING || (group as string) === "Mechanical Engineering") {
+      return MECHANICAL_ENGINEERING_SUBJECTS.map((s) => ({ ...s }));
+    }
     if (group === Group.ELECTRONICS_TECHNOLOGY || (group as string) === "Electronics Technology") {
       return ELECTRONICS_TECHNOLOGY_SUBJECTS.map((s) => ({ ...s }));
     }

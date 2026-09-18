@@ -84,7 +84,7 @@ export default function AdminPanel({
     newReligion: Religion,
     currentSubjects: SubjectGrade[] = []
   ) => {
-    if (newCategory === Category.DIPLOMA && (newGroup === Group.ELECTRONICS_TECHNOLOGY || newGroup === Group.ELECTRICAL_ELECTRONICS_ENGINEERING || newGroup === Group.AIR_CONDITION_MAINTENANCE)) {
+    if (newCategory === Category.DIPLOMA && (newGroup === Group.MECHANICAL_ENGINEERING || newGroup === Group.ELECTRONICS_TECHNOLOGY || newGroup === Group.ELECTRICAL_ELECTRONICS_ENGINEERING || newGroup === Group.AIR_CONDITION_MAINTENANCE)) {
       const emptyPreset = generateEmptySubjectGrades(newCategory, newGroup, newReligion);
       const updatedPreset = emptyPreset.map((sub) => {
         const match = currentSubjects.find((s) => s.subjectCode === sub.subjectCode || s.subjectName === sub.subjectName);
@@ -819,9 +819,10 @@ export default function AdminPanel({
                         // Default groups for categories
                         let newGroup = formGroup;
                         if (newCat === Category.DIPLOMA) {
-                          newGroup = Group.ELECTRONICS_TECHNOLOGY;
-                          setFormGroup(Group.ELECTRONICS_TECHNOLOGY);
+                          newGroup = Group.MECHANICAL_ENGINEERING;
+                          setFormGroup(Group.MECHANICAL_ENGINEERING);
                         } else if (
+                          formGroup === Group.MECHANICAL_ENGINEERING ||
                           formGroup === Group.ELECTRONICS_TECHNOLOGY ||
                           formGroup === Group.ENGINEERING ||
                           formGroup === Group.AIR_CONDITION_MAINTENANCE ||
@@ -854,6 +855,7 @@ export default function AdminPanel({
                         }}
                         className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium"
                       >
+                        <option value={Group.MECHANICAL_ENGINEERING}>Mechanical Engineering</option>
                         <option value={Group.ELECTRONICS_TECHNOLOGY}>Electronics Technology</option>
                         <option value={Group.AIR_CONDITION_MAINTENANCE}>Air Condition and Maintenance</option>
                         <option value={Group.ENGINEERING}>Engineering Streams</option>
