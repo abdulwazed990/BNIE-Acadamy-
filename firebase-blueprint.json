@@ -25,6 +25,26 @@
         "subjects": "array"
       },
       "indexes": []
+    },
+    "leadership_profiles": {
+      "schema": {
+        "id": "string",
+        "position": "string",
+        "fullName": "string",
+        "designation": "string",
+        "departmentOrOffice": "string",
+        "email": "string",
+        "phone": "string",
+        "mobileNumber": "string",
+        "biography": "string",
+        "officeAddress": "string",
+        "photoUrl": "string",
+        "displayOrder": "number",
+        "status": "string",
+        "createdAt": "string",
+        "updatedAt": "string"
+      },
+      "indexes": []
     }
   }
 }

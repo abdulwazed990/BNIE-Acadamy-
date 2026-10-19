@@ -1,7 +1,10 @@
 export enum Category {
   SSC = "SSC",
   HSC = "HSC",
-  DIPLOMA = "Diploma"
+  DIPLOMA = "Diploma",
+  DEGREE_PASS = "Degree Pass",
+  HONOURS = "Honours",
+  MASTERS = "Masters"
 }
 
 export enum Group {
@@ -12,7 +15,8 @@ export enum Group {
   AIR_CONDITION_MAINTENANCE = "Air Condition and Maintenance",
   ELECTRICAL_ELECTRONICS_ENGINEERING = "Electrical & Electronics Engineering",
   ELECTRONICS_TECHNOLOGY = "Electronics Technology",
-  MECHANICAL_ENGINEERING = "Mechanical Engineering"
+  MECHANICAL_ENGINEERING = "Mechanical Engineering",
+  GENERAL = "General"
 }
 
 export enum Religion {
@@ -27,8 +31,18 @@ export interface SubjectGrade {
   gradePoint: number; // 0.00 to 5.00 or 0.00 to 4.00
   subjectCode?: string;
   marks?: number; // optional mark 0 to 100
-  credit?: number; // credit for Diploma calculation
+  credit?: number; // credit for Diploma and Degree calculation
+  credits?: number; // optional alias for credit
+  letterGrade?: string; // Letter grade e.g. "A+", "A", "B"
   year?: string; // academic year e.g. "FIRST YEAR", "SECOND YEAR", "THIRD YEAR", "FOURTH YEAR"
+}
+
+export interface SemesterResult {
+  semesterName: string; // e.g. "1st Semester" or "1st Year"
+  semesterGpa: number; // GPA out of 4.00 for this semester/year
+  totalCredits?: number;
+  publicationDate?: string;
+  subjects: SubjectGrade[];
 }
 
 export interface Student {
@@ -51,8 +65,58 @@ export interface Student {
   qrCodeUrl?: string; // custom QR upload or auto-generated
   secureToken?: string; // Secure high-entropy verification token
   subjects: SubjectGrade[];
-  finalGpa: number; // calculated automatically
+  finalGpa: number; // calculated automatically (CGPA on 4.00 scale for Degree/Honours/Masters/Diploma, 5.00 for SSC/HSC)
   totalMarks?: number; // optional total marks
+
+  // Degree Pass, Honours & Masters Specific Fields
+  academicLevel?: "Degree Pass" | "Honours" | "Masters";
+  programName?: string;
+  programCode?: string;
+  department?: string;
+  majorSubject?: string;
+  currentSemesterOrYear?: string;
+  resultStatus?: string; // e.g. "Passed", "First Class", "Promoted", "Graduated"
+  maxGpa?: number; // 4.00
+  semesterResults?: SemesterResult[];
+}
+
+export type LeadershipPosition =
+  | "Chancellor"
+  | "Vice-Chancellor"
+  | "Pro-Vice-Chancellor"
+  | "Treasurer"
+  | "Pro-Vice-Chancellor (Administration)"
+  | "Registrar"
+  | "Former Vice-Chancellors";
+
+export const LEADERSHIP_POSITIONS: LeadershipPosition[] = [
+  "Chancellor",
+  "Vice-Chancellor",
+  "Pro-Vice-Chancellor",
+  "Treasurer",
+  "Pro-Vice-Chancellor (Administration)",
+  "Registrar",
+  "Former Vice-Chancellors"
+];
+
+export type PublicationStatus = "Draft" | "Published" | "Unpublished";
+
+export interface LeadershipProfile {
+  id: string;
+  position: LeadershipPosition;
+  fullName: string;
+  designation: string;
+  departmentOrOffice: string;
+  email: string;
+  phone: string;
+  mobileNumber?: string;
+  biography?: string;
+  officeAddress?: string;
+  photoUrl?: string; // Optimized passport-size base64 data URL
+  displayOrder: number;
+  status: PublicationStatus;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Map marks to grade point
@@ -155,6 +219,44 @@ export function calculateFinalGpa(subjects: SubjectGrade[]): number {
   const average = totalPoints / subjects.length;
   // Format to two decimal places
   return Math.round(average * 100) / 100;
+}
+
+// Calculate GPA for a single semester / academic year on 4.00 scale
+export function calculateSemesterGpa(subjects: SubjectGrade[]): number {
+  if (subjects.length === 0) return 0.0;
+  let totalWeighted = 0;
+  let totalCredits = 0;
+  for (const s of subjects) {
+    const cred = s.credit && s.credit > 0 ? s.credit : 3.0;
+    totalWeighted += (s.gradePoint || 0) * cred;
+    totalCredits += cred;
+  }
+  if (totalCredits === 0) return 0.0;
+  const gpa = totalWeighted / totalCredits;
+  return Math.min(4.00, Math.round(gpa * 100) / 100);
+}
+
+// Calculate Cumulative CGPA across all semesters on 4.00 scale
+export function calculateDegreeCgpa(semesters: SemesterResult[]): number {
+  if (!semesters || semesters.length === 0) return 0.0;
+  let totalWeighted = 0;
+  let totalCredits = 0;
+
+  for (const sem of semesters) {
+    for (const sub of sem.subjects) {
+      const cred = sub.credit && sub.credit > 0 ? sub.credit : 3.0;
+      totalWeighted += (sub.gradePoint || 0) * cred;
+      totalCredits += cred;
+    }
+  }
+
+  if (totalCredits === 0) {
+    const avg = semesters.reduce((sum, s) => sum + s.semesterGpa, 0) / semesters.length;
+    return Math.min(4.00, Math.round(avg * 100) / 100);
+  }
+
+  const cgpa = totalWeighted / totalCredits;
+  return Math.min(4.00, Math.round(cgpa * 100) / 100);
 }
 
 // Generate a high-entropy cryptographically secure verification token

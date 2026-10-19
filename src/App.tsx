@@ -16,7 +16,21 @@ import TermsAndConditions from "./components/TermsAndConditions";
 import HelpCenter from "./components/HelpCenter";
 import ServicesPage from "./components/ServicesPage";
 import GovernmentAccreditation from "./components/GovernmentAccreditation";
-import Logo from "./components/Logo";
+import ViceChancellorMessage from "./components/ViceChancellorMessage";
+import ComplaintsAndServices from "./components/ComplaintsAndServices";
+import StudentHandbooksPage from "./components/StudentHandbooksPage";
+import OnlineAdmissionPage from "./components/OnlineAdmissionPage";
+import OsapsLoginPage from "./components/OsapsLoginPage";
+import EbookPage from "./components/EbookPage";
+import WebEmailPage from "./components/WebEmailPage";
+import DegreeProgramsSection from "./components/DegreeProgramsSection";
+import FindProgramPage from "./components/FindProgramPage";
+import ResearchPublicationsPage from "./components/ResearchPublicationsPage";
+import NoticesPage from "./components/NoticesPage";
+import RegionalCentersPage from "./components/RegionalCentersPage";
+import SideDrawer from "./components/SideDrawer";
+import LeadershipAdministrationPage, { LeadershipSectionId } from "./components/LeadershipAdministrationPage";
+import DegreeResultVerificationPage from "./components/DegreeResultVerificationPage";
 import { Student } from "./types";
 import { DEFAULT_STUDENTS } from "./data/defaultStudents";
 import { 
@@ -25,13 +39,65 @@ import {
   updateStudentInDb, 
   deleteStudentFromDb 
 } from "./lib/firebase";
-import { ChevronRight, Home, ShieldCheck, Database, Award, ArrowLeft, Menu, X, BookOpen, RefreshCw, Briefcase, Landmark } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
-export default function App() {
-  // Navigation / Pages State: "home" | "verify" | "report" | "admin"
-  const [currentPage, setCurrentPage] = useState<string>("home");
+const getInitialPage = (): string => {
+  if (typeof window === "undefined") return "home";
   
+  const params = new URLSearchParams(window.location.search);
+  const pageParam = params.get("page");
+  if (pageParam) return pageParam;
+
+  const path = window.location.pathname.toLowerCase();
+  if (path.includes("/degree-marksheet-result") || path.includes("/degree-result")) {
+    return "degree-marksheet-result";
+  }
+  if (
+    path.includes("/verify") ||
+    path.includes("/certificate") ||
+    path.includes("/record") ||
+    params.get("token") ||
+    params.get("id") ||
+    params.get("roll") ||
+    params.get("serial")
+  ) {
+    return "verify";
+  }
+  if (path.includes("/admin")) return "admin-login";
+  if (path.includes("/handbooks")) return "student-handbooks";
+  if (path.includes("/admission")) return "online-admission";
+  if (path.includes("/osaps")) return "osaps-login";
+  if (path.includes("/ebook")) return "ebook";
+  if (path.includes("/webmail")) return "web-email";
+  if (path.includes("/find-program")) return "find-program";
+
+  const hash = window.location.hash.replace("#", "").replace("/", "");
+  if (hash) return hash;
+
+  return "home";
+};
+
+export default function App() {
+  // Navigation State with full browser refresh and URL parameter persistence
+  const [currentPage, setCurrentPage] = useState<string>(getInitialPage);
+
+  // Side Drawer state (The only intended overlay in this navigation design)
+  const [isSideDrawerOpen, setIsSideDrawerOpen] = useState(false);
+
+  // Selected program for online admission preselection
+  const [selectedAdmissionProgram, setSelectedAdmissionProgram] = useState<string>("mech_4y");
+
+  // Leadership & Administration section state
+  const [leadershipSection, setLeadershipSection] = useState<LeadershipSectionId>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const sec = params.get("section") as LeadershipSectionId | null;
+      if (sec) return sec;
+    }
+    return "vice-chancellor";
+  });
+
   // Database Loading state
   const [isDbLoading, setIsDbLoading] = useState(true);
   
@@ -70,9 +136,6 @@ export default function App() {
   // Track currently selected/verified student for the Report view
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
-  // Mobile menu control
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
   // Synchronize student ledger changes to localStorage as a robust hybrid/secondary backup
   useEffect(() => {
     localStorage.setItem("bnie_students", JSON.stringify(students));
@@ -82,17 +145,54 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const path = window.location.pathname.toLowerCase();
+    const pageParam = params.get("page");
+    if (path.includes("/degree-marksheet-result") || path.includes("/degree-result") || pageParam === "degree-marksheet-result") {
+      setCurrentPage("degree-marksheet-result");
+      return;
+    }
     const hasVerifyPath = path.includes("/verify") || path.includes("/certificate") || path.includes("/record");
     if (params.get("token") || params.get("id") || params.get("roll") || params.get("serial") || hasVerifyPath) {
       setCurrentPage("verify");
     }
   }, []);
 
-  // Handle route navigation smoothly
-  const handleNavigate = (page: string) => {
+  // Browser Back/Forward navigation listener for bookmark & refresh consistency
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state && event.state.page) {
+        setCurrentPage(event.state.page);
+        if (event.state.section) {
+          setLeadershipSection(event.state.section);
+        }
+      } else {
+        const params = new URLSearchParams(window.location.search);
+        const p = params.get("page") || "home";
+        setCurrentPage(p);
+        const sec = params.get("section") as LeadershipSectionId | null;
+        if (sec) {
+          setLeadershipSection(sec);
+        }
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  // Handle route navigation smoothly with URL query persistence
+  const handleNavigate = (page: string, section?: LeadershipSectionId) => {
+    if (section) {
+      setLeadershipSection(section);
+    }
     setCurrentPage(page);
+    try {
+      const sectionQuery = section ? `&section=${section}` : "";
+      const newUrl = page === "home" ? window.location.pathname : `?page=${page}${sectionQuery}`;
+      window.history.pushState({ page, section }, "", newUrl);
+    } catch (e) {
+      console.warn("Failed to update history state", e);
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
-    setIsMobileMenuOpen(false);
+    setIsSideDrawerOpen(false);
   };
 
   // Callback when student is successfully queried
@@ -101,15 +201,10 @@ export default function App() {
     handleNavigate("report");
   };
 
-  // CMS functions with automatic Firebase cloud saving (optimistic updates for smooth mobile/offline experience)
+  // CMS functions with automatic Firebase cloud saving
   const handleAddStudent = async (newStudent: Student) => {
-    // 1. Immediately update local state
     setStudents((prev) => [newStudent, ...prev]);
-    
-    // 2. Notify user instantly of success
     alert(`Successfully registered candidate: ${newStudent.name}`);
-    
-    // 3. Sync to Cloud Firestore in the background
     try {
       await addStudentToDb(newStudent);
     } catch (error) {
@@ -118,15 +213,10 @@ export default function App() {
   };
 
   const handleUpdateStudent = async (updatedStudent: Student) => {
-    // 1. Immediately update local state
     setStudents((prev) =>
       prev.map((s) => (s.id === updatedStudent.id ? updatedStudent : s))
     );
-    
-    // 2. Notify user instantly of success
     alert(`Successfully updated record for: ${updatedStudent.name}`);
-    
-    // 3. Sync to Cloud Firestore in the background
     try {
       await updateStudentInDb(updatedStudent);
     } catch (error) {
@@ -135,17 +225,13 @@ export default function App() {
   };
 
   const handleDeleteStudent = async (id: string) => {
-    // 1. Immediately update local state
     setStudents((prev) => prev.filter((s) => s.id !== id));
-    
-    // 2. Sync to Cloud Firestore in the background
     try {
       await deleteStudentFromDb(id);
     } catch (error) {
       console.warn("Background delete from cloud database failed.", error);
     }
   };
-
 
   const handleViewStudentFromAdmin = (student: Student) => {
     setSelectedStudent(student);
@@ -158,185 +244,217 @@ export default function App() {
       {/* Webpage contents layout wrapper */}
       <div className="flex-1 flex flex-col">
 
-      {/* Main Administrative Header Navigation Rail (Hidden in Print) */}
-      <nav className="w-full bg-gray-50 border-b border-gray-200 py-3 px-4 no-print shrink-0">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          
-          {/* Left Title Link */}
-          <button 
-            onClick={() => handleNavigate("home")}
-            className="flex items-center space-x-3.5 text-left cursor-pointer group"
-          >
-            <Logo size={68} className="hover:scale-105 transition-transform" />
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-sm md:text-lg text-gray-950 uppercase tracking-tight block">
-                  BNIE Portal
-                </span>
-                {isDbLoading ? (
-                  <span className="inline-flex items-center gap-1 text-[9px] bg-amber-50 text-amber-700 border border-amber-200/60 px-1.5 py-0.5 rounded-sm font-bold normal-case font-mono tracking-normal">
-                    <RefreshCw className="w-2.5 h-2.5 animate-spin" /> Syncing...
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-1.5 py-0.5 rounded-sm font-bold normal-case font-mono tracking-normal">
-                    ● Cloud Live
-                  </span>
-                )}
-              </div>
-              <span className="text-[10px] md:text-xs text-gray-500 font-medium block">
-                People's Republic of Bangladesh
-              </span>
-            </div>
-          </button>
+      {/* Main Professional Educational Header with Logo on Left and Three-Line Menu on Far Right */}
+      <Header 
+        onNavigate={handleNavigate} 
+        onOpenDrawer={() => setIsSideDrawerOpen(true)}
+        isDbLoading={isDbLoading}
+      />
 
-          {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center space-x-5">
-            <button
-              onClick={() => handleNavigate("home")}
-              className={`text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors flex items-center space-x-1 ${
-                currentPage === "home" ? "text-[#006a4e]" : "text-gray-600 hover:text-[#006a4e]"
-              }`}
-            >
-              <Home className="w-3.5 h-3.5" />
-              <span>Home</span>
-            </button>
-            <button
-              onClick={() => handleNavigate("specializations")}
-              className={`text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors flex items-center space-x-1 ${
-                currentPage === "specializations" ? "text-[#006a4e]" : "text-gray-600 hover:text-[#006a4e]"
-              }`}
-            >
-              <Award className="w-3.5 h-3.5 text-emerald-600" />
-              <span>SSC/HSC Groups</span>
-            </button>
-            <button
-              onClick={() => handleNavigate("courses")}
-              className={`text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors flex items-center space-x-1 ${
-                currentPage === "courses" ? "text-[#006a4e]" : "text-gray-600 hover:text-[#006a4e]"
-              }`}
-            >
-              <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Diploma Courses</span>
-            </button>
-            <button
-              onClick={() => handleNavigate("services")}
-              className={`text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors flex items-center space-x-1 ${
-                currentPage === "services" ? "text-[#006a4e]" : "text-gray-600 hover:text-[#006a4e]"
-              }`}
-            >
-              <Briefcase className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Our Services</span>
-            </button>
-            <button
-              onClick={() => handleNavigate("accreditation")}
-              className={`text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors flex items-center space-x-1 ${
-                currentPage === "accreditation" ? "text-[#006a4e]" : "text-gray-600 hover:text-[#006a4e]"
-              }`}
-            >
-              <Landmark className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Govt. Approval</span>
-            </button>
-            <button
-              onClick={() => handleNavigate("verify")}
-              className={`text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors flex items-center space-x-1 ${
-                currentPage === "verify" ? "text-[#006a4e]" : "text-gray-600 hover:text-[#006a4e]"
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Verify Certificate</span>
-            </button>
-          </div>
-
-          {/* Mobile Menu Toggle Button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-1.5 hover:bg-gray-100 rounded-lg text-gray-700 transition-colors cursor-pointer"
-          >
-            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
-      </nav>
-
-      {/* Mobile Drawer Slide-in Navigation (Hidden in Print) */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white border-b border-gray-200 px-4 py-4 space-y-3 no-print overflow-hidden"
-          >
-            <button
-              onClick={() => handleNavigate("home")}
-              className="w-full text-left text-xs font-bold uppercase tracking-wider py-2 text-gray-700 hover:text-[#006a4e] flex items-center space-x-2"
-            >
-              <Home className="w-4 h-4 text-gray-400" />
-              <span>Home</span>
-            </button>
-            <button
-              onClick={() => handleNavigate("specializations")}
-              className="w-full text-left text-xs font-bold uppercase tracking-wider py-2 text-gray-700 hover:text-[#006a4e] flex items-center space-x-2"
-            >
-              <Award className="w-4 h-4 text-[#006a4e]" />
-              <span>SSC/HSC Groups</span>
-            </button>
-            <button
-              onClick={() => handleNavigate("courses")}
-              className="w-full text-left text-xs font-bold uppercase tracking-wider py-2 text-gray-700 hover:text-[#006a4e] flex items-center space-x-2"
-            >
-              <BookOpen className="w-4 h-4 text-[#006a4e]" />
-              <span>Diploma Courses</span>
-            </button>
-            <button
-              onClick={() => handleNavigate("services")}
-              className="w-full text-left text-xs font-bold uppercase tracking-wider py-2 text-gray-700 hover:text-[#006a4e] flex items-center space-x-2"
-            >
-              <Briefcase className="w-4 h-4 text-[#006a4e]" />
-              <span>Our Services</span>
-            </button>
-            <button
-              onClick={() => handleNavigate("accreditation")}
-              className="w-full text-left text-xs font-bold uppercase tracking-wider py-2 text-gray-700 hover:text-[#006a4e] flex items-center space-x-2"
-            >
-              <Landmark className="w-4 h-4 text-[#006a4e]" />
-              <span>Govt. Approval (সরকারি অনুমোদন)</span>
-            </button>
-            <button
-              onClick={() => handleNavigate("verify")}
-              className="w-full text-left text-xs font-bold uppercase tracking-wider py-2 text-[#006a4e] flex items-center space-x-2"
-            >
-              <ShieldCheck className="w-4 h-4 text-[#006a4e]" />
-              <span>Verify Certificate</span>
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Main Educational Banner Header */}
-      <Header onNavigate={handleNavigate} />
-
-      {/* Page Content Body (Dynamic Router) */}
+      {/* Page Content Body (Dynamic Full-Page Router) */}
       <main className="flex-1">
         <AnimatePresence mode="wait">
           
-          {/* HOME PAGE ROUTE */}
+          {/* 1. HOME PAGE ROUTE */}
           {currentPage === "home" && (
             <motion.div
               key="home"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
             >
               <Hero 
-                onVerifyClick={() => handleNavigate("verify")} 
-                onCoursesClick={() => handleNavigate("courses")} 
-                onAccreditationClick={() => handleNavigate("accreditation")}
+                onOpenVcMessage={() => handleNavigate("vc-message")}
+                onOpenResults={() => handleNavigate("verify")}
+                onOpenDegreeResults={() => handleNavigate("degree-marksheet-result")}
+                onOpenComplaints={() => handleNavigate("complaints-services")}
+                onOpenFindProgram={() => handleNavigate("find-program")}
+                onOpenHandbooks={() => handleNavigate("student-handbooks")}
+                onOpenAdmission={() => handleNavigate("online-admission")}
+                onOpenOsaps={() => handleNavigate("osaps-login")}
+                onOpenEbook={() => handleNavigate("ebook")}
+                onOpenWebmail={() => handleNavigate("web-email")}
               />
               <GovernmentAccreditation />
+              <DegreeProgramsSection 
+                onNavigateToDegreeVerify={() => handleNavigate("degree-marksheet-result")}
+                onNavigateToAdmission={(code) => {
+                  if (code) setSelectedAdmissionProgram(code);
+                  handleNavigate("online-admission");
+                }}
+                onNavigateToFindProgram={() => handleNavigate("find-program")}
+              />
               <VocationalSpecialization />
               <DiplomaStreams />
               <MissionAndServices />
+              <Contact />
+            </motion.div>
+          )}
+
+          {/* 2. FIND PROGRAM FULL PAGE ROUTE */}
+          {currentPage === "find-program" && (
+            <motion.div
+              key="find-program"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <FindProgramPage
+                onBackToHome={() => handleNavigate("home")}
+                onNavigateToAdmission={(code) => {
+                  if (code) setSelectedAdmissionProgram(code);
+                  handleNavigate("online-admission");
+                }}
+                onNavigateToVerify={() => handleNavigate("verify")}
+              />
+              <Contact />
+            </motion.div>
+          )}
+
+          {/* 3. STUDENT HANDBOOKS FULL PAGE ROUTE (Limited Availability) */}
+          {currentPage === "student-handbooks" && (
+            <motion.div
+              key="student-handbooks"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <StudentHandbooksPage
+                onBackToHome={() => handleNavigate("home")}
+                onNavigateToCourses={() => handleNavigate("courses")}
+                onNavigateToVerify={() => handleNavigate("verify")}
+              />
+              <Contact />
+            </motion.div>
+          )}
+
+          {/* 4. ONLINE ADMISSION FULL PAGE ROUTE */}
+          {currentPage === "online-admission" && (
+            <motion.div
+              key="online-admission"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <OnlineAdmissionPage
+                onBackToHome={() => handleNavigate("home")}
+                onNavigateToCourses={() => handleNavigate("courses")}
+                initialProgram={selectedAdmissionProgram}
+              />
+              <Contact />
+            </motion.div>
+          )}
+
+          {/* 5. OSAPS STUDENT LOGIN FULL PAGE ROUTE */}
+          {currentPage === "osaps-login" && (
+            <motion.div
+              key="osaps-login"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <OsapsLoginPage
+                students={students}
+                onBackToHome={() => handleNavigate("home")}
+                onNavigateToVerify={(student) => {
+                  if (student) {
+                    setSelectedStudent(student);
+                    handleNavigate("report");
+                  } else {
+                    handleNavigate("verify");
+                  }
+                }}
+                onNavigateToAdmin={() => handleNavigate("admin-login")}
+              />
+              <Contact />
+            </motion.div>
+          )}
+
+          {/* 6. E-BOOK DIGITAL LIBRARY FULL PAGE ROUTE (Limited Availability) */}
+          {currentPage === "ebook" && (
+            <motion.div
+              key="ebook"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <EbookPage
+                onBackToHome={() => handleNavigate("home")}
+                onNavigateToCourses={() => handleNavigate("courses")}
+              />
+              <Contact />
+            </motion.div>
+          )}
+
+          {/* 7. WEB EMAIL FULL PAGE ROUTE */}
+          {currentPage === "web-email" && (
+            <motion.div
+              key="web-email"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <WebEmailPage
+                onBackToHome={() => handleNavigate("home")}
+              />
+              <Contact />
+            </motion.div>
+          )}
+
+          {/* 8. RESEARCH & PUBLICATIONS FULL PAGE ROUTE */}
+          {currentPage === "research-publications" && (
+            <motion.div
+              key="research-publications"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ResearchPublicationsPage
+                onBackToHome={() => handleNavigate("home")}
+                onNavigateToEbooks={() => handleNavigate("ebook")}
+              />
+              <Contact />
+            </motion.div>
+          )}
+
+          {/* 9. NOTICES & ANNOUNCEMENTS FULL PAGE ROUTE */}
+          {currentPage === "notices" && (
+            <motion.div
+              key="notices"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <NoticesPage
+                onBackToHome={() => handleNavigate("home")}
+                onNavigateToVerify={() => handleNavigate("verify")}
+              />
+              <Contact />
+            </motion.div>
+          )}
+
+          {/* 10. REGIONAL CENTERS FULL PAGE ROUTE */}
+          {currentPage === "regional-centers" && (
+            <motion.div
+              key="regional-centers"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <RegionalCentersPage
+                onBackToHome={() => handleNavigate("home")}
+                onNavigateToContact={() => handleNavigate("help")}
+              />
               <Contact />
             </motion.div>
           )}
@@ -348,7 +466,7 @@ export default function App() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
             >
               <Specializations
                 onBackToHome={() => handleNavigate("home")}
@@ -364,7 +482,7 @@ export default function App() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
             >
               <DiplomaCourses
                 onBackToHome={() => handleNavigate("home")}
@@ -381,7 +499,7 @@ export default function App() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
             >
               <ServicesPage
                 onBackToHome={() => handleNavigate("home")}
@@ -401,7 +519,7 @@ export default function App() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
             >
               <div className="py-6 px-4 max-w-7xl mx-auto">
                 <button
@@ -424,7 +542,7 @@ export default function App() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
             >
               <PrivacyPolicy
                 onBackToHome={() => handleNavigate("home")}
@@ -441,7 +559,7 @@ export default function App() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
             >
               <TermsAndConditions
                 onBackToHome={() => handleNavigate("home")}
@@ -458,7 +576,7 @@ export default function App() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
             >
               <HelpCenter
                 onBackToHome={() => handleNavigate("home")}
@@ -475,15 +593,36 @@ export default function App() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
             >
               <div className="py-8 bg-gray-50/50">
                 <VerificationForm 
                   students={students} 
                   onVerifySuccess={handleVerifySuccess} 
                   isDbLoading={isDbLoading}
+                  onNavigateToDegreeVerify={() => handleNavigate("degree-marksheet-result")}
                 />
               </div>
+              <Contact />
+            </motion.div>
+          )}
+
+          {/* DEGREE / HONOURS / MASTERS FULL MARKSHEET RESULT ROUTE */}
+          {currentPage === "degree-marksheet-result" && (
+            <motion.div
+              key="degree-marksheet-result"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <DegreeResultVerificationPage
+                students={students}
+                isDbLoading={isDbLoading}
+                onBackToHome={() => handleNavigate("home")}
+                onNavigateToAdmin={() => handleNavigate("admin-login")}
+                onNavigateToSscHscVerify={() => handleNavigate("verify")}
+              />
               <Contact />
             </motion.div>
           )}
@@ -495,14 +634,11 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
             >
               <VerificationReport 
                 student={selectedStudent} 
                 onBack={() => {
-                  // If we came from the admin dashboard, return to admin! Otherwise, return to verify.
-                  // We can determine this by checking the last state or checking if they have admin state
-                  // Let's default back to the verification page
                   handleNavigate("verify");
                 }} 
               />
@@ -516,7 +652,7 @@ export default function App() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
             >
               {/* Back Button for Admin Page */}
               <div className="max-w-7xl mx-auto px-4 pt-6 no-print">
@@ -539,11 +675,77 @@ export default function App() {
             </motion.div>
           )}
 
+          {/* VICE-CHANCELLOR WELCOME MESSAGE ROUTE (উপাচার্যের শুভেচ্ছাপত্র) */}
+          {currentPage === "vc-message" && (
+            <motion.div
+              key="vc-message"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ViceChancellorMessage
+                onBackToHome={() => handleNavigate("home")}
+                onNavigateToVerify={() => handleNavigate("verify")}
+                onNavigateToCourses={() => handleNavigate("courses")}
+              />
+              <Contact />
+            </motion.div>
+          )}
+
+          {/* COMPLAINTS & STUDENT SERVICES ROUTE (অভিযোগ ও সেবা) */}
+          {currentPage === "complaints-services" && (
+            <motion.div
+              key="complaints-services"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ComplaintsAndServices
+                onBackToHome={() => handleNavigate("home")}
+                onNavigateToVerify={() => handleNavigate("verify")}
+                onNavigateToHelp={() => handleNavigate("help")}
+              />
+              <Contact />
+            </motion.div>
+          )}
+
+          {/* LEADERSHIP & INSTITUTIONAL GOVERNANCE ROUTE */}
+          {currentPage === "leadership-admin" && (
+            <motion.div
+              key="leadership-admin"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <LeadershipAdministrationPage
+                initialSection={leadershipSection}
+                onBackToHome={() => handleNavigate("home")}
+                onNavigateToVcMessage={() => handleNavigate("vc-message")}
+                onNavigateToRegionalCenters={() => handleNavigate("regional-centers")}
+                onNavigateToContact={() => handleNavigate("help")}
+                onNavigateToVerify={() => handleNavigate("verify")}
+              />
+              <Contact />
+            </motion.div>
+          )}
+
         </AnimatePresence>
       </main>
 
       {/* Official Government footer */}
       <Footer onNavigate={handleNavigate} />
+
+      {/* Scrollable Side Drawer Overlay (Only intended overlay) */}
+      <SideDrawer
+        isOpen={isSideDrawerOpen}
+        onClose={() => setIsSideDrawerOpen(false)}
+        onNavigate={handleNavigate}
+        currentPage={currentPage}
+      />
+
       </div>
     </div>
   );

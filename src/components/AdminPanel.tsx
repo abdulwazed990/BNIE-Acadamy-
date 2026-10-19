@@ -5,9 +5,16 @@ import { PASSPORT_AVATARS } from "../data/defaultStudents";
 import Logo from "./Logo";
 import { 
   Plus, Edit2, Trash2, Eye, ShieldCheck, LogOut, Search, User, Key, 
-  Calendar, FileText, School, Clock, Upload, ArrowRight, Save, X, Image as ImageIcon
+  Calendar, FileText, School, Clock, Upload, ArrowRight, Save, X, Image as ImageIcon,
+  BookOpen, Tablet, CheckCircle2, Lock, ToggleLeft, ToggleRight
 } from "lucide-react";
 import { motion } from "motion/react";
+import { 
+  getStoredHandbooks, saveStoredHandbooks, HandbookItem,
+  getStoredEbooks, saveStoredEbooks, EbookItem
+} from "../data/resourcesData";
+import LeadershipAdminModule from "./LeadershipAdminModule";
+import DegreeStudentForm from "./DegreeStudentForm";
 
 interface AdminPanelProps {
   students: Student[];
@@ -34,6 +41,23 @@ export default function AdminPanel({
   // Dashboard Filters & Search
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<Category | "ALL">("ALL");
+
+  // Admin section tab: "students" | "resources" | "leadership"
+  const [adminActiveTab, setAdminActiveTab] = useState<"students" | "resources" | "leadership">("students");
+  const [adminHandbooks, setAdminHandbooks] = useState<HandbookItem[]>(() => getStoredHandbooks());
+  const [adminEbooks, setAdminEbooks] = useState<EbookItem[]>(() => getStoredEbooks());
+
+  const handleToggleHandbookAvailability = (id: string) => {
+    const updated = adminHandbooks.map((h) => (h.id === id ? { ...h, isAvailable: !h.isAvailable } : h));
+    setAdminHandbooks(updated);
+    saveStoredHandbooks(updated);
+  };
+
+  const handleToggleEbookAvailability = (id: string) => {
+    const updated = adminEbooks.map((e) => (e.id === id ? { ...e, isAvailable: !e.isAvailable } : e));
+    setAdminEbooks(updated);
+    saveStoredEbooks(updated);
+  };
 
   // Add / Edit Form Modal state
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -116,11 +140,17 @@ export default function AdminPanel({
     setFormSubjects(updatedSubjects);
   };
 
-  // Triggered when clicking "Add Student"
-  const openAddModal = () => {
+  // Triggered when clicking "Add Student" with optional category
+  const openAddModal = (cat: Category = Category.SSC) => {
     setEditingStudentId(null);
-    setFormCategory(Category.SSC);
-    setFormGroup(Group.SCIENCE);
+    setFormCategory(cat);
+
+    if (cat === Category.DEGREE_PASS || cat === Category.HONOURS || cat === Category.MASTERS) {
+      setIsFormOpen(true);
+      return;
+    }
+
+    setFormGroup(cat === Category.DIPLOMA ? Group.MECHANICAL_ENGINEERING : Group.SCIENCE);
     setFormReligion(Religion.ISLAM);
     setFormName("");
     setFormFatherName("");
@@ -131,13 +161,13 @@ export default function AdminPanel({
     setFormInstitute("Bangladesh National Institute of Education");
     setFormSession("2022-2023");
     setFormPassingYear("2024");
-    setFormCertificateSerial(`BNIE-SSC-2024-${Math.floor(Math.random() * 89999 + 10000)}`);
+    setFormCertificateSerial(`BNIE-${cat}-2024-${Math.floor(Math.random() * 89999 + 10000)}`);
     setFormIssueDate("2024-06-20");
     setFormPhoto(PASSPORT_AVATARS.male1);
     setQuickGpaInput("");
     setQuickMarksInput("");
     
-    const initialSubjects = generateEmptySubjectGrades(Category.SSC, Group.SCIENCE, Religion.ISLAM);
+    const initialSubjects = generateEmptySubjectGrades(cat, cat === Category.DIPLOMA ? Group.MECHANICAL_ENGINEERING : Group.SCIENCE, Religion.ISLAM);
     setFormSubjects(initialSubjects);
     setIsFormOpen(true);
   };
@@ -146,6 +176,18 @@ export default function AdminPanel({
   const openEditModal = (student: Student) => {
     setEditingStudentId(student.id);
     setFormCategory(student.category);
+
+    // If Degree Pass, Honours, or Masters, open modal directly for DegreeStudentForm
+    if (
+      student.category === Category.DEGREE_PASS ||
+      student.category === Category.HONOURS ||
+      student.category === Category.MASTERS ||
+      student.academicLevel
+    ) {
+      setIsFormOpen(true);
+      return;
+    }
+
     setFormGroup(student.group);
     setFormReligion(student.religion);
     setFormName(student.name);
@@ -633,22 +675,280 @@ export default function AdminPanel({
         </div>
       </div>
 
-      {/* Database Filtering & Search Bar */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-4 md:p-6 shadow-xs space-y-4 mb-8">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+      {/* Main Admin Section Tabs */}
+      <div className="flex flex-wrap items-center gap-3 mb-6 border-b border-gray-200 pb-3">
+        <button
+          type="button"
+          onClick={() => setAdminActiveTab("students")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            adminActiveTab === "students"
+              ? "bg-[#006a4e] text-white shadow-xs"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+        >
+          <User className="w-4 h-4" />
+          <span>Student Ledgers &amp; Certificates ({students.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setAdminActiveTab("leadership")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            adminActiveTab === "leadership"
+              ? "bg-[#006a4e] text-white shadow-xs"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4" />
+          <span>Leadership &amp; Administration Management</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setAdminActiveTab("resources")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            adminActiveTab === "resources"
+              ? "bg-[#006a4e] text-white shadow-xs"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+        >
+          <BookOpen className="w-4 h-4" />
+          <span>Resource Availability (হ্যান্ডবুক ও ই-বুক নিয়ন্ত্রণ)</span>
+        </button>
+      </div>
+
+      {adminActiveTab === "leadership" ? (
+        <LeadershipAdminModule />
+      ) : adminActiveTab === "resources" ? (
+        <div className="space-y-8 mb-10">
+          {/* Resources Header */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs space-y-2">
+            <h3 className="text-lg font-bold text-gray-950 font-sans flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-[#006a4e]" />
+              <span>Student Handbooks &amp; E-Books Availability Controller</span>
+            </h3>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Control the live availability status of Student Handbooks and Educational E-Books across the website. Only items marked &quot;Available&quot; provide View and Download capabilities to students and visitors. Unavailable items display an inactive &quot;Not Available&quot; badge without download buttons or broken links.
+            </p>
+          </div>
+
+          {/* Section 1: Student Handbooks */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div>
+                <h4 className="font-bold text-base text-gray-900 font-sans flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-[#006a4e]" />
+                  <span>Student Handbooks ({adminHandbooks.filter(h => h.isAvailable).length} Available / {adminHandbooks.length} Total)</span>
+                </h4>
+                <span className="text-[11px] text-gray-500">Toggle live availability for institutional handbooks</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {adminHandbooks.map((hb) => (
+                <div key={hb.id} className="p-4 rounded-xl border border-gray-200 bg-gray-50/50 flex items-start justify-between gap-4">
+                  <div className="space-y-1 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-white border border-gray-200 text-gray-700">
+                        {hb.code}
+                      </span>
+                      <span className="text-[10px] text-gray-500 font-medium">{hb.category}</span>
+                    </div>
+                    <h5 className="text-xs font-bold text-gray-900 leading-snug">{hb.title}</h5>
+                    <p className="text-[11px] text-gray-500">{hb.pages} • {hb.size}</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleToggleHandbookAvailability(hb.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors shrink-0 flex items-center gap-1.5 ${
+                      hb.isAvailable 
+                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200"
+                        : "bg-gray-200 text-gray-700 border border-gray-300 hover:bg-gray-300"
+                    }`}
+                  >
+                    {hb.isAvailable ? (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Available</span>
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-3.5 h-3.5 text-gray-500" />
+                        <span>Not Available</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Section 2: Educational E-Books */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div>
+                <h4 className="font-bold text-base text-gray-900 font-sans flex items-center gap-2">
+                  <Tablet className="w-4 h-4 text-[#006a4e]" />
+                  <span>Digital Textbooks &amp; E-Books ({adminEbooks.filter(e => e.isAvailable).length} Available / {adminEbooks.length} Total)</span>
+                </h4>
+                <span className="text-[11px] text-gray-500">Toggle live availability for educational textbooks</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {adminEbooks.map((eb) => (
+                <div key={eb.id} className="p-4 rounded-xl border border-gray-200 bg-gray-50/50 flex items-start justify-between gap-4">
+                  <div className="space-y-1 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-white border border-gray-200 text-emerald-700">
+                        {eb.code}
+                      </span>
+                      <span className="text-[10px] text-gray-500 font-medium">{eb.category}</span>
+                    </div>
+                    <h5 className="text-xs font-bold text-gray-900 leading-snug">{eb.title}</h5>
+                    <p className="text-[11px] text-gray-500">{eb.author} • {eb.edition}</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleToggleEbookAvailability(eb.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors shrink-0 flex items-center gap-1.5 ${
+                      eb.isAvailable 
+                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200"
+                        : "bg-gray-200 text-gray-700 border border-gray-300 hover:bg-gray-300"
+                    }`}
+                  >
+                    {eb.isAvailable ? (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Available</span>
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-3.5 h-3.5 text-gray-500" />
+                        <span>Not Available</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+        {/* ADD STUDENT BY ACADEMIC CATEGORY — VISIBLE SELECTOR */}
+        <div className="bg-white border-2 border-[#006a4e]/25 rounded-2xl p-5 shadow-xs mb-6 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2.5 border-b border-gray-100 gap-2">
+            <div>
+              <h3 className="text-xs font-black uppercase tracking-wider text-black flex items-center gap-2">
+                <Plus className="w-4 h-4 text-[#006a4e]" />
+                <span>Add Student by Academic Category</span>
+              </h3>
+              <p className="text-[11px] text-gray-500">
+                Select qualification to launch the dedicated student registration form. SSC, HSC, and Diploma use school systems; Degree Pass, Honours, and Masters open higher education semester forms.
+              </p>
+            </div>
+            <span className="text-[10px] font-mono font-bold text-[#006a4e] bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 self-start sm:self-auto">
+              6 Academic Qualifications Available
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
+            <button
+              type="button"
+              onClick={() => openAddModal(Category.SSC)}
+              className="p-3 rounded-xl border border-gray-200 bg-gray-50/80 hover:bg-emerald-50 hover:border-[#006a4e] text-left transition-all cursor-pointer group shadow-2xs"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-900 group-hover:text-[#006a4e]">SSC</span>
+                <span className="text-[9px] font-mono text-gray-400">5.00</span>
+              </div>
+              <span className="text-[10px] text-gray-500 block mt-0.5">Secondary School</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => openAddModal(Category.HSC)}
+              className="p-3 rounded-xl border border-gray-200 bg-gray-50/80 hover:bg-emerald-50 hover:border-[#006a4e] text-left transition-all cursor-pointer group shadow-2xs"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-900 group-hover:text-[#006a4e]">HSC</span>
+                <span className="text-[9px] font-mono text-gray-400">5.00</span>
+              </div>
+              <span className="text-[10px] text-gray-500 block mt-0.5">Higher Secondary</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => openAddModal(Category.DIPLOMA)}
+              className="p-3 rounded-xl border border-gray-200 bg-gray-50/80 hover:bg-emerald-50 hover:border-[#006a4e] text-left transition-all cursor-pointer group shadow-2xs"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-900 group-hover:text-[#006a4e]">Diploma</span>
+                <span className="text-[9px] font-mono text-gray-400">4.00</span>
+              </div>
+              <span className="text-[10px] text-gray-500 block mt-0.5">Polytechnic 4-Year</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => openAddModal(Category.DEGREE_PASS)}
+              className="p-3 rounded-xl border-2 border-[#006a4e]/40 bg-emerald-50/40 hover:bg-emerald-100/70 hover:border-[#006a4e] text-left transition-all cursor-pointer group shadow-2xs"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-[#006a4e]">Degree Pass</span>
+                <span className="text-[9px] font-mono font-bold text-[#006a4e]">4.00</span>
+              </div>
+              <span className="text-[10px] text-gray-600 block mt-0.5 font-medium">3-Year Annual</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => openAddModal(Category.HONOURS)}
+              className="p-3 rounded-xl border-2 border-[#006a4e]/40 bg-emerald-50/40 hover:bg-emerald-100/70 hover:border-[#006a4e] text-left transition-all cursor-pointer group shadow-2xs"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-[#006a4e]">Honours</span>
+                <span className="text-[9px] font-mono font-bold text-[#006a4e]">4.00</span>
+              </div>
+              <span className="text-[10px] text-gray-600 block mt-0.5 font-medium">4-Year Bachelor</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => openAddModal(Category.MASTERS)}
+              className="p-3 rounded-xl border-2 border-[#006a4e]/40 bg-emerald-50/40 hover:bg-emerald-100/70 hover:border-[#006a4e] text-left transition-all cursor-pointer group shadow-2xs"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-[#006a4e]">Masters</span>
+                <span className="text-[9px] font-mono font-bold text-[#006a4e]">4.00</span>
+              </div>
+              <span className="text-[10px] text-gray-600 block mt-0.5 font-medium">Post-Graduate</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Database Filtering & Search Bar */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 md:p-6 shadow-xs space-y-4 mb-8">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
           
           {/* Category Tabs */}
           <div className="flex flex-wrap gap-2">
             {[
-              { value: "ALL", label: "All Records" },
-              { value: Category.SSC, label: "SSC Students" },
-              { value: Category.HSC, label: "HSC Students" },
-              { value: Category.DIPLOMA, label: "Diploma Students" }
+              { value: "ALL", label: `All Records (${students.length})` },
+              { value: Category.SSC, label: `SSC (${students.filter(s => s.category === Category.SSC).length})` },
+              { value: Category.HSC, label: `HSC (${students.filter(s => s.category === Category.HSC).length})` },
+              { value: Category.DIPLOMA, label: `Diploma (${students.filter(s => s.category === Category.DIPLOMA).length})` },
+              { value: Category.DEGREE_PASS, label: `Degree Pass (${students.filter(s => s.category === Category.DEGREE_PASS).length})` },
+              { value: Category.HONOURS, label: `Honours (${students.filter(s => s.category === Category.HONOURS).length})` },
+              { value: Category.MASTERS, label: `Masters (${students.filter(s => s.category === Category.MASTERS).length})` }
             ].map((tab) => (
               <button
                 key={tab.value}
                 onClick={() => setActiveCategory(tab.value as Category | "ALL")}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   activeCategory === tab.value
                     ? "bg-[#006a4e]/10 text-[#006a4e] border border-[#006a4e]/20"
                     : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-transparent"
@@ -698,14 +998,16 @@ export default function AdminPanel({
                     <div>
                       <h4 className="font-bold text-gray-950 text-sm font-sans line-clamp-1">{stud.name}</h4>
                       <span className="inline-block text-[9px] font-bold bg-[#006a4e]/10 text-[#006a4e] px-1.5 py-0.5 rounded-md mt-0.5">
-                        {stud.category} — {stud.group}
+                        {stud.category} — {stud.programName ? stud.programName : stud.group}
                       </span>
                     </div>
                   </div>
                   
                   {/* GPA Badge */}
                   <div className="text-right">
-                    <span className="text-[10px] text-gray-400 block uppercase font-semibold">GPA</span>
+                    <span className="text-[10px] text-gray-400 block uppercase font-semibold">
+                      {stud.category === Category.DEGREE_PASS || stud.category === Category.HONOURS || stud.category === Category.MASTERS || stud.category === Category.DIPLOMA ? "CGPA (4.00)" : "GPA (5.00)"}
+                    </span>
                     <span className="text-sm font-black font-mono text-[#006a4e]">
                       {stud.finalGpa.toFixed(2)}
                     </span>
@@ -723,6 +1025,24 @@ export default function AdminPanel({
                     <span className="text-gray-400">Reg No:</span>
                     <span className="font-bold text-gray-800 font-mono">{stud.registrationNumber}</span>
                   </div>
+                  {stud.department && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Dept:</span>
+                      <span className="font-semibold text-gray-800 truncate max-w-[150px]">{stud.department}</span>
+                    </div>
+                  )}
+                  {stud.majorSubject && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Major:</span>
+                      <span className="font-bold text-[#006a4e] truncate max-w-[150px]">{stud.majorSubject}</span>
+                    </div>
+                  )}
+                  {stud.semesterResults && stud.semesterResults.length > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Transcripts:</span>
+                      <span className="font-mono font-bold text-gray-800">{stud.semesterResults.length} Semesters/Years</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-gray-400">Passing Year:</span>
                     <span className="font-bold text-gray-800 font-mono">{stud.passingYear}</span>
@@ -767,6 +1087,8 @@ export default function AdminPanel({
           ))}
         </div>
       )}
+      </>
+      )}
 
       {/* Add / Edit Form Modal Dialog */}
       {isFormOpen && (
@@ -774,73 +1096,109 @@ export default function AdminPanel({
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            className={`bg-white rounded-2xl shadow-2xl border border-gray-200 w-full overflow-hidden flex flex-col ${
+              formCategory === Category.DEGREE_PASS || formCategory === Category.HONOURS || formCategory === Category.MASTERS
+                ? "max-w-5xl max-h-[92vh] overflow-y-auto"
+                : "max-w-4xl max-h-[90vh]"
+            }`}
           >
-            {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#006a4e] to-emerald-800 text-white p-5 flex items-center justify-between shrink-0">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-white/10 rounded-lg">
-                  <FileText className="w-5 h-5 text-emerald-200" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-base md:text-lg font-sans">
-                    {editingStudentId ? "Modify Student Credential Record" : "Add New Student Registry"}
-                  </h3>
-                  <p className="text-[11px] text-emerald-100">Ensure values correspond with printed verification registers</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsFormOpen(false)}
-                className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-white cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Form Scrollable Content */}
-            <form onSubmit={handleSaveStudent} className="p-6 md:p-8 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-6">
-              
-              {/* Left Column: Basic Information */}
-              <div className="md:col-span-6 space-y-4">
-                <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider border-b border-gray-200 pb-2">
-                  1. Candidate General Demographics
-                </h4>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Category */}
-                  <div>
-                    <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-1">Category</label>
-                    <select
-                      value={formCategory}
-                      onChange={(e) => {
-                        const newCat = e.target.value as Category;
-                        setFormCategory(newCat);
-                        
-                        // Default groups for categories
-                        let newGroup = formGroup;
-                        if (newCat === Category.DIPLOMA) {
-                          newGroup = Group.MECHANICAL_ENGINEERING;
-                          setFormGroup(Group.MECHANICAL_ENGINEERING);
-                        } else if (
-                          formGroup === Group.MECHANICAL_ENGINEERING ||
-                          formGroup === Group.ELECTRONICS_TECHNOLOGY ||
-                          formGroup === Group.ENGINEERING ||
-                          formGroup === Group.AIR_CONDITION_MAINTENANCE ||
-                          formGroup === Group.ELECTRICAL_ELECTRONICS_ENGINEERING
-                        ) {
-                          newGroup = Group.SCIENCE;
-                          setFormGroup(Group.SCIENCE);
-                        }
-                        
-                        handleFormCategoryGroupReligionChange(newCat, newGroup, formReligion, formSubjects);
-                      }}
-                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium"
-                    >
-                      <option value={Category.SSC}>SSC Program</option>
-                      <option value={Category.HSC}>HSC Program</option>
-                      <option value={Category.DIPLOMA}>Diploma in Engineering</option>
-                    </select>
+            {formCategory === Category.DEGREE_PASS || formCategory === Category.HONOURS || formCategory === Category.MASTERS ? (
+              <DegreeStudentForm
+                initialLevel={
+                  formCategory === Category.DEGREE_PASS
+                    ? "Degree Pass"
+                    : formCategory === Category.MASTERS
+                    ? "Masters"
+                    : "Honours"
+                }
+                existingStudent={editingStudentId ? students.find((s) => s.id === editingStudentId) : null}
+                onSaveStudent={(savedStudent) => {
+                  if (editingStudentId) {
+                    onUpdateStudent(savedStudent);
+                  } else {
+                    onAddStudent(savedStudent);
+                  }
+                  setIsFormOpen(false);
+                }}
+                onCancel={() => setIsFormOpen(false)}
+                onSwitchToSchoolSystem={(cat) => {
+                  setFormCategory(cat);
+                  handleFormCategoryGroupReligionChange(cat, cat === Category.DIPLOMA ? Group.MECHANICAL_ENGINEERING : Group.SCIENCE, formReligion, formSubjects);
+                }}
+              />
+            ) : (
+              <>
+                {/* Modal Header */}
+                <div className="bg-gradient-to-r from-[#006a4e] to-emerald-800 text-white p-5 flex items-center justify-between shrink-0">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-white/10 rounded-lg">
+                      <FileText className="w-5 h-5 text-emerald-200" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-base md:text-lg font-sans">
+                        {editingStudentId ? "Modify Student Credential Record" : "Add New Student Registry"}
+                      </h3>
+                      <p className="text-[11px] text-emerald-100">Ensure values correspond with printed verification registers</p>
+                    </div>
                   </div>
+                  <button
+                    onClick={() => setIsFormOpen(false)}
+                    className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-white cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Modal Form Scrollable Content */}
+                <form onSubmit={handleSaveStudent} className="p-6 md:p-8 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-6">
+                  
+                  {/* Left Column: Basic Information */}
+                  <div className="md:col-span-6 space-y-4">
+                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider border-b border-gray-200 pb-2">
+                      1. Candidate General Demographics
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Category */}
+                      <div>
+                        <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-1">Category</label>
+                        <select
+                          value={formCategory}
+                          onChange={(e) => {
+                            const newCat = e.target.value as Category;
+                            setFormCategory(newCat);
+                            if (newCat === Category.DEGREE_PASS || newCat === Category.HONOURS || newCat === Category.MASTERS) {
+                              return;
+                            }
+                            
+                            // Default groups for categories
+                            let newGroup = formGroup;
+                            if (newCat === Category.DIPLOMA) {
+                              newGroup = Group.MECHANICAL_ENGINEERING;
+                              setFormGroup(Group.MECHANICAL_ENGINEERING);
+                            } else if (
+                              formGroup === Group.MECHANICAL_ENGINEERING ||
+                              formGroup === Group.ELECTRONICS_TECHNOLOGY ||
+                              formGroup === Group.ENGINEERING ||
+                              formGroup === Group.AIR_CONDITION_MAINTENANCE ||
+                              formGroup === Group.ELECTRICAL_ELECTRONICS_ENGINEERING
+                            ) {
+                              newGroup = Group.SCIENCE;
+                              setFormGroup(Group.SCIENCE);
+                            }
+                            
+                            handleFormCategoryGroupReligionChange(newCat, newGroup, formReligion, formSubjects);
+                          }}
+                          className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium"
+                        >
+                          <option value={Category.SSC}>SSC</option>
+                          <option value={Category.HSC}>HSC</option>
+                          <option value={Category.DIPLOMA}>Diploma</option>
+                          <option value={Category.DEGREE_PASS}>Degree Pass</option>
+                          <option value={Category.HONOURS}>Honours</option>
+                          <option value={Category.MASTERS}>Masters</option>
+                        </select>
+                      </div>
 
                   {/* Group / Stream */}
                   <div>
@@ -918,7 +1276,7 @@ export default function AdminPanel({
                   <input
                     type="text"
                     required
-                    placeholder="Candidate full name"
+                    placeholder=""
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
                     className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium"
@@ -932,7 +1290,7 @@ export default function AdminPanel({
                     <input
                       type="text"
                       required
-                      placeholder="Father's full name"
+                      placeholder=""
                       value={formFatherName}
                       onChange={(e) => setFormFatherName(e.target.value)}
                       className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium"
@@ -943,7 +1301,7 @@ export default function AdminPanel({
                     <input
                       type="text"
                       required
-                      placeholder="Mother's full name"
+                      placeholder=""
                       value={formMotherName}
                       onChange={(e) => setFormMotherName(e.target.value)}
                       className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium"
@@ -960,7 +1318,7 @@ export default function AdminPanel({
                     <input
                       type="text"
                       required
-                      placeholder={formCategory === Category.DIPLOMA ? "e.g. ABC12345 or 666102" : "e.g. 102938"}
+                      placeholder=""
                       value={formRoll}
                       onChange={(e) => setFormRoll(e.target.value.replace(/[^a-zA-Z0-9\-_/]/g, ""))}
                       className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium font-mono"
@@ -973,7 +1331,7 @@ export default function AdminPanel({
                     <input
                       type="text"
                       required
-                      placeholder={formCategory === Category.DIPLOMA ? "e.g. REG98234 or 1502938499" : "e.g. 2019384756"}
+                      placeholder=""
                       value={formReg}
                       onChange={(e) => setFormReg(e.target.value.replace(/[^a-zA-Z0-9\-_/]/g, ""))}
                       className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium font-mono"
@@ -988,7 +1346,7 @@ export default function AdminPanel({
                     <input
                       type="text"
                       required
-                      placeholder="School or College Name"
+                      placeholder=""
                       value={formInstitute}
                       onChange={(e) => setFormInstitute(e.target.value)}
                       className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium"
@@ -999,7 +1357,7 @@ export default function AdminPanel({
                     <input
                       type="text"
                       required
-                      placeholder="e.g. 2022-2023"
+                      placeholder=""
                       value={formSession}
                       onChange={(e) => setFormSession(e.target.value)}
                       className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium font-mono"
@@ -1014,7 +1372,7 @@ export default function AdminPanel({
                     <input
                       type="text"
                       required
-                      placeholder="e.g. 2024"
+                      placeholder=""
                       value={formPassingYear}
                       onChange={(e) => setFormPassingYear(e.target.value.replace(/\D/g, ""))}
                       className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium font-mono"
@@ -1025,7 +1383,7 @@ export default function AdminPanel({
                     <input
                       type="text"
                       required
-                      placeholder="e.g. BNIE-SSC-2024-55102"
+                      placeholder=""
                       value={formCertificateSerial}
                       onChange={(e) => setFormCertificateSerial(e.target.value)}
                       className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium font-mono"
@@ -1396,6 +1754,8 @@ export default function AdminPanel({
               </div>
 
             </form>
+            </>
+            )}
           </motion.div>
         </div>
       )}

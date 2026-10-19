@@ -285,7 +285,7 @@ export default function HelpCenter({ onBackToHome, onNavigateToVerify }: HelpCen
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Md. Abdul Karim"
+                  placeholder=""
                   value={ticketName}
                   onChange={(e) => setTicketName(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:bg-white focus:outline-none focus:border-[#006a4e]"
@@ -298,7 +298,7 @@ export default function HelpCenter({ onBackToHome, onNavigateToVerify }: HelpCen
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. ACM1029 / REG90182736"
+                  placeholder=""
                   value={ticketRoll}
                   onChange={(e) => setTicketRoll(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:bg-white focus:outline-none focus:border-[#006a4e]"
@@ -314,7 +314,7 @@ export default function HelpCenter({ onBackToHome, onNavigateToVerify }: HelpCen
                 <input
                   type="email"
                   required
-                  placeholder="name@example.com"
+                  placeholder=""
                   value={ticketEmail}
                   onChange={(e) => setTicketEmail(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:bg-white focus:outline-none focus:border-[#006a4e]"
@@ -347,7 +347,7 @@ export default function HelpCenter({ onBackToHome, onNavigateToVerify }: HelpCen
               <textarea
                 required
                 rows={4}
-                placeholder="Please describe your query with candidate details, session, and any relevant certificate serial numbers..."
+                placeholder=""
                 value={ticketMessage}
                 onChange={(e) => setTicketMessage(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:bg-white focus:outline-none focus:border-[#006a4e]"

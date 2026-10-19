@@ -708,7 +708,7 @@ export default function DiplomaCourses({ onBackToHome, onNavigateToVerify }: Dip
                                   required
                                   value={applyName}
                                   onChange={(e) => setApplyName(e.target.value)}
-                                  placeholder="e.g. Mohammad Abdul"
+                                  placeholder=""
                                   className="w-full bg-white border border-gray-300 rounded-xl pl-9 pr-3 py-2.5 text-xs focus:outline-hidden focus:border-[#006a4e]"
                                 />
                               </div>
@@ -723,7 +723,7 @@ export default function DiplomaCourses({ onBackToHome, onNavigateToVerify }: Dip
                                   required
                                   value={applyPhone}
                                   onChange={(e) => setApplyPhone(e.target.value)}
-                                  placeholder="e.g. +8801700000000"
+                                  placeholder=""
                                   className="w-full bg-white border border-gray-300 rounded-xl pl-9 pr-3 py-2.5 text-xs focus:outline-hidden focus:border-[#006a4e]"
                                 />
                               </div>
@@ -740,7 +740,7 @@ export default function DiplomaCourses({ onBackToHome, onNavigateToVerify }: Dip
                                   required
                                   value={applyEmail}
                                   onChange={(e) => setApplyEmail(e.target.value)}
-                                  placeholder="e.g. name@gmail.com"
+                                  placeholder=""
                                   className="w-full bg-white border border-gray-300 rounded-xl pl-9 pr-3 py-2.5 text-xs focus:outline-hidden focus:border-[#006a4e]"
                                 />
                               </div>
@@ -1039,7 +1039,7 @@ export default function DiplomaCourses({ onBackToHome, onNavigateToVerify }: Dip
                     required
                     value={prospectusEmail}
                     onChange={(e) => setProspectusEmail(e.target.value)}
-                    placeholder="e.g. yourname@gmail.com"
+                    placeholder=""
                     className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-hidden focus:border-[#006a4e]"
                   />
                   <span className="text-[10px] text-gray-400 block font-light leading-normal">

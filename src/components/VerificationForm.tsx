@@ -1,12 +1,13 @@
 import { useState, useEffect, FormEvent } from "react";
 import { Category, Student } from "../types";
-import { RefreshCw, SearchCode, ShieldAlert, CheckCircle2, FileKey2 } from "lucide-react";
+import { RefreshCw, SearchCode, ShieldAlert, CheckCircle2, FileKey2, GraduationCap } from "lucide-react";
 import { motion } from "motion/react";
 
 interface VerificationFormProps {
   students: Student[];
   onVerifySuccess: (student: Student) => void;
   isDbLoading?: boolean;
+  onNavigateToDegreeVerify?: () => void;
 }
 
 interface Captcha {
@@ -16,7 +17,12 @@ interface Captcha {
   result: number;
 }
 
-export default function VerificationForm({ students, onVerifySuccess, isDbLoading = false }: VerificationFormProps) {
+export default function VerificationForm({ 
+  students, 
+  onVerifySuccess, 
+  isDbLoading = false,
+  onNavigateToDegreeVerify 
+}: VerificationFormProps) {
   // Input fields
   const [category, setCategory] = useState<Category>(Category.SSC);
   const [rollNumber, setRollNumber] = useState("");
@@ -263,6 +269,23 @@ export default function VerificationForm({ students, onVerifySuccess, isDbLoadin
           </span>
         </div>
 
+        {/* Switcher to Degree / Honours / Masters Result Check */}
+        {onNavigateToDegreeVerify && (
+          <div className="bg-emerald-50/70 border-b border-emerald-200 px-6 py-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center space-x-2 text-xs text-gray-700">
+              <GraduationCap className="w-4 h-4 text-[#006a4e]" />
+              <span>Looking for <strong>Degree Pass, Honours, or Masters</strong> full marksheet results?</span>
+            </div>
+            <button
+              type="button"
+              onClick={onNavigateToDegreeVerify}
+              className="text-xs font-bold text-[#006a4e] hover:text-[#005a42] hover:underline cursor-pointer flex items-center gap-1"
+            >
+              <span>Degree / Honours / Masters Result Check →</span>
+            </button>
+          </div>
+        )}
+
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6">
           
@@ -326,7 +349,7 @@ export default function VerificationForm({ students, onVerifySuccess, isDbLoadin
                 type="text"
                 required
                 disabled={isTokenLoaded}
-                placeholder={category === Category.DIPLOMA ? "e.g. ABC12345 or 666102" : "e.g. 102938"}
+                placeholder=""
                 value={rollNumber}
                 onChange={(e) => {
                   setRollNumber(e.target.value.replace(/[^a-zA-Z0-9\-_/]/g, ""));
@@ -345,7 +368,7 @@ export default function VerificationForm({ students, onVerifySuccess, isDbLoadin
                 type="text"
                 required
                 disabled={isTokenLoaded}
-                placeholder={category === Category.DIPLOMA ? "e.g. REG98234 or 1502938499" : "e.g. 2019384756"}
+                placeholder=""
                 value={registrationNumber}
                 onChange={(e) => {
                   setRegistrationNumber(e.target.value.replace(/[^a-zA-Z0-9\-_/]/g, ""));

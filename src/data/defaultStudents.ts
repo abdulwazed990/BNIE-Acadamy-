@@ -258,11 +258,111 @@ export const DEFAULT_STUDENTS: Student[] = [
     photoUrl: PASSPORT_AVATARS.male1,
     subjects: mechanicalGrades,
     finalGpa: 3.88
+  },
+  {
+    id: "BNIE-DEG-1001",
+    category: Category.DEGREE_PASS,
+    academicLevel: "Degree Pass",
+    programCode: "BA-PASS",
+    programName: "Bachelor of Arts (B.A. Pass)",
+    department: "Faculty of Arts & Humanities",
+    majorSubject: "Bengali National & Modern Literature",
+    group: Group.HUMANITIES,
+    religion: Religion.ISLAM,
+    name: "Farhana Akter Rima",
+    fatherName: "Nurul Islam",
+    motherName: "Suraiya Begum",
+    dob: "2001-04-10",
+    rollNumber: "331001",
+    registrationNumber: "1903829101",
+    instituteName: "Bangladesh National Institute of Education (BNIE)",
+    session: "2020-2023",
+    currentSemesterOrYear: "3rd Year (Final)",
+    passingYear: "2024",
+    certificateSerialNumber: "BNIE-DEG-2024-33101",
+    issueDate: "2024-07-20",
+    photoUrl: PASSPORT_AVATARS.female1,
+    finalGpa: 3.65,
+    resultStatus: "First Division",
+    semesterResults: DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "BA-PASS") 
+      ? generateDefaultSemesterResults(DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "BA-PASS")!, 2)
+      : [],
+    subjects: DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "BA-PASS") 
+      ? generateDefaultSemesterResults(DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "BA-PASS")!, 2).flatMap(s => s.subjects)
+      : [],
+    secureToken: "bnie_sec_deg_331001"
+  },
+  {
+    id: "BNIE-HON-2001",
+    category: Category.HONOURS,
+    academicLevel: "Honours",
+    programCode: "CSE-HON",
+    programName: "B.Sc. (Honours) in Computer Science & Engineering (CSE)",
+    department: "Department of Computer Science & Engineering",
+    majorSubject: "Software Engineering & Artificial Intelligence",
+    group: Group.SCIENCE,
+    religion: Religion.ISLAM,
+    name: "Shahriar Ahmed Tanvir",
+    fatherName: "Kamrul Hassan",
+    motherName: "Nasreen Sultana",
+    dob: "2000-09-18",
+    rollNumber: "441001",
+    registrationNumber: "2003829102",
+    instituteName: "Bangladesh National Institute of Education (BNIE)",
+    session: "2019-2023",
+    currentSemesterOrYear: "8th Semester (Final)",
+    passingYear: "2024",
+    certificateSerialNumber: "BNIE-HON-2024-44102",
+    issueDate: "2024-08-15",
+    photoUrl: PASSPORT_AVATARS.male1,
+    finalGpa: 3.82,
+    resultStatus: "First Class with Honours",
+    semesterResults: DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "CSE-HON")
+      ? generateDefaultSemesterResults(DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "CSE-HON")!, 4)
+      : [],
+    subjects: DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "CSE-HON")
+      ? generateDefaultSemesterResults(DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "CSE-HON")!, 4).flatMap(s => s.subjects)
+      : [],
+    secureToken: "bnie_sec_hon_441001"
+  },
+  {
+    id: "BNIE-MAS-3001",
+    category: Category.MASTERS,
+    academicLevel: "Masters",
+    programCode: "MBA-GEN",
+    programName: "Master of Business Administration (M.B.A.)",
+    department: "Faculty of Business Administration",
+    majorSubject: "Financial Management & Banking",
+    group: Group.BUSINESS_STUDIES,
+    religion: Religion.ISLAM,
+    name: "Nusrat Jahan Mim",
+    fatherName: "Abdul Mannan",
+    motherName: "Ferdousi Begum",
+    dob: "1998-11-22",
+    rollNumber: "551001",
+    registrationNumber: "2203829103",
+    instituteName: "Bangladesh National Institute of Education (BNIE)",
+    session: "2022-2024",
+    currentSemesterOrYear: "4th Semester (Final)",
+    passingYear: "2024",
+    certificateSerialNumber: "BNIE-MAS-2024-55103",
+    issueDate: "2024-09-10",
+    photoUrl: PASSPORT_AVATARS.female1,
+    finalGpa: 3.90,
+    resultStatus: "First Class with Distinction",
+    semesterResults: DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "MBA-GEN")
+      ? generateDefaultSemesterResults(DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "MBA-GEN")!, 6)
+      : [],
+    subjects: DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "MBA-GEN")
+      ? generateDefaultSemesterResults(DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "MBA-GEN")!, 6).flatMap(s => s.subjects)
+      : [],
+    secureToken: "bnie_sec_mas_551001"
   }
 ];
 
 // Ensure default students have consistent subject codes and marks matching their gradePoints
 import { getSubjectCode } from "./subjectLoader";
+import { DEGREE_PROGRAMS_CATALOG, generateDefaultSemesterResults } from "./degreeProgramsCatalog";
 import { generateSecureToken } from "../types";
 
 for (const student of DEFAULT_STUDENTS) {

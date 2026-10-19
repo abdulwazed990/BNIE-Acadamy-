@@ -3,29 +3,29 @@ import { motion } from "motion/react";
 
 const SERVICES = [
   {
-    title: "Certificate Verification",
+    title: "ডিগ্রি, অনার্স ও মাস্টার্স ফলাফল ও ট্রান্সক্রিপ্ট",
     icon: FileCheck2,
-    desc: "Instant digital authenticity checks of SSC, HSC, and Diploma certificates for employers, colleges, and global authorities."
+    desc: "৩ বছর মেয়াদী ডিগ্রি (পাস), ৪ বছর মেয়াদী অনার্স এবং স্নাতকোত্তর (মাস্টার্স) শিক্ষাক্রমের পূর্ণাঙ্গ সেমিস্টার মার্কশিট ও সনদ যাচাইকরণ।"
   },
   {
-    title: "Vocational Programs",
-    icon: Landmark,
-    desc: "Practical hands-on technical curricula curated in accordance with international vocational competency standards."
-  },
-  {
-    title: "Educational Support",
-    icon: HelpCircle,
-    desc: "Academic advising, exam registrations, duplicate certificates issue, and credentials correction helper desks."
-  },
-  {
-    title: "Student Record Verification",
-    icon: ShieldCheck,
-    desc: "Comprehensive database validation of academic session logs, attendance transcripts, and registration ledger entries."
-  },
-  {
-    title: "Diploma Information Service",
+    title: "পলিটেকনিক ডিপ্লোমা ইন ইঞ্জিনিয়ারিং",
     icon: CalendarRange,
-    desc: "Dedicated counseling and structural guidance for polytechnic streams, industrial attachments, and project modules."
+    desc: "১ থেকে ৪ বছর মেয়াদী পলিটেকনিক ডিপ্লোমা ইন ইঞ্জিনিয়ারিং ও ইন্ডাস্ট্রিয়াল ট্রেনিং এর প্রাতিষ্ঠানিক পাঠ্যক্রম ও অ্যাটাচমেন্ট।"
+  },
+  {
+    title: "এসএসসি ও এইচএসসি ভোকেশনাল",
+    icon: Landmark,
+    desc: "বাংলাদেশ কারিগরি শিক্ষা বোর্ড সমমান কারিকুলামে বাস্তবমুখী দক্ষতাভিত্তিক মাধ্যমিক ও উচ্চ মাধ্যমিক শিক্ষা।"
+  },
+  {
+    title: "অনলাইন সনদ ও রেকর্ড ভেরিফিকেশন",
+    icon: ShieldCheck,
+    desc: "কিউআর কোড (QR Code) ও কেন্দ্রীয় প্রাতিষ্ঠানিক ডেটাবেসের মাধ্যমে বিশ্বস্ত তাৎক্ষণিক সত্যতা যাচাই।"
+  },
+  {
+    title: "শিক্ষার্থী সহায়তা ও হেল্পডেস্ক",
+    icon: HelpCircle,
+    desc: "একাডেমিক এডভাইজিং, ট্রান্সক্রিপ্ট ও নম্বরপত্র ইস্যু, তথ্য সংশোধন ও ওয়ান-স্টপ স্টুডেন্ট সাপোর্ট।"
   }
 ];
 

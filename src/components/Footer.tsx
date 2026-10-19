@@ -58,7 +58,23 @@ export default function Footer({ onNavigate }: FooterProps) {
                     onClick={() => onNavigate("verify")}
                     className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer font-medium"
                   >
-                    Verify Certificate
+                    Verify Certificate (পরীক্ষার ফলাফল)
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => onNavigate("vc-message")}
+                    className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer"
+                  >
+                    উপাচার্যের শুভেচ্ছাপত্র
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => onNavigate("complaints-services")}
+                    className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer"
+                  >
+                    অভিযোগ ও সেবা (GRS)
                   </button>
                 </li>
                 <li>
