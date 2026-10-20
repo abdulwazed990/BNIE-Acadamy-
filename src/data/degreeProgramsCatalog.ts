@@ -307,29 +307,79 @@ export const DEGREE_PROGRAMS_CATALOG: DegreeProgram[] = [
     ]
   },
   {
-    code: "BBA-AIS",
-    name: "Bachelor of Business Administration (BBA) in Accounting",
-    nameBn: "বিবিএ (অনার্স) অ্যাকাউন্টিং অ্যান্ড ইনফরমেশন সিস্টেমস",
+    code: "BBA-ACC",
+    name: "Bachelor of Business Administration (BBA)",
+    nameBn: "ব্যাচেলর অব বিজনেস অ্যাডমিনিস্ট্রেশন (বিবিএ) — অ্যাকাউন্টিং",
     academicLevel: "Honours",
     department: "Department of Accounting & Information Systems",
     duration: "4 Years (8 Semesters)",
     structureType: "Semester-wise",
     periods: ["1st Semester", "2nd Semester", "3rd Semester", "4th Semester", "5th Semester", "6th Semester", "7th Semester", "8th Semester"],
     majorSubjects: [
+      "Accounting",
       "Financial Accounting & Advanced Financial Reporting",
       "Cost & Management Accounting",
       "Auditing, Assurance & Corporate Governance",
       "Taxation, Fiscal Law & Computerized Accounting Systems"
     ],
     defaultCourses: [
-      { subjectCode: "AIS-101", subjectName: "Principles of Financial Accounting", credits: 3, period: "1st Semester", defaultMarks: 85 },
-      { subjectCode: "AIS-201", subjectName: "Cost Accounting & Cost Controls", credits: 3, period: "2nd Semester", defaultMarks: 82 },
-      { subjectCode: "AIS-301", subjectName: "Intermediate Financial Reporting (IFRS)", credits: 3, period: "3rd Semester", defaultMarks: 84 },
-      { subjectCode: "AIS-401", subjectName: "Management Accounting for Decisions", credits: 3, period: "4th Semester", defaultMarks: 86 },
-      { subjectCode: "AIS-501", subjectName: "Direct & Indirect Tax Laws of Bangladesh", credits: 3, period: "5th Semester", defaultMarks: 83 },
-      { subjectCode: "AIS-601", subjectName: "Corporate Auditing & Forensic Accounting", credits: 3, period: "6th Semester", defaultMarks: 87 },
-      { subjectCode: "AIS-701", subjectName: "Computerized Accounting Systems & ERP Software", credits: 3, period: "7th Semester", defaultMarks: 89 },
-      { subjectCode: "AIS-801", subjectName: "Corporate Internship, Accounting Project & Viva", credits: 3, period: "8th Semester", defaultMarks: 92 }
+      // YEAR 1 — SEMESTER 1 (15 Credits)
+      { subjectCode: "AIS 1101", subjectName: "Introduction to Financial Accounting", credits: 3, period: "1st Semester", defaultMarks: 82 },
+      { subjectCode: "AIS 1102", subjectName: "Introduction to Business", credits: 3, period: "1st Semester", defaultMarks: 80 },
+      { subjectCode: "AIS 1103", subjectName: "Computer Concepts and Applications", credits: 3, period: "1st Semester", defaultMarks: 84 },
+      { subjectCode: "AIS 1104", subjectName: "Mathematics for Business Decisions-I", credits: 3, period: "1st Semester", defaultMarks: 78 },
+      { subjectCode: "AIS 1105", subjectName: "Business Communication", credits: 3, period: "1st Semester", defaultMarks: 85 },
+
+      // YEAR 1 — SEMESTER 2 (15 Credits)
+      { subjectCode: "AIS 1201", subjectName: "Intermediate Accounting", credits: 3, period: "2nd Semester", defaultMarks: 83 },
+      { subjectCode: "AIS 1202", subjectName: "Microeconomics", credits: 3, period: "2nd Semester", defaultMarks: 79 },
+      { subjectCode: "AIS 1203", subjectName: "Management and Organizational Behavior", credits: 3, period: "2nd Semester", defaultMarks: 81 },
+      { subjectCode: "AIS 1204", subjectName: "Mathematics for Business Decisions-II", credits: 3, period: "2nd Semester", defaultMarks: 80 },
+      { subjectCode: "AIS 1205", subjectName: "Bangladesh Studies", credits: 3, period: "2nd Semester", defaultMarks: 86 },
+
+      // YEAR 2 — SEMESTER 3 (15 Credits)
+      { subjectCode: "AIS 2101", subjectName: "Advanced Financial Accounting-I", credits: 3, period: "3rd Semester", defaultMarks: 84 },
+      { subjectCode: "AIS 2102", subjectName: "Macroeconomics", credits: 3, period: "3rd Semester", defaultMarks: 82 },
+      { subjectCode: "AIS 2103", subjectName: "Programming and Database Management", credits: 3, period: "3rd Semester", defaultMarks: 85 },
+      { subjectCode: "AIS 2104", subjectName: "General Science and Environment", credits: 3, period: "3rd Semester", defaultMarks: 83 },
+      { subjectCode: "AIS 2105", subjectName: "Business Statistics-I", credits: 3, period: "3rd Semester", defaultMarks: 81 },
+
+      // YEAR 2 — SEMESTER 4 (15 Credits)
+      { subjectCode: "AIS 2201", subjectName: "Advanced Financial Accounting-II", credits: 3, period: "4th Semester", defaultMarks: 85 },
+      { subjectCode: "AIS 2202", subjectName: "Financial Management", credits: 3, period: "4th Semester", defaultMarks: 82 },
+      { subjectCode: "AIS 2203", subjectName: "Cost Accounting", credits: 3, period: "4th Semester", defaultMarks: 86 },
+      { subjectCode: "AIS 2204", subjectName: "Marketing", credits: 3, period: "4th Semester", defaultMarks: 84 },
+      { subjectCode: "AIS 2205", subjectName: "Business Statistics-II", credits: 3, period: "4th Semester", defaultMarks: 83 },
+
+      // YEAR 3 — SEMESTER 5 (15 Credits)
+      { subjectCode: "AIS 3101", subjectName: "Management Accounting", credits: 3, period: "5th Semester", defaultMarks: 85 },
+      { subjectCode: "AIS 3102", subjectName: "Banking and Insurance", credits: 3, period: "5th Semester", defaultMarks: 82 },
+      { subjectCode: "AIS 3103", subjectName: "Audit and Assurance", credits: 3, period: "5th Semester", defaultMarks: 86 },
+      { subjectCode: "AIS 3104", subjectName: "Income Tax: Laws and Practice", credits: 3, period: "5th Semester", defaultMarks: 84 },
+      { subjectCode: "AIS 3105", subjectName: "Business Laws", credits: 3, period: "5th Semester", defaultMarks: 85 },
+
+      // YEAR 3 — SEMESTER 6 (15 Credits)
+      { subjectCode: "AIS 3201", subjectName: "Forensic Accounting and Fraud Investigation", credits: 3, period: "6th Semester", defaultMarks: 87 },
+      { subjectCode: "AIS 3202", subjectName: "Corporate Finance", credits: 3, period: "6th Semester", defaultMarks: 84 },
+      { subjectCode: "AIS 3203", subjectName: "Accounting Information Systems", credits: 3, period: "6th Semester", defaultMarks: 86 },
+      { subjectCode: "AIS 3204", subjectName: "VAT and Cross-border Taxation", credits: 3, period: "6th Semester", defaultMarks: 83 },
+      { subjectCode: "AIS 3205", subjectName: "Corporate Laws, Governance and Secretarial Practices", credits: 3, period: "6th Semester", defaultMarks: 85 },
+
+      // YEAR 4 — SEMESTER 7 (15 Credits)
+      { subjectCode: "AIS 4101", subjectName: "Advanced Management Accounting", credits: 3, period: "7th Semester", defaultMarks: 86 },
+      { subjectCode: "AIS 4102", subjectName: "Financial Market and Investment Analysis", credits: 3, period: "7th Semester", defaultMarks: 85 },
+      { subjectCode: "AIS 4103", subjectName: "IT Governance and Information System Audit", credits: 3, period: "7th Semester", defaultMarks: 88 },
+      { subjectCode: "AIS 4104", subjectName: "Supply Chain and Operation Management", credits: 3, period: "7th Semester", defaultMarks: 84 },
+      { subjectCode: "AIS 4105", subjectName: "Public Sector Accounting and Financial Management", credits: 3, period: "7th Semester", defaultMarks: 86 },
+
+      // YEAR 4 — SEMESTER 8 (21 Credits: 5 courses of 3 credits + Internship 3 credits + Combined Oral Exam 3 credits)
+      { subjectCode: "AIS 4201", subjectName: "Accounting Theory", credits: 3, period: "8th Semester", defaultMarks: 88 },
+      { subjectCode: "AIS 4202", subjectName: "Business Analysis and Valuation", credits: 3, period: "8th Semester", defaultMarks: 87 },
+      { subjectCode: "AIS 4203", subjectName: "Data Analytics", credits: 3, period: "8th Semester", defaultMarks: 89 },
+      { subjectCode: "AIS 4204", subjectName: "Strategic Management", credits: 3, period: "8th Semester", defaultMarks: 86 },
+      { subjectCode: "AIS 4205", subjectName: "Research Methodology", credits: 3, period: "8th Semester", defaultMarks: 88 },
+      { subjectCode: "AIS 4206", subjectName: "Internship Project Paper", credits: 3, period: "8th Semester", defaultMarks: 90 },
+      { subjectCode: "AIS 4207", subjectName: "Combined Annual Oral Examination (4 Sessions)", credits: 3, period: "8th Semester", defaultMarks: 92 }
     ]
   },
   {
@@ -622,7 +672,19 @@ export function getProgramsByLevel(level: "Degree Pass" | "Honours" | "Masters")
 }
 
 export function getProgramByCode(code: string): DegreeProgram | undefined {
-  return DEGREE_PROGRAMS_CATALOG.find((p) => p.code.toLowerCase() === code.toLowerCase());
+  const clean = code.toLowerCase().trim();
+  if (clean === "bba" || clean === "bba-acc" || clean === "bba-ais") {
+    return DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "BBA-ACC" || p.code === "BBA-AIS");
+  }
+  return DEGREE_PROGRAMS_CATALOG.find((p) => p.code.toLowerCase() === clean);
+}
+
+/**
+ * Returns the standardized default BBA in Accounting curriculum (126 Credits, 8 Semesters)
+ */
+export function getBbaAccountingCurriculum(): DegreeProgram {
+  const prog = DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "BBA-ACC")!;
+  return prog;
 }
 
 /**

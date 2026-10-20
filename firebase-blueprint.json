@@ -45,6 +45,23 @@
         "updatedAt": "string"
       },
       "indexes": []
+    },
+    "curriculums": {
+      "schema": {
+        "id": "string",
+        "programCode": "string",
+        "programName": "string",
+        "major": "string",
+        "duration": "string",
+        "totalSemesters": "number",
+        "totalCredits": "number",
+        "courseCredits": "number",
+        "oralExamCredits": "number",
+        "internshipCredits": "number",
+        "semesters": "array",
+        "updatedAt": "string"
+      },
+      "indexes": []
     }
   }
 }

@@ -162,7 +162,8 @@ export default function WebEmailPage({ onBackToHome }: WebEmailPageProps) {
                       <input
                         type="text"
                         required
-                        placeholder="username"
+                        autoComplete="off"
+                        placeholder=""
                         value={emailUser}
                         onChange={(e) => setEmailUser(e.target.value)}
                         className="flex-1 px-3.5 py-2.5 bg-gray-50 text-xs sm:text-sm font-medium focus:outline-hidden"

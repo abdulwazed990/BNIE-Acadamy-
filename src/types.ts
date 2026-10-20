@@ -78,6 +78,22 @@ export interface Student {
   resultStatus?: string; // e.g. "Passed", "First Class", "Promoted", "Graduated"
   maxGpa?: number; // 4.00
   semesterResults?: SemesterResult[];
+
+  // Automatic Academic Numbering, Timeline & Certification Fields
+  admissionYear?: string; // e.g. "2020"
+  courseDuration?: string; // e.g. "4 Years", "3 Years", "2 Years", "1 Year"
+  expectedCompletionYear?: string; // e.g. "2024"
+  examinationYear?: string; // e.g. "2024"
+  resultPublicationDate?: string; // e.g. "2024-05-20"
+  certificateIssueDate?: string; // e.g. "2024-11-16"
+  certificateNumber?: string; // e.g. "BNIE-BBA-CERT-2024-0012"
+  certificateStatus?: "Pending" | "Eligible for Issue" | "Issued";
+  auditLog?: Array<{
+    action: string;
+    timestamp: string;
+    details: string;
+    changedBy?: string;
+  }>;
 }
 
 export type LeadershipPosition =

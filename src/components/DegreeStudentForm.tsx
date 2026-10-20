@@ -16,8 +16,17 @@ import {
   DEGREE_PROGRAMS_CATALOG, 
   DegreeProgram, 
   getProgramsByLevel, 
-  generateDefaultSemesterResults 
+  generateDefaultSemesterResults,
+  getBbaAccountingCurriculum
 } from "../data/degreeProgramsCatalog";
+import { 
+  generateAutomaticRollNumber,
+  generateAutomaticRegistrationNumber,
+  calculateAcademicTimeline,
+  calculateSuggestedCertificateIssueDate,
+  generateOfficialCertificateNumber,
+  extractAdmissionYearFromSession
+} from "../lib/academicNumberingService";
 import { 
   GraduationCap, 
   BookOpen, 
@@ -36,13 +45,19 @@ import {
   Sparkles,
   ArrowLeft,
   Save,
-  X
+  X,
+  ShieldCheck,
+  History,
+  Lock,
+  Unlock,
+  RefreshCw
 } from "lucide-react";
 import { PASSPORT_AVATARS } from "../data/defaultStudents";
 
 interface DegreeStudentFormProps {
   initialLevel?: "Degree Pass" | "Honours" | "Masters";
   existingStudent?: Student | null;
+  allStudents?: Student[];
   onSaveStudent: (student: Student) => Promise<void> | void;
   onCancel: () => void;
   onSwitchToSchoolSystem?: (category: Category) => void;
@@ -51,6 +66,7 @@ interface DegreeStudentFormProps {
 export default function DegreeStudentForm({
   initialLevel = "Honours",
   existingStudent = null,
+  allStudents = [],
   onSaveStudent,
   onCancel,
   onSwitchToSchoolSystem
@@ -77,21 +93,107 @@ export default function DegreeStudentForm({
   const [motherName, setMotherName] = useState(existingStudent?.motherName || "");
   const [department, setDepartment] = useState(existingStudent?.department || currentProgram?.department || "");
   const [majorSubject, setMajorSubject] = useState(existingStudent?.majorSubject || currentProgram?.majorSubjects[0] || "");
-  const [session, setSession] = useState(existingStudent?.session || "2020-2021");
+  const [session, setSession] = useState(existingStudent?.session || "2024-2025");
   const [currentPeriod, setCurrentPeriod] = useState(
     existingStudent?.currentSemesterOrYear || (academicLevel === "Degree Pass" ? "3rd Year (Final)" : academicLevel === "Masters" ? "4th Semester (Final)" : "8th Semester (Final)")
   );
-  const [rollNumber, setRollNumber] = useState(existingStudent?.rollNumber || "");
-  const [registrationNumber, setRegistrationNumber] = useState(existingStudent?.registrationNumber || "");
-  const [studentId, setStudentId] = useState(existingStudent?.id || `BNIE-DEG-${Math.floor(100000 + Math.random() * 900000)}`);
-  const [certificateSerial, setCertificateSerial] = useState(
-    existingStudent?.certificateSerialNumber || `BNIE-${academicLevel === "Degree Pass" ? "DEG" : academicLevel.toUpperCase().slice(0, 3)}-2024-${Math.floor(10000 + Math.random() * 90000)}`
+
+  // Automatic Academic Timeline
+  const initialTimeline = calculateAcademicTimeline({
+    academicLevel: existingStudent?.academicLevel || initialLevel,
+    programCode: existingStudent?.programCode || selectedProgramCode,
+    session: existingStudent?.session || "2024-2025",
+    manualAdmissionYear: existingStudent?.admissionYear
+  });
+
+  const [admissionYear, setAdmissionYear] = useState<string>(
+    existingStudent?.admissionYear || initialTimeline.admissionYear
   );
-  const [passingYear, setPassingYear] = useState(existingStudent?.passingYear || "2024");
-  const [issueDate, setIssueDate] = useState(existingStudent?.issueDate || "2024-07-15");
+  const [courseDuration, setCourseDuration] = useState<string>(
+    existingStudent?.courseDuration || initialTimeline.courseDuration
+  );
+  const [expectedCompletionYear, setExpectedCompletionYear] = useState<string>(
+    existingStudent?.expectedCompletionYear || initialTimeline.expectedCompletionYear
+  );
+  const [examinationYear, setExaminationYear] = useState<string>(
+    existingStudent?.examinationYear || initialTimeline.examinationYear
+  );
+  const [passingYear, setPassingYear] = useState(existingStudent?.passingYear || initialTimeline.examinationYear);
+
+  // Result Publication Date
+  const [resultPublicationDate, setResultPublicationDate] = useState<string>(
+    existingStudent?.resultPublicationDate || initialTimeline.suggestedPublicationDate
+  );
+
+  // Certificate Issuance & Number
+  const [certificateStatus, setCertificateStatus] = useState<"Pending" | "Eligible for Issue" | "Issued">(
+    existingStudent?.certificateStatus || (existingStudent?.certificateSerialNumber ? "Issued" : "Pending")
+  );
+  const [certificateIssueDate, setCertificateIssueDate] = useState<string>(
+    existingStudent?.certificateIssueDate || existingStudent?.issueDate || initialTimeline.suggestedCertificateIssueDate
+  );
+  const [certificateSerial, setCertificateSerial] = useState(
+    existingStudent?.certificateNumber || existingStudent?.certificateSerialNumber || ""
+  );
+
+  // Automatic Roll & Registration Numbers (Preserve existing students, generate unique sequential for new)
+  const [rollNumber, setRollNumber] = useState<string>(() => {
+    if (existingStudent?.rollNumber) return existingStudent.rollNumber;
+    return generateAutomaticRollNumber({
+      academicLevel,
+      programCode: selectedProgramCode,
+      session: existingStudent?.session || "2024-2025",
+      admissionYear: initialTimeline.admissionYear,
+      existingStudents: allStudents
+    });
+  });
+
+  const [registrationNumber, setRegistrationNumber] = useState<string>(() => {
+    if (existingStudent?.registrationNumber) return existingStudent.registrationNumber;
+    return generateAutomaticRegistrationNumber({
+      academicLevel,
+      session: existingStudent?.session || "2024-2025",
+      admissionYear: initialTimeline.admissionYear,
+      existingStudents: allStudents
+    });
+  });
+
+  // Manual Override states with audit safety
+  const [isManualRollOverride, setIsManualRollOverride] = useState(false);
+  const [isManualRegOverride, setIsManualRegOverride] = useState(false);
+  const [auditLog, setAuditLog] = useState<Array<{ action: string; timestamp: string; details: string; changedBy?: string }>>(
+    existingStudent?.auditLog || []
+  );
+
+  const [studentId, setStudentId] = useState(existingStudent?.id || `BNIE-DEG-${Math.floor(100000 + Math.random() * 900000)}`);
+  const [issueDate, setIssueDate] = useState(existingStudent?.issueDate || initialTimeline.suggestedCertificateIssueDate);
   const [resultStatus, setResultStatus] = useState(existingStudent?.resultStatus || "First Class");
   const [photoUrl, setPhotoUrl] = useState(existingStudent?.photoUrl || PASSPORT_AVATARS.male1);
   const [dob, setDob] = useState(existingStudent?.dob || "2001-08-14");
+
+  // Recalculate automatic numbers for new student when level, program or session changes
+  const refreshAutoNumbers = (level = academicLevel, prog = selectedProgramCode, sess = session, admYr = admissionYear) => {
+    if (existingStudent) return; // Never overwrite existing student's numbers
+    if (!isManualRollOverride) {
+      const newRoll = generateAutomaticRollNumber({
+        academicLevel: level,
+        programCode: prog,
+        session: sess,
+        admissionYear: admYr,
+        existingStudents: allStudents
+      });
+      setRollNumber(newRoll);
+    }
+    if (!isManualRegOverride) {
+      const newReg = generateAutomaticRegistrationNumber({
+        academicLevel: level,
+        session: sess,
+        admissionYear: admYr,
+        existingStudents: allStudents
+      });
+      setRegistrationNumber(newReg);
+    }
+  };
 
   // Semester / Year-wise Results
   const [semesters, setSemesters] = useState<SemesterResult[]>(() => {
@@ -106,6 +208,7 @@ export default function DegreeStudentForm({
 
   // UI state
   const [expandedSemesters, setExpandedSemesters] = useState<Record<number, boolean>>({ 0: true, 1: true });
+  const [showAuditLogModal, setShowAuditLogModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -120,7 +223,21 @@ export default function DegreeStudentForm({
       setDepartment(p.department);
       setMajorSubject(p.majorSubjects[0] || "");
       setCurrentPeriod(newLevel === "Degree Pass" ? "3rd Year (Final)" : newLevel === "Masters" ? "4th Semester (Final)" : "8th Semester (Final)");
-      setCertificateSerial(`BNIE-${newLevel === "Degree Pass" ? "DEG" : newLevel.toUpperCase().slice(0, 3)}-2024-${Math.floor(10000 + Math.random() * 90000)}`);
+      
+      const timeline = calculateAcademicTimeline({
+        academicLevel: newLevel,
+        programCode: p.code,
+        session,
+        manualAdmissionYear: admissionYear
+      });
+      setCourseDuration(timeline.courseDuration);
+      setExpectedCompletionYear(timeline.expectedCompletionYear);
+      setExaminationYear(timeline.examinationYear);
+      setPassingYear(timeline.examinationYear);
+      setResultPublicationDate(timeline.suggestedPublicationDate);
+      setCertificateIssueDate(timeline.suggestedCertificateIssueDate);
+
+      refreshAutoNumbers(newLevel, p.code, session, admissionYear);
       setSemesters(generateDefaultSemesterResults(p));
     }
   };
@@ -131,13 +248,73 @@ export default function DegreeStudentForm({
     const p = DEGREE_PROGRAMS_CATALOG.find((item) => item.code === code);
     if (p) {
       setDepartment(p.department);
-      setMajorSubject(p.majorSubjects[0] || "");
+      const defaultMajor = p.majorSubjects[0] || "";
+      setMajorSubject(defaultMajor);
+
+      const timeline = calculateAcademicTimeline({
+        academicLevel,
+        programCode: code,
+        session,
+        manualAdmissionYear: admissionYear
+      });
+      setCourseDuration(timeline.courseDuration);
+      setExpectedCompletionYear(timeline.expectedCompletionYear);
+      setExaminationYear(timeline.examinationYear);
+
+      refreshAutoNumbers(academicLevel, code, session, admissionYear);
       setSemesters(generateDefaultSemesterResults(p));
     }
   };
 
+  // Handle Session or Admission Year change
+  const handleSessionChange = (newSession: string) => {
+    setSession(newSession);
+    const adm = extractAdmissionYearFromSession(newSession);
+    setAdmissionYear(adm);
+    const timeline = calculateAcademicTimeline({
+      academicLevel,
+      programCode: selectedProgramCode,
+      session: newSession,
+      manualAdmissionYear: adm
+    });
+    setExpectedCompletionYear(timeline.expectedCompletionYear);
+    setExaminationYear(timeline.examinationYear);
+    setPassingYear(timeline.examinationYear);
+    setResultPublicationDate(timeline.suggestedPublicationDate);
+    setCertificateIssueDate(timeline.suggestedCertificateIssueDate);
+    refreshAutoNumbers(academicLevel, selectedProgramCode, newSession, adm);
+  };
+
+  // Sync when major changes
+  const handleMajorChange = (newMajor: string) => {
+    setMajorSubject(newMajor);
+    if (
+      newMajor.toLowerCase().includes("accounting") &&
+      (selectedProgramCode.includes("BBA") || currentProgram?.name.includes("Business Administration"))
+    ) {
+      const bba = getBbaAccountingCurriculum();
+      setSemesters(generateDefaultSemesterResults(bba));
+    }
+  };
+
+  // Explicit helper to load official BBA Accounting 126-Credit Curriculum
+  const handleLoadBbaAccountingCurriculum = () => {
+    const bba = getBbaAccountingCurriculum();
+    setSelectedProgramCode(bba.code);
+    setDepartment(bba.department);
+    setMajorSubject("Accounting");
+    setCurrentPeriod("8th Semester (Final)");
+    setSemesters(generateDefaultSemesterResults(bba));
+  };
+
   // Calculate CGPA dynamically from semesters
   const calculatedCgpa = calculateDegreeCgpa(semesters);
+
+  // Calculate total program credits
+  const totalProgramCredits = semesters.reduce(
+    (sum, sem) => sum + sem.subjects.reduce((sSum, s) => sSum + (s.credit || 3), 0),
+    0
+  );
 
   // Toggle accordion for semester card
   const toggleSemester = (idx: number) => {
@@ -326,8 +503,8 @@ export default function DegreeStudentForm({
       setErrorMessage("Student Registration Number is required.");
       return;
     }
-    if (!certificateSerial.trim()) {
-      setErrorMessage("Student Certificate Number is required.");
+    if (certificateStatus === "Issued" && !certificateSerial.trim()) {
+      setErrorMessage("Certificate Number is required when certificate status is 'Issued'. Click 'Generate' or enter the official number.");
       return;
     }
     if (!passingYear.trim()) {
@@ -379,7 +556,7 @@ export default function DegreeStudentForm({
         session: session.trim(),
         passingYear: passingYear.trim(),
         certificateSerialNumber: certificateSerial.trim(),
-        issueDate: issueDate,
+        issueDate: certificateIssueDate || issueDate,
         photoUrl: photoUrl,
         secureToken: existingStudent?.secureToken || generateSecureToken(),
         subjects: flattenedSubjects,
@@ -395,7 +572,18 @@ export default function DegreeStudentForm({
         currentSemesterOrYear: currentPeriod.trim(),
         resultStatus: resultStatus,
         maxGpa: 4.00,
-        semesterResults: semesters
+        semesterResults: semesters,
+
+        // Automatic Academic Numbering, Timeline & Certification Fields
+        admissionYear: admissionYear.trim(),
+        courseDuration: courseDuration.trim(),
+        expectedCompletionYear: expectedCompletionYear.trim(),
+        examinationYear: examinationYear.trim(),
+        resultPublicationDate: resultPublicationDate.trim(),
+        certificateIssueDate: certificateIssueDate.trim(),
+        certificateNumber: certificateSerial.trim(),
+        certificateStatus: certificateStatus,
+        auditLog: auditLog
       };
 
       await onSaveStudent(studentRecord);
@@ -576,9 +764,10 @@ export default function DegreeStudentForm({
               <input
                 type="text"
                 required
+                autoComplete="off"
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
-                placeholder="e.g. Department of English"
+                placeholder=""
                 className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
               />
             </div>
@@ -591,7 +780,7 @@ export default function DegreeStudentForm({
               <div className="space-y-1.5">
                 <select
                   value={majorSubject}
-                  onChange={(e) => setMajorSubject(e.target.value)}
+                  onChange={(e) => handleMajorChange(e.target.value)}
                   className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
                 >
                   {currentProgram?.majorSubjects.map((maj) => (
@@ -604,7 +793,8 @@ export default function DegreeStudentForm({
                 {majorSubject === "Custom" && (
                   <input
                     type="text"
-                    placeholder="Enter custom major subject name"
+                    autoComplete="off"
+                    placeholder=""
                     onChange={(e) => setMajorSubject(e.target.value)}
                     className="w-full bg-white border border-gray-300 rounded-xl px-3 py-1.5 text-xs text-gray-900"
                   />
@@ -612,6 +802,30 @@ export default function DegreeStudentForm({
               </div>
             </div>
           </div>
+
+          {/* BBA in Accounting Curriculum Active Notice */}
+          {(selectedProgramCode.includes("BBA") || majorSubject.toLowerCase().includes("accounting")) && (
+            <div className="mt-3 bg-emerald-50 border border-emerald-300/80 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs text-emerald-950">
+              <div className="flex items-center gap-2">
+                <GraduationCap className="w-4 h-4 text-[#006a4e] shrink-0" />
+                <span>
+                  <strong>BBA in Accounting Default Curriculum:</strong> 8 Semesters • 40 Courses (120 Credits) + Combined Oral Exam (3 Credits) + Internship Project Paper (3 Credits) = <strong>126 Total Program Credits</strong>
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono font-bold bg-white px-2 py-0.5 rounded border border-emerald-300 text-[#006a4e]">
+                  Current Credits: {totalProgramCredits} / 126
+                </span>
+                <button
+                  type="button"
+                  onClick={handleLoadBbaAccountingCurriculum}
+                  className="bg-[#006a4e] text-white px-2.5 py-1 rounded-lg font-bold text-[11px] hover:bg-[#005a42] transition-colors cursor-pointer"
+                >
+                  Load Standard 126-Cr Curriculum
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* SECTION 2: STUDENT BIOGRAPHICAL & REGISTRATION IDENTIFIERS */}
@@ -715,137 +929,516 @@ export default function DegreeStudentForm({
                 </div>
               </div>
 
-              {/* Numbers Grid: Student ID, Roll, Reg, Certificate, Session, Passing Year */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
-                    Student ID <span className="text-[#006a4e]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={studentId}
-                    onChange={(e) => setStudentId(e.target.value)}
-                    placeholder=""
-                    className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-mono font-bold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
-                  />
+              {/* Block A: Institutional Numbering (Roll, Registration, Student ID) */}
+              <div className="bg-white p-3.5 rounded-xl border border-gray-200 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-150 pb-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-[#006a4e]" />
+                    <span className="text-xs font-black uppercase tracking-wider text-black">
+                      Automatic Academic Numbering System
+                    </span>
+                  </div>
+                  {!existingStudent && (
+                    <button
+                      type="button"
+                      onClick={() => refreshAutoNumbers()}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-[#006a4e] border border-emerald-200 rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
+                      title="Recalculate next sequential roll and registration number"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      <span>Refresh Counters</span>
+                    </button>
+                  )}
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
-                    Roll Number <span className="text-[#006a4e]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={rollNumber}
-                    onChange={(e) => setRollNumber(e.target.value)}
-                    placeholder=""
-                    className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-mono font-bold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
-                  />
-                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Student ID */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
+                      Student ID <span className="text-[#006a4e]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      autoComplete="off"
+                      value={studentId}
+                      onChange={(e) => setStudentId(e.target.value)}
+                      placeholder=""
+                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-mono font-bold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
+                    />
+                  </div>
 
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
-                    Registration Number <span className="text-[#006a4e]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={registrationNumber}
-                    onChange={(e) => setRegistrationNumber(e.target.value)}
-                    placeholder=""
-                    className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-mono font-bold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
-                  />
-                </div>
+                  {/* Automatic Roll Number */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
+                        Roll Number <span className="text-[#006a4e]">*</span>
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[9px] font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                          {existingStudent ? "Saved" : "Sequential Auto"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!isManualRollOverride) {
+                              const confirmManual = confirm("Enable manual Roll Number override? Any manual changes will be recorded in the audit log.");
+                              if (confirmManual) {
+                                setIsManualRollOverride(true);
+                                setAuditLog((prev) => [
+                                  ...prev,
+                                  {
+                                    action: "Manual Roll Override Enabled",
+                                    timestamp: new Date().toISOString(),
+                                    details: `Roll manual override enabled for student ${studentId}. Previous: ${rollNumber}`
+                                  }
+                                ]);
+                              }
+                            } else {
+                              setIsManualRollOverride(false);
+                            }
+                          }}
+                          className="text-[10px] text-gray-500 hover:text-black font-semibold flex items-center gap-0.5 ml-1"
+                          title="Manual Roll Override"
+                        >
+                          {isManualRollOverride ? <Lock className="w-2.5 h-2.5 text-amber-600" /> : <Unlock className="w-2.5 h-2.5 text-gray-400" />}
+                        </button>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      autoComplete="off"
+                      value={rollNumber}
+                      readOnly={!isManualRollOverride && Boolean(existingStudent)}
+                      onChange={(e) => {
+                        setRollNumber(e.target.value);
+                        setAuditLog((prev) => [
+                          ...prev,
+                          {
+                            action: "Roll Number Modified",
+                            timestamp: new Date().toISOString(),
+                            details: `Manual correction of Roll Number to: ${e.target.value}`
+                          }
+                        ]);
+                      }}
+                      placeholder=""
+                      className={`w-full border rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-hidden ${
+                        !isManualRollOverride && Boolean(existingStudent)
+                          ? "bg-gray-100 border-gray-200 text-gray-700 cursor-not-allowed"
+                          : "bg-white border-emerald-400 text-gray-900 focus:border-[#006a4e]"
+                      }`}
+                    />
+                    <span className="text-[9px] text-gray-500 block">
+                      Format: BNIE-[LEVEL]-[YY]-[SERIAL] (e.g. BNIE-HN-24-7294, BNIE-DG-24-5837, BNIE-MS-24-4168)
+                    </span>
+                  </div>
 
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
-                    Certificate Number <span className="text-[#006a4e]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={certificateSerial}
-                    onChange={(e) => setCertificateSerial(e.target.value)}
-                    placeholder=""
-                    className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-mono font-bold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
-                    Academic Session <span className="text-[#006a4e]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={session}
-                    onChange={(e) => setSession(e.target.value)}
-                    placeholder=""
-                    className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
-                    Passing Year <span className="text-[#006a4e]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={passingYear}
-                    onChange={(e) => setPassingYear(e.target.value)}
-                    placeholder=""
-                    className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
-                  />
+                  {/* Automatic Registration Number */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
+                        Registration Number <span className="text-[#006a4e]">*</span>
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[9px] font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                          {existingStudent ? "Preserved" : "Unique Auto"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!isManualRegOverride) {
+                              const confirmManual = confirm("Enable manual Registration Number override? Any manual changes will be recorded in the audit log.");
+                              if (confirmManual) {
+                                setIsManualRegOverride(true);
+                                setAuditLog((prev) => [
+                                  ...prev,
+                                  {
+                                    action: "Manual Reg Override Enabled",
+                                    timestamp: new Date().toISOString(),
+                                    details: `Reg manual override enabled for student ${studentId}. Previous: ${registrationNumber}`
+                                  }
+                                ]);
+                              }
+                            } else {
+                              setIsManualRegOverride(false);
+                            }
+                          }}
+                          className="text-[10px] text-gray-500 hover:text-black font-semibold flex items-center gap-0.5 ml-1"
+                          title="Manual Registration Override"
+                        >
+                          {isManualRegOverride ? <Lock className="w-2.5 h-2.5 text-amber-600" /> : <Unlock className="w-2.5 h-2.5 text-gray-400" />}
+                        </button>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      autoComplete="off"
+                      value={registrationNumber}
+                      readOnly={!isManualRegOverride && Boolean(existingStudent)}
+                      onChange={(e) => {
+                        setRegistrationNumber(e.target.value);
+                        setAuditLog((prev) => [
+                          ...prev,
+                          {
+                            action: "Registration Number Modified",
+                            timestamp: new Date().toISOString(),
+                            details: `Manual correction of Registration Number to: ${e.target.value}`
+                          }
+                        ]);
+                      }}
+                      placeholder=""
+                      className={`w-full border rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-hidden ${
+                        !isManualRegOverride && Boolean(existingStudent)
+                          ? "bg-gray-100 border-gray-200 text-gray-700 cursor-not-allowed"
+                          : "bg-white border-emerald-400 text-gray-900 focus:border-[#006a4e]"
+                      }`}
+                    />
+                    <span className="text-[9px] text-gray-500 block">
+                      Format: BNIE-REG-[LEVEL]-[YYYY]-[SERIAL] (e.g. BNIE-REG-HN-2024-846291)
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
-                    Semester / Academic Year <span className="text-[#006a4e]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={currentPeriod}
-                    onChange={(e) => setCurrentPeriod(e.target.value)}
-                    placeholder=""
-                    className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
-                  />
+              {/* Block B: Academic Session & Timeline Progression */}
+              <div className="bg-white p-3.5 rounded-xl border border-gray-200 space-y-3">
+                <div className="flex items-center gap-2 border-b border-gray-150 pb-2">
+                  <Calendar className="w-4 h-4 text-[#006a4e]" />
+                  <span className="text-xs font-black uppercase tracking-wider text-black">
+                    Academic Session, Timeline &amp; Progression Logic
+                  </span>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
-                    Certificate Issue Date
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={issueDate}
-                    onChange={(e) => setIssueDate(e.target.value)}
-                    className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
-                  />
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
+                      Academic Session <span className="text-[#006a4e]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      autoComplete="off"
+                      value={session}
+                      onChange={(e) => handleSessionChange(e.target.value)}
+                      placeholder=""
+                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
+                      Admission Year <span className="text-[#006a4e]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      autoComplete="off"
+                      value={admissionYear}
+                      onChange={(e) => {
+                        setAdmissionYear(e.target.value);
+                        const durYears = parseInt(courseDuration, 10) || (academicLevel === "Degree Pass" ? 3 : academicLevel === "Masters" ? 2 : 4);
+                        const admNum = parseInt(e.target.value, 10);
+                        if (!isNaN(admNum)) {
+                          setExpectedCompletionYear((admNum + durYears).toString());
+                          setPassingYear((admNum + durYears).toString());
+                          setExaminationYear((admNum + durYears).toString());
+                        }
+                      }}
+                      placeholder=""
+                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
+                      Course Duration <span className="text-[#006a4e]">*</span>
+                    </label>
+                    <select
+                      value={courseDuration}
+                      onChange={(e) => {
+                        setCourseDuration(e.target.value);
+                        const durNum = parseInt(e.target.value, 10);
+                        const admNum = parseInt(admissionYear, 10);
+                        if (!isNaN(durNum) && !isNaN(admNum)) {
+                          setExpectedCompletionYear((admNum + durNum).toString());
+                          setPassingYear((admNum + durNum).toString());
+                          setExaminationYear((admNum + durNum).toString());
+                        }
+                      }}
+                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
+                    >
+                      <option value="4 Years">4 Years (8 Semesters)</option>
+                      <option value="3 Years">3 Years (Degree Pass)</option>
+                      <option value="2 Years">2 Years (Masters/MBA)</option>
+                      <option value="1 Year">1 Year (Executive Masters)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
+                      Expected Completion <span className="text-[#006a4e]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      autoComplete="off"
+                      value={expectedCompletionYear}
+                      onChange={(e) => setExpectedCompletionYear(e.target.value)}
+                      placeholder=""
+                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
+                      Examination Year <span className="text-[#006a4e]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      autoComplete="off"
+                      value={examinationYear}
+                      onChange={(e) => setExaminationYear(e.target.value)}
+                      placeholder=""
+                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
+                      Actual Passing Year <span className="text-[#006a4e]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      autoComplete="off"
+                      value={passingYear}
+                      onChange={(e) => setPassingYear(e.target.value)}
+                      placeholder=""
+                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
+                      Evaluated Period <span className="text-[#006a4e]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      autoComplete="off"
+                      value={currentPeriod}
+                      onChange={(e) => setCurrentPeriod(e.target.value)}
+                      placeholder=""
+                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
+                      Result Status
+                    </label>
+                    <select
+                      value={resultStatus}
+                      onChange={(e) => setResultStatus(e.target.value)}
+                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
+                    >
+                      <option value="First Class">First Class</option>
+                      <option value="Second Class">Second Class</option>
+                      <option value="Graduated with Distinction">Graduated with Distinction</option>
+                      <option value="Passed">Passed</option>
+                      <option value="Promoted">Promoted</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Block C: Official Result Publication & Certificate Issuance Policy */}
+              <div className="bg-white p-3.5 rounded-xl border border-gray-200 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-150 pb-2">
+                  <div className="flex items-center gap-2">
+                    <Award className="w-4 h-4 text-[#006a4e]" />
+                    <span className="text-xs font-black uppercase tracking-wider text-black">
+                      Official Result Publication &amp; Certificate Issuance Policy
+                    </span>
+                  </div>
+                  {auditLog.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAuditLogModal(!showAuditLogModal)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
+                    >
+                      <History className="w-3 h-3 text-[#006a4e]" />
+                      <span>Audit Log ({auditLog.length})</span>
+                    </button>
+                  )}
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
-                    Result Status
-                  </label>
-                  <select
-                    value={resultStatus}
-                    onChange={(e) => setResultStatus(e.target.value)}
-                    className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
-                  >
-                    <option value="First Class">First Class</option>
-                    <option value="Second Class">Second Class</option>
-                    <option value="Graduated with Distinction">Graduated with Distinction</option>
-                    <option value="Passed">Passed</option>
-                    <option value="Promoted">Promoted</option>
-                  </select>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Official Result Publication Date */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
+                      Result Publication Date <span className="text-[#006a4e]">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={resultPublicationDate}
+                      onChange={(e) => {
+                        setResultPublicationDate(e.target.value);
+                        // Recalculate suggested certificate issue date (180 days policy)
+                        const sugg = calculateSuggestedCertificateIssueDate(e.target.value, 180);
+                        if (sugg) {
+                          setCertificateIssueDate(sugg);
+                          setIssueDate(sugg);
+                        }
+                      }}
+                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
+                    />
+                    <span className="text-[9px] text-gray-500 block">
+                      Official publication date confirmed by Controller of Exam
+                    </span>
+                  </div>
+
+                  {/* Certificate Status */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
+                      Certificate Status <span className="text-[#006a4e]">*</span>
+                    </label>
+                    <select
+                      value={certificateStatus}
+                      onChange={(e) => {
+                        const newStatus = e.target.value as "Pending" | "Eligible for Issue" | "Issued";
+                        setCertificateStatus(newStatus);
+                        if (newStatus === "Issued" && !certificateSerial) {
+                          const autoCert = generateOfficialCertificateNumber({
+                            academicLevel,
+                            programCode: selectedProgramCode,
+                            passingYear,
+                            existingStudents: allStudents
+                          });
+                          setCertificateSerial(autoCert);
+                        }
+                      }}
+                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
+                    >
+                      <option value="Pending">Pending (Under Convocational Review)</option>
+                      <option value="Eligible for Issue">Eligible for Issue (Clearance Approved)</option>
+                      <option value="Issued">Issued (Officially Sealed &amp; Delivered)</option>
+                    </select>
+                    <span className="text-[9px] text-gray-500 block">
+                      Controls public display of certificate number on marksheet
+                    </span>
+                  </div>
+
+                  {/* Certificate Number */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
+                        Certificate Number {certificateStatus === "Issued" && <span className="text-[#006a4e]">*</span>}
+                      </label>
+                      {certificateStatus === "Issued" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newCert = generateOfficialCertificateNumber({
+                              academicLevel,
+                              programCode: selectedProgramCode,
+                              passingYear,
+                              existingStudents: allStudents
+                            });
+                            setCertificateSerial(newCert);
+                          }}
+                          className="text-[10px] text-[#006a4e] hover:underline font-bold"
+                        >
+                          Generate Official No
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      value={certificateSerial}
+                      disabled={certificateStatus !== "Issued"}
+                      onChange={(e) => setCertificateSerial(e.target.value)}
+                      placeholder=""
+                      className={`w-full border rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-hidden ${
+                        certificateStatus !== "Issued"
+                          ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-white border-gray-300 text-gray-900 focus:border-[#006a4e]"
+                      }`}
+                    />
+                    <span className="text-[9px] text-gray-500 block">
+                      {certificateStatus !== "Issued" ? "Enabled when status is 'Issued'" : "Format: BNIE-[PROG]-CERT-[YEAR]-[SEQ]"}
+                    </span>
+                  </div>
                 </div>
+
+                {/* Certificate Issue Date */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
+                      Certificate Issue Date {certificateStatus === "Issued" && <span className="text-[#006a4e]">*</span>}
+                    </label>
+                    <input
+                      type="date"
+                      value={certificateIssueDate}
+                      onChange={(e) => {
+                        setCertificateIssueDate(e.target.value);
+                        setIssueDate(e.target.value);
+                      }}
+                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
+                    />
+                    <span className="text-[9px] text-gray-500 block">
+                      Calculated using 180-day policy from publication date
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-black uppercase tracking-wider block">
+                      Issuing Senate Authority
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      value="BNIE Academic Senate & Controller of Examinations"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-600 cursor-not-allowed"
+                    />
+                    <span className="text-[9px] text-gray-500 block">
+                      Standard Central Senate Accreditation
+                    </span>
+                  </div>
+                </div>
+
+                {/* Audit Log expandable panel */}
+                {showAuditLogModal && (
+                  <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between border-b border-gray-200 pb-1">
+                      <span className="text-xs font-bold text-gray-900">Academic Numbering &amp; Data Audit Trail</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowAuditLogModal(false)}
+                        className="text-xs text-gray-500 hover:text-black font-bold"
+                      >
+                        Close
+                      </button>
+                    </div>
+                    {auditLog.length === 0 ? (
+                      <p className="text-[11px] text-gray-500">No manual corrections recorded.</p>
+                    ) : (
+                      <div className="space-y-1 max-h-36 overflow-y-auto text-[10px]">
+                        {auditLog.map((log, lIdx) => (
+                          <div key={lIdx} className="bg-white p-1.5 rounded border border-gray-200">
+                            <span className="font-bold text-[#006a4e]">{log.action}</span> • <span className="text-gray-400 font-mono">{log.timestamp.slice(0, 19).replace("T", " ")}</span>
+                            <p className="text-gray-700">{log.details}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
             </div>
@@ -978,18 +1571,20 @@ export default function DegreeStudentForm({
                                 <td className="py-2 px-2.5">
                                   <input
                                     type="text"
+                                    autoComplete="off"
                                     value={sub.subjectCode || ""}
                                     onChange={(e) => handleUpdateSubject(semIdx, subIdx, "subjectCode", e.target.value)}
-                                    placeholder="Code"
+                                    placeholder=""
                                     className="w-24 bg-white border border-gray-300 rounded px-2 py-1 text-xs font-mono font-bold text-gray-900"
                                   />
                                 </td>
                                 <td className="py-2 px-2.5">
                                   <input
                                     type="text"
+                                    autoComplete="off"
                                     value={sub.subjectName}
                                     onChange={(e) => handleUpdateSubject(semIdx, subIdx, "subjectName", e.target.value)}
-                                    placeholder="Course Title"
+                                    placeholder=""
                                     className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-xs font-medium text-gray-900"
                                   />
                                 </td>

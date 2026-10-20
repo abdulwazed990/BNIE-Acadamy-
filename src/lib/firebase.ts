@@ -4,13 +4,15 @@ import {
   collection, 
   doc, 
   getDocs, 
+  getDoc,
   setDoc, 
   updateDoc, 
   deleteDoc,
   writeBatch
 } from "firebase/firestore";
-import { Student } from "../types";
+import { Student, SemesterResult } from "../types";
 import { DEFAULT_STUDENTS } from "../data/defaultStudents";
+import { getBbaAccountingCurriculum, generateDefaultSemesterResults } from "../data/degreeProgramsCatalog";
 
 const firebaseConfig = {
   apiKey: "AIzaSyChRPYx_95hDfi7ZRDSnrVFcmZQnYdWDaM",
@@ -126,4 +128,93 @@ export async function deleteStudentFromDb(id: string): Promise<void> {
     console.error("Error deleting student from Firestore:", error);
     throw error;
   }
+}
+
+const CURRICULUMS_COLLECTION = "curriculums";
+
+export interface ProgramCurriculumRecord {
+  id: string; // "bba-accounting"
+  programCode: string; // "BBA-ACC"
+  programName: string; // "Bachelor of Business Administration (BBA)"
+  major: string; // "Accounting"
+  duration: string; // "4 Years"
+  totalSemesters: number; // 8
+  totalCredits: number; // 126
+  courseCredits: number; // 120
+  oralExamCredits: number; // 3
+  internshipCredits: number; // 3
+  semesters: SemesterResult[];
+  updatedAt: string;
+}
+
+/**
+ * Generate standard BBA in Accounting curriculum record
+ */
+export function getDefaultBbaCurriculumRecord(): ProgramCurriculumRecord {
+  const bbaProg = getBbaAccountingCurriculum();
+  const defaultSemesters = generateDefaultSemesterResults(bbaProg);
+  return {
+    id: "bba-accounting",
+    programCode: "BBA-ACC",
+    programName: "Bachelor of Business Administration (BBA)",
+    major: "Accounting",
+    duration: "4 Years",
+    totalSemesters: 8,
+    totalCredits: 126,
+    courseCredits: 120,
+    oralExamCredits: 3,
+    internshipCredits: 3,
+    semesters: defaultSemesters,
+    updatedAt: new Date().toISOString()
+  };
+}
+
+/**
+ * Persistently save program curriculum template in Firestore database
+ */
+export async function saveCurriculumToDb(curriculum: ProgramCurriculumRecord): Promise<void> {
+  try {
+    const docRef = doc(db, CURRICULUMS_COLLECTION, curriculum.id);
+    await setDoc(docRef, curriculum);
+    console.log(`Saved curriculum ${curriculum.programName} (${curriculum.major}) to Firestore.`);
+  } catch (error) {
+    console.error("Error saving curriculum to Firestore:", error);
+    // Also save in localStorage as safe fallback
+    try {
+      localStorage.setItem(`bnie_curriculum_${curriculum.id}`, JSON.stringify(curriculum));
+    } catch (e) {
+      console.warn("Local storage fallback failed:", e);
+    }
+  }
+}
+
+/**
+ * Fetch program curriculum from Firestore or local fallback
+ */
+export async function fetchCurriculumFromDb(id: string): Promise<ProgramCurriculumRecord> {
+  try {
+    const docRef = doc(db, CURRICULUMS_COLLECTION, id);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      return snap.data() as ProgramCurriculumRecord;
+    }
+  } catch (error) {
+    console.warn(`Firestore curriculum read for ${id} failed, checking local backup:`, error);
+  }
+
+  // Check localStorage backup
+  try {
+    const local = localStorage.getItem(`bnie_curriculum_${id}`);
+    if (local) {
+      return JSON.parse(local) as ProgramCurriculumRecord;
+    }
+  } catch (e) {
+    console.warn("Failed to read local curriculum backup:", e);
+  }
+
+  // Fallback to default BBA in Accounting curriculum record
+  const defaultRecord = getDefaultBbaCurriculumRecord();
+  // Automatically seed to DB in background
+  saveCurriculumToDb(defaultRecord).catch(() => {});
+  return defaultRecord;
 }

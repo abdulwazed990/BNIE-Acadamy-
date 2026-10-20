@@ -710,7 +710,8 @@ export default function LeadershipAdminModule() {
                 </label>
                 <textarea
                   rows={4}
-                  placeholder="Enter official executive biography, educational background, achievements, and scholarly leadership..."
+                  autoComplete="off"
+                  placeholder=""
                   value={formBio}
                   onChange={(e) => setFormBio(e.target.value)}
                   className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm focus:outline-hidden focus:border-[#006a4e] text-gray-900 leading-relaxed"

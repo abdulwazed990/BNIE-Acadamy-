@@ -18,7 +18,7 @@ export default function GovernmentAccreditation() {
             Government Approval, Institutional Accreditation &amp; Legal Recognition
           </p>
           <p className="text-xs sm:text-sm text-gray-600 mt-2 leading-relaxed">
-            <strong>বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট</strong> (Bangladesh National Institute of Education — BNIE) গণপ্রজাতন্ত্রী বাংলাদেশ সরকার অনুমোদিত একটি স্বায়ত্তশাসিত জাতীয় শিক্ষা প্রতিষ্ঠান। এটি দেশব্যাপী এস.এস.সি, এইচ.এস.সি, ভোকেশনাল এবং ১ বছর থেকে ৪ বছর মেয়াদী পলিটেকনিক ডিপ্লোমা সনদ প্রদান ও অনলাইন ডিজিটাল ভেরিফিকেশন সেবা প্রদান করে।
+            <strong>বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট</strong> (Bangladesh National Institute of Education — BNIE) গণপ্রজাতন্ত্রী বাংলাদেশ সরকার অনুমোদিত একটি স্বায়ত্তশাসিত জাতীয় শিক্ষা প্রতিষ্ঠান। এটি দেশব্যাপী ৪ বছর মেয়াদী স্নাতক অনার্স (বিবিএ, সিএসই, ইংরেজি, রাষ্ট্রবিজ্ঞান), ৩ বছর মেয়াদী ডিগ্রি পাস, স্নাতকোত্তর (মাস্টার্স/এমবিএ), ১ থেকে ৪ বছর মেয়াদী পলিটেকনিক ডিপ্লোমা এবং এস.এস.সি ও এইচ.এস.সি সনদ প্রদান ও কেন্দ্রীয় ডিজিটাল ভেরিফিকেশন সেবা প্রদান করে।
           </p>
         </div>
 
@@ -52,13 +52,13 @@ export default function GovernmentAccreditation() {
               Academic Curricula
             </span>
             <h3 className="text-sm font-bold text-gray-900 mt-2">
-              ১ থেকে ৪ বছর মেয়াদী ডিপ্লোমা
+              ডিগ্রি, অনার্স, মাস্টার্স ও ১ থেকে ৪ বছর মেয়াদী ডিপ্লোমা
             </h3>
             <p className="text-xs font-semibold text-gray-600 mb-2">
-              1-Year to 4-Year Diploma &amp; Vocational
+              Bachelor, Honours, Masters, 1-Year to 4-Year Diploma &amp; Vocational
             </p>
             <p className="text-xs text-gray-500 leading-relaxed">
-              সিভিল, ইলেকট্রিক্যাল, মেকানিক্যাল, কম্পিউটার, এসিএম সহ আধুনিক পলিটেকনিক ইঞ্জিনিয়ারিং ও টেকনিক্যাল কোর্স (Scale 4.00 &amp; Scale 5.00)।
+              ৪ বছর মেয়াদী স্নাতক সম্মান/অনার্স (বিবিএ ইন অ্যাকাউন্টিং - ১২৬ ক্রেডিট, সিএসই, অর্থনীতি), ৩ বছর মেয়াদী স্নাতক ডিগ্রি (পাস), স্নাতকোত্তর (মাস্টার্স/এমবিএ) এবং ১ থেকে ৪ বছর মেয়াদী সিভিল, ইলেকট্রিক্যাল, মেকানিক্যাল, কম্পিউটার, এসিএম সহ আধুনিক পলিটেকনিক ইঞ্জিনিয়ারিং ও টেকনিক্যাল কোর্স (Scale 4.00 &amp; Scale 5.00)।
             </p>
           </div>
 

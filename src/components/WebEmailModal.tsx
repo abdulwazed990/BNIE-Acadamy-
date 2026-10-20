@@ -77,9 +77,10 @@ export default function WebEmailModal({ isOpen, onClose }: WebEmailModalProps) {
                   <input
                     type="text"
                     required
+                    autoComplete="off"
                     value={emailUser}
                     onChange={(e) => setEmailUser(e.target.value)}
-                    placeholder="username"
+                    placeholder=""
                     className="w-full bg-white border border-gray-300 rounded-l-xl px-3 py-2 text-xs text-gray-900 font-mono focus:border-[#006a4e] focus:outline-hidden"
                   />
                   <span className="inline-flex items-center px-3 rounded-r-xl border border-l-0 border-gray-300 bg-gray-100 text-gray-600 text-xs font-mono font-semibold">

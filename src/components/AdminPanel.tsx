@@ -596,7 +596,8 @@ export default function AdminPanel({
                 <input
                   type="text"
                   required
-                  placeholder="Enter username"
+                  autoComplete="off"
+                  placeholder=""
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full bg-white border border-gray-300 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-hidden focus:border-[#006a4e] text-gray-900"
@@ -613,7 +614,8 @@ export default function AdminPanel({
                 <input
                   type="password"
                   required
-                  placeholder="Enter password"
+                  autoComplete="off"
+                  placeholder=""
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-white border border-gray-300 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-hidden focus:border-[#006a4e] text-gray-900"
@@ -1112,6 +1114,7 @@ export default function AdminPanel({
                     : "Honours"
                 }
                 existingStudent={editingStudentId ? students.find((s) => s.id === editingStudentId) : null}
+                allStudents={students}
                 onSaveStudent={(savedStudent) => {
                   if (editingStudentId) {
                     onUpdateStudent(savedStudent);
@@ -1497,7 +1500,8 @@ export default function AdminPanel({
                           step="0.01"
                           min="0.00"
                           max={formCategory === Category.DIPLOMA ? "4.00" : "5.00"}
-                          placeholder={formCategory === Category.DIPLOMA ? "e.g. 3.50" : "e.g. 4.59"}
+                          autoComplete="off"
+                          placeholder=""
                           value={quickGpaInput}
                           onChange={(e) => setQuickGpaInput(e.target.value)}
                           className="w-full bg-white border border-gray-300 rounded-lg px-2 py-1 text-xs font-mono font-bold text-gray-850"
@@ -1518,7 +1522,8 @@ export default function AdminPanel({
                       <div className="flex gap-1">
                         <input
                           type="number"
-                          placeholder={`e.g. ${Math.round(formSubjects.length * 80)}`}
+                          autoComplete="off"
+                          placeholder=""
                           value={quickMarksInput}
                           onChange={(e) => setQuickMarksInput(e.target.value)}
                           className="w-full bg-white border border-gray-305 rounded-lg px-2 py-1 text-xs font-mono font-bold text-gray-850"

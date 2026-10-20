@@ -164,8 +164,13 @@ export default function DegreeResultVerificationPage({
       const matchReg = s.registrationNumber && s.registrationNumber.toLowerCase() === cleanId;
       const matchToken = s.secureToken && s.secureToken.toLowerCase() === cleanId;
       const matchCert = s.certificateSerialNumber && s.certificateSerialNumber.toLowerCase() === cleanId;
+      const matchCert2 = s.certificateNumber && s.certificateNumber.toLowerCase() === cleanId;
 
-      const matchesIdentifier = matchId || matchRoll || matchReg || matchToken || matchCert;
+      // Allow searching by exact mixed numeric suffix (e.g. "5837", "7294", "4168", "846291")
+      const matchRollSuffix = s.rollNumber && s.rollNumber.toLowerCase().endsWith(`-${cleanId}`);
+      const matchRegSuffix = s.registrationNumber && s.registrationNumber.toLowerCase().endsWith(`-${cleanId}`);
+
+      const matchesIdentifier = matchId || matchRoll || matchReg || matchToken || matchCert || matchCert2 || matchRollSuffix || matchRegSuffix;
       if (!matchesIdentifier) return false;
 
       // Check category/academicLevel
@@ -187,7 +192,10 @@ export default function DegreeResultVerificationPage({
         const matchReg = s.registrationNumber && s.registrationNumber.toLowerCase() === cleanId;
         const matchToken = s.secureToken && s.secureToken.toLowerCase() === cleanId;
         const matchCert = s.certificateSerialNumber && s.certificateSerialNumber.toLowerCase() === cleanId;
-        return matchId || matchRoll || matchReg || matchToken || matchCert;
+        const matchCert2 = s.certificateNumber && s.certificateNumber.toLowerCase() === cleanId;
+        const matchRollSuffix = s.rollNumber && s.rollNumber.toLowerCase().endsWith(`-${cleanId}`);
+        const matchRegSuffix = s.registrationNumber && s.registrationNumber.toLowerCase().endsWith(`-${cleanId}`);
+        return matchId || matchRoll || matchReg || matchToken || matchCert || matchCert2 || matchRollSuffix || matchRegSuffix;
       });
       if (found) {
         if (found.category === Category.DEGREE_PASS || found.academicLevel === "Degree Pass") {
@@ -309,14 +317,14 @@ export default function DegreeResultVerificationPage({
         @media print {
           @page {
             size: A4 portrait;
-            margin: 8mm 10mm 8mm 10mm;
+            margin: 6mm 8mm 6mm 8mm;
           }
           html, body {
             margin: 0 !important;
             padding: 0 !important;
             background: #ffffff !important;
             color: #000000 !important;
-            font-size: 10.5px !important;
+            font-size: 10px !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
@@ -327,23 +335,21 @@ export default function DegreeResultVerificationPage({
             page-break-after: always !important;
             break-after: page !important;
             box-sizing: border-box !important;
-            padding: 14px 16px !important;
+            padding: 8px 12px !important;
             margin: 0 !important;
             border: 1px solid #374151 !important;
-            border-radius: 8px !important;
+            border-radius: 6px !important;
             box-shadow: none !important;
-            min-height: 275mm;
           }
           .marksheet-page-2 {
             page-break-before: always !important;
             break-before: page !important;
             box-sizing: border-box !important;
-            padding: 14px 16px !important;
+            padding: 8px 12px !important;
             margin-top: 0 !important;
             border: 1px solid #374151 !important;
-            border-radius: 8px !important;
+            border-radius: 6px !important;
             box-shadow: none !important;
-            min-height: 275mm;
           }
           /* Hide full subject names in print to save space with compact subject codes */
           .print-hide-title {
@@ -357,15 +363,15 @@ export default function DegreeResultVerificationPage({
           .semester-block {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
-            margin-bottom: 6px !important;
+            margin-bottom: 3px !important;
           }
           .print-compact-table {
-            font-size: 9.5px !important;
-            line-height: 1.25 !important;
+            font-size: 8.5px !important;
+            line-height: 1.15 !important;
           }
           .print-compact-table th, 
           .print-compact-table td {
-            padding: 2.5px 4px !important;
+            padding: 1.5px 3px !important;
           }
         }
       `}</style>
@@ -618,19 +624,6 @@ export default function DegreeResultVerificationPage({
               </div>
             </div>
 
-            {/* Helper Notice for Print Settings */}
-            <div className="p-3 bg-white border border-gray-200 rounded-xl text-[11px] text-gray-600 flex items-center justify-between no-print shadow-2xs">
-              <span className="flex items-center gap-1.5 font-medium">
-                <Check className="w-3.5 h-3.5 text-[#006a4e]" />
-                <span>
-                  <strong>Two-Page Continuous A4 Layout:</strong> In the printed and downloaded PDF, academic results are divided across exactly 2 consecutive A4 portrait pages with compact subject codes to save space.
-                </span>
-              </span>
-              <span className="font-mono text-emerald-800 font-bold hidden md:inline">
-                A4 Portrait • Exactly 2 Pages
-              </span>
-            </div>
-
             {/* ========================================================================= */}
             {/* MARKSHEET PAGE 1 OF 2                                                     */}
             {/* ========================================================================= */}
@@ -756,7 +749,7 @@ export default function DegreeResultVerificationPage({
                   <span className="font-mono font-bold text-gray-950">{matchedStudent.id}</span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Student Roll Number</span>
+                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Roll Number</span>
                   <span className="font-mono font-bold text-gray-950">{matchedStudent.rollNumber}</span>
                 </div>
                 <div>
@@ -764,24 +757,52 @@ export default function DegreeResultVerificationPage({
                   <span className="font-mono font-bold text-gray-950">{matchedStudent.registrationNumber}</span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Certificate Serial No</span>
-                  <span className="font-mono font-bold text-gray-950">{matchedStudent.certificateSerialNumber}</span>
+                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Academic Session</span>
+                  <span className="font-semibold text-gray-950">{matchedStudent.session}</span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Passing Year</span>
-                  <span className="font-semibold text-gray-950">{matchedStudent.passingYear}</span>
+                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Admission Year</span>
+                  <span className="font-semibold text-gray-950">{matchedStudent.admissionYear || matchedStudent.session?.split("-")[0] || "2020"}</span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Issue Date</span>
-                  <span className="font-semibold text-gray-950">{matchedStudent.issueDate}</span>
+                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Course Duration</span>
+                  <span className="font-semibold text-gray-950">{matchedStudent.courseDuration || (examType === "Degree Pass" ? "3 Years" : examType === "Masters" ? "2 Years" : "4 Years")}</span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Configured Duration</span>
-                  <span className="font-semibold text-gray-950">{examType === "Degree Pass" ? "3 Years" : examType === "Masters" ? "2 Years" : "4 Years"}</span>
+                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Expected Completion</span>
+                  <span className="font-semibold text-gray-950">{matchedStudent.expectedCompletionYear || matchedStudent.passingYear}</span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Issuing Authority</span>
-                  <span className="font-semibold text-gray-950 truncate block">BNIE Central Senate</span>
+                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Passing / Exam Year</span>
+                  <span className="font-semibold text-gray-950">{matchedStudent.passingYear || matchedStudent.examinationYear}</span>
+                </div>
+                <div>
+                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Result Publication Date</span>
+                  <span className="font-semibold text-[#006a4e]">{matchedStudent.resultPublicationDate || (matchedStudent.semesterResults?.[matchedStudent.semesterResults.length - 1]?.publicationDate) || "2024-05-20"}</span>
+                </div>
+                <div>
+                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Certificate Status</span>
+                  <span className="font-bold text-emerald-800">
+                    {matchedStudent.certificateStatus || (matchedStudent.certificateSerialNumber ? "Issued" : "Pending")}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Certificate Number</span>
+                  <span className="font-mono font-bold text-gray-950">
+                    {(matchedStudent.certificateStatus === "Pending" || matchedStudent.certificateStatus === "Eligible for Issue") && !matchedStudent.certificateNumber && !matchedStudent.certificateSerialNumber
+                      ? <span className="text-amber-700 italic font-sans font-medium text-[10px]">Pending Senate Issuance</span>
+                      : matchedStudent.certificateNumber || matchedStudent.certificateSerialNumber || "Pending"
+                    }
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Certificate Issue Date</span>
+                  <span className="font-semibold text-gray-950">
+                    {matchedStudent.certificateStatus === "Pending" && !matchedStudent.certificateIssueDate && !matchedStudent.issueDate
+                      ? <span className="text-gray-400 italic font-normal text-[10px]">Not yet issued</span>
+                      : matchedStudent.certificateIssueDate || matchedStudent.issueDate || "Under Review"
+                    }
+                  </span>
                 </div>
               </div>
 
