@@ -1,5 +1,10 @@
 import { useState, FormEvent, ChangeEvent } from "react";
-import { Category, Group, Religion, Student, SubjectGrade, calculateFinalGpa, getGradePointFromMarks, generateSecureToken, getDiplomaLetterGrade, getDiplomaGradePointFromMarks, calculateDiplomaGpa } from "../types";
+import { 
+  Category, Group, Religion, Student, SubjectGrade, calculateFinalGpa, 
+  getGradePointFromMarks, generateSecureToken, getDiplomaLetterGrade, 
+  getDiplomaGradePointFromMarks, calculateDiplomaGpa,
+  isDivisionSystemStudent, calculateDivisionFromMarks 
+} from "../types";
 import { getFixedSubjectList, generateEmptySubjectGrades, getSubjectCode, getSubjectImage } from "../data/subjectLoader";
 import { PASSPORT_AVATARS } from "../data/defaultStudents";
 import Logo from "./Logo";
@@ -80,6 +85,13 @@ export default function AdminPanel({
   const [formIssueDate, setFormIssueDate] = useState("");
   const [formPhoto, setFormPhoto] = useState(PASSPORT_AVATARS.male1);
   const [formSubjects, setFormSubjects] = useState<SubjectGrade[]>([]);
+  const [formDivision, setFormDivision] = useState<string>("First Division");
+
+  // Historical Rule: Pre-2001 (1995-2000) SSC & HSC followed the traditional Bangladesh Board Division System (No GPA)
+  const isPre2001Division = (formCategory === Category.SSC || formCategory === Category.HSC) && (() => {
+    const yr = parseInt(formPassingYear, 10);
+    return !isNaN(yr) && yr > 1950 && yr <= 2000;
+  })();
 
   // Quick Results Distribution Board States
   const [quickGpaInput, setQuickGpaInput] = useState("");
@@ -166,6 +178,7 @@ export default function AdminPanel({
     setFormPhoto(PASSPORT_AVATARS.male1);
     setQuickGpaInput("");
     setQuickMarksInput("");
+    setFormDivision("First Division");
     
     const initialSubjects = generateEmptySubjectGrades(cat, cat === Category.DIPLOMA ? Group.MECHANICAL_ENGINEERING : Group.SCIENCE, Religion.ISLAM);
     setFormSubjects(initialSubjects);
@@ -204,6 +217,10 @@ export default function AdminPanel({
     setFormPhoto(student.photoUrl);
     setQuickGpaInput("");
     setQuickMarksInput("");
+
+    // Set division for pre-2001 division system students
+    const divResult = calculateDivisionFromMarks(student.subjects);
+    setFormDivision(student.division || divResult.division);
     
     // Ensure existing subjects have proper subjectCode, marks, credit, and year
     const mappedSubjects = student.subjects.map((sub) => ({
@@ -284,20 +301,33 @@ export default function AdminPanel({
     const is4PointScale = formCategory === Category.DIPLOMA;
     const maxScale = is4PointScale ? 4.00 : 5.00;
 
-    // Validate GPA entries
-    for (const sub of formSubjects) {
-      if (isNaN(sub.gradePoint) || sub.gradePoint < 0 || sub.gradePoint > maxScale) {
-        if (is4PointScale) {
-          alert("Invalid CGPA. Diploma CGPA must be between 0.00 and 4.00.");
-        } else {
-          alert(`Please enter a valid GPA for "${sub.subjectName}" (0.00 to 5.00).`);
+    if (!isPre2001Division) {
+      // Validate GPA entries for post-2000 students
+      for (const sub of formSubjects) {
+        if (isNaN(sub.gradePoint) || sub.gradePoint < 0 || sub.gradePoint > maxScale) {
+          if (is4PointScale) {
+            alert("Invalid CGPA. Diploma CGPA must be between 0.00 and 4.00.");
+          } else {
+            alert(`Please enter a valid GPA for "${sub.subjectName}" (0.00 to 5.00).`);
+          }
+          return;
         }
-        return;
+      }
+    } else {
+      // Validate marks entries (0-100) for pre-2001 Division system students
+      for (const sub of formSubjects) {
+        if (sub.marks === undefined || isNaN(sub.marks) || sub.marks < 0 || sub.marks > 100) {
+          alert(`Please enter valid Marks for "${sub.subjectName}" (0 to 100).`);
+          return;
+        }
       }
     }
 
-    // Auto calculate CGPA and total marks
-    const finalGpa = is4PointScale ? calculateDiplomaGpa(formSubjects) : calculateFinalGpa(formSubjects);
+    // Auto calculate CGPA, Division, and total marks
+    const divisionResult = calculateDivisionFromMarks(formSubjects);
+    const finalGpa = isPre2001Division
+      ? 0.00
+      : (is4PointScale ? calculateDiplomaGpa(formSubjects) : calculateFinalGpa(formSubjects));
     const totalMarks = formSubjects.reduce((sum, sub) => sum + (sub.marks || 0), 0);
 
     // Retrieve or generate a secure verification token for this student
@@ -329,7 +359,9 @@ export default function AdminPanel({
       secureToken: secureToken,
       subjects: formSubjects,
       finalGpa: finalGpa,
-      totalMarks: totalMarks
+      totalMarks: totalMarks,
+      gradingSystem: isPre2001Division ? "Division" : "GPA",
+      division: isPre2001Division ? (formDivision || divisionResult.division) : undefined
     };
 
     if (editingStudentId) {
@@ -403,13 +435,20 @@ export default function AdminPanel({
     if (parsed > 100) parsed = 100;
     
     const updated = [...formSubjects];
-    const gp = is4PointScale ? getDiplomaGradePointFromMarks(parsed) : getGradePointFromMarks(parsed);
+    const gp = isPre2001Division
+      ? 0
+      : (is4PointScale ? getDiplomaGradePointFromMarks(parsed) : getGradePointFromMarks(parsed));
     updated[index] = {
       ...updated[index],
       marks: parsed,
       gradePoint: gp
     };
     setFormSubjects(updated);
+
+    if (isPre2001Division) {
+      const divRes = calculateDivisionFromMarks(updated);
+      setFormDivision(divRes.division);
+    }
   };
 
   // Automatic distribution of entered GPA/CGPA across all subjects
@@ -542,7 +581,10 @@ export default function AdminPanel({
     // Update form subjects with calculated gradePoints based on marks
     const updated = formSubjects.map((sub, i) => {
       const mark = distributedMarks[i];
-      const gp = getGradePointFromMarks(mark);
+      const is4PointScale = formCategory === Category.DIPLOMA;
+      const gp = isPre2001Division
+        ? 0
+        : (is4PointScale ? getDiplomaGradePointFromMarks(mark) : getGradePointFromMarks(mark));
       return {
         ...sub,
         marks: mark,
@@ -551,6 +593,44 @@ export default function AdminPanel({
     });
     
     setFormSubjects(updated);
+
+    if (isPre2001Division) {
+      const divRes = calculateDivisionFromMarks(updated);
+      setFormDivision(divRes.division);
+    }
+  };
+
+  // Quick distribution for Bangladesh Board Division System (pre-2001)
+  const handleDistributeByDivision = (tier: "Star" | "First" | "Second" | "Third") => {
+    const numSubjects = formSubjects.length;
+    if (numSubjects === 0) return;
+
+    let targetAvg = 65;
+    if (tier === "Star") targetAvg = 78;
+    else if (tier === "First") targetAvg = 65;
+    else if (tier === "Second") targetAvg = 52;
+    else if (tier === "Third") targetAvg = 40;
+
+    const updated = formSubjects.map((sub, idx) => {
+      // Natural variation across subjects so marks are not unrealistically identical
+      const variance = (idx % 2 === 0 ? 1 : -1) * (((idx * 3) % 9) - 4);
+      let mark = targetAvg + variance;
+      if (tier === "Star") mark = Math.max(75, Math.min(94, mark));
+      else if (tier === "First") mark = Math.max(60, Math.min(84, mark));
+      else if (tier === "Second") mark = Math.max(45, Math.min(59, mark));
+      else mark = Math.max(34, Math.min(44, mark));
+
+      return {
+        ...sub,
+        marks: mark,
+        gradePoint: 0
+      };
+    });
+
+    const divRes = calculateDivisionFromMarks(updated);
+    setFormSubjects(updated);
+    setFormDivision(divRes.division);
+    setQuickMarksInput(divRes.totalMarks.toString());
   };
 
   // Filters students based on search and category tab
@@ -1005,14 +1085,30 @@ export default function AdminPanel({
                     </div>
                   </div>
                   
-                  {/* GPA Badge */}
+                  {/* GPA or Division Badge */}
                   <div className="text-right">
-                    <span className="text-[10px] text-gray-400 block uppercase font-semibold">
-                      {stud.category === Category.DEGREE_PASS || stud.category === Category.HONOURS || stud.category === Category.MASTERS || stud.category === Category.DIPLOMA ? "CGPA (4.00)" : "GPA (5.00)"}
-                    </span>
-                    <span className="text-sm font-black font-mono text-[#006a4e]">
-                      {stud.finalGpa.toFixed(2)}
-                    </span>
+                    {isDivisionSystemStudent(stud) ? (
+                      <>
+                        <span className="text-[10px] text-gray-400 block uppercase font-semibold">
+                          Division
+                        </span>
+                        <span className="text-xs font-black font-sans text-[#006a4e] block max-w-[130px] truncate" title={stud.division || calculateDivisionFromMarks(stud.subjects).division}>
+                          {stud.division || calculateDivisionFromMarks(stud.subjects).division}
+                        </span>
+                        <span className="text-[10px] text-gray-500 font-mono block">
+                          {stud.totalMarks !== undefined ? `${stud.totalMarks} Marks` : `${stud.subjects.reduce((sum, s) => sum + (s.marks || 0), 0)} Marks`}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-[10px] text-gray-400 block uppercase font-semibold">
+                          {stud.category === Category.DEGREE_PASS || stud.category === Category.HONOURS || stud.category === Category.MASTERS || stud.category === Category.DIPLOMA ? "CGPA (4.00)" : "GPA (5.00)"}
+                        </span>
+                        <span className="text-sm font-black font-mono text-[#006a4e]">
+                          {stud.finalGpa.toFixed(2)}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -1377,9 +1473,22 @@ export default function AdminPanel({
                       required
                       placeholder=""
                       value={formPassingYear}
-                      onChange={(e) => setFormPassingYear(e.target.value.replace(/\D/g, ""))}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "");
+                        setFormPassingYear(val);
+                        const yr = parseInt(val, 10);
+                        if (!isNaN(yr) && yr > 1950 && yr <= 2000 && (formCategory === Category.SSC || formCategory === Category.HSC)) {
+                          const divRes = calculateDivisionFromMarks(formSubjects);
+                          setFormDivision(divRes.division);
+                        }
+                      }}
                       className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium font-mono"
                     />
+                    {isPre2001Division && (
+                      <span className="text-[10px] text-amber-700 font-bold block mt-1">
+                        ★ Pre-2001 Division System (1995–2000)
+                      </span>
+                    )}
                   </div>
                   <div>
                     <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-1">Certificate Serial</label>
@@ -1481,73 +1590,158 @@ export default function AdminPanel({
                       Quick Result Distribution Board
                     </span>
                     <span className="text-[9px] bg-[#006a4e]/10 text-[#006a4e] px-1.5 py-0.5 rounded-full font-bold">
-                      Auto-Populating Engine
+                      {isPre2001Division ? "Pre-2001 Division Mode" : "Auto-Populating Engine"}
                     </span>
                   </div>
-                  <p className="text-[10px] text-gray-500 leading-tight">
-                    Enter either a Total GPA or Total Marks to automatically distribute grade points and marks across all subjects mathematically.
-                  </p>
-                  
-                  <div className="grid grid-cols-2 gap-3 pt-1">
-                    {/* Distribute by GPA */}
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-gray-600 block">
-                        {formCategory === Category.DIPLOMA ? "Total CGPA (0.00 – 4.00)" : "Total GPA (0.00 – 5.00)"}
-                      </label>
-                      <div className="flex gap-1">
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0.00"
-                          max={formCategory === Category.DIPLOMA ? "4.00" : "5.00"}
-                          autoComplete="off"
-                          placeholder=""
-                          value={quickGpaInput}
-                          onChange={(e) => setQuickGpaInput(e.target.value)}
-                          className="w-full bg-white border border-gray-300 rounded-lg px-2 py-1 text-xs font-mono font-bold text-gray-850"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleDistributeByGpa}
-                          className="bg-[#006a4e] hover:bg-[#00563f] text-white px-2 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-colors cursor-pointer"
-                        >
-                          Apply
-                        </button>
-                      </div>
-                    </div>
 
-                    {/* Distribute by Marks */}
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-gray-600 block">Total Marks (Max {formSubjects.length * 100})</label>
-                      <div className="flex gap-1">
-                        <input
-                          type="number"
-                          autoComplete="off"
-                          placeholder=""
-                          value={quickMarksInput}
-                          onChange={(e) => setQuickMarksInput(e.target.value)}
-                          className="w-full bg-white border border-gray-305 rounded-lg px-2 py-1 text-xs font-mono font-bold text-gray-850"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleDistributeByMarks}
-                          className="bg-[#006a4e] hover:bg-[#00563f] text-white px-2 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-colors cursor-pointer"
-                        >
-                          Apply
-                        </button>
+                  {isPre2001Division ? (
+                    <div className="space-y-3">
+                      <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                        <span className="text-[11px] font-bold text-amber-900 block">
+                          ★ Pre-2001 Traditional Division System Activated
+                        </span>
+                        <p className="text-[10px] text-amber-700 leading-tight mt-0.5">
+                          In accordance with Bangladesh Secondary &amp; Higher Secondary Education Board historical rules (1995–2000), results are awarded strictly in Subject Marks &amp; Divisions. GPA 5.00 is automatically disabled.
+                        </p>
+                      </div>
+
+                      {/* Division Quick Preset Buttons */}
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-gray-700 block">
+                          Quick Division Tier Presets:
+                        </label>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleDistributeByDivision("Star")}
+                            className="bg-[#006a4e] hover:bg-[#00563f] text-white px-2 py-1.5 rounded-lg text-[10px] font-bold text-center transition-colors cursor-pointer"
+                          >
+                            Star Marks (75%+)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDistributeByDivision("First")}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold text-center transition-colors cursor-pointer"
+                          >
+                            1st Division (60%+)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDistributeByDivision("Second")}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold text-center transition-colors cursor-pointer"
+                          >
+                            2nd Division (45%+)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDistributeByDivision("Third")}
+                            className="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold text-center transition-colors cursor-pointer"
+                          >
+                            3rd Division (33%+)
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Distribute by Total Marks */}
+                      <div className="space-y-1.5 pt-1">
+                        <label className="text-[10px] font-bold text-gray-600 block">
+                          Or Enter Exact Total Marks (Max {formSubjects.length * 100}):
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            autoComplete="off"
+                            placeholder="e.g. 748"
+                            value={quickMarksInput}
+                            onChange={(e) => setQuickMarksInput(e.target.value)}
+                            className="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-gray-850"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleDistributeByMarks}
+                            className="bg-[#006a4e] hover:bg-[#00563f] text-white px-4 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-colors cursor-pointer"
+                          >
+                            Distribute Marks
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      <p className="text-[10px] text-gray-500 leading-tight">
+                        Enter either a Total GPA or Total Marks to automatically distribute grade points and marks across all subjects mathematically.
+                      </p>
+                      
+                      <div className="grid grid-cols-2 gap-3 pt-1">
+                        {/* Distribute by GPA */}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-gray-600 block">
+                            {formCategory === Category.DIPLOMA ? "Total CGPA (0.00 – 4.00)" : "Total GPA (0.00 – 5.00)"}
+                          </label>
+                          <div className="flex gap-1">
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0.00"
+                              max={formCategory === Category.DIPLOMA ? "4.00" : "5.00"}
+                              autoComplete="off"
+                              placeholder=""
+                              value={quickGpaInput}
+                              onChange={(e) => setQuickGpaInput(e.target.value)}
+                              className="w-full bg-white border border-gray-300 rounded-lg px-2 py-1 text-xs font-mono font-bold text-gray-850"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleDistributeByGpa}
+                              className="bg-[#006a4e] hover:bg-[#00563f] text-white px-2 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-colors cursor-pointer"
+                            >
+                              Apply
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Distribute by Marks */}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-gray-600 block">Total Marks (Max {formSubjects.length * 100})</label>
+                          <div className="flex gap-1">
+                            <input
+                              type="number"
+                              autoComplete="off"
+                              placeholder=""
+                              value={quickMarksInput}
+                              onChange={(e) => setQuickMarksInput(e.target.value)}
+                              className="w-full bg-white border border-gray-305 rounded-lg px-2 py-1 text-xs font-mono font-bold text-gray-850"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleDistributeByMarks}
+                              className="bg-[#006a4e] hover:bg-[#00563f] text-white px-2 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-colors cursor-pointer"
+                            >
+                              Apply
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* GPA & Marks inputs scroll list */}
                 <div className="space-y-2 max-h-[42vh] overflow-y-auto pr-2">
-                  <div className="grid grid-cols-12 gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider px-3 pb-1 border-b border-gray-100">
-                    <div className="col-span-6">Subject (Name & Code)</div>
-                    <div className="col-span-2 text-center">Marks</div>
-                    <div className="col-span-2 text-center">{formCategory === Category.DIPLOMA ? "CGPA / GP" : "GPA"}</div>
-                    <div className="col-span-2 text-center">Grade</div>
-                  </div>
+                  {isPre2001Division ? (
+                    <div className="grid grid-cols-12 gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider px-3 pb-1 border-b border-gray-100">
+                      <div className="col-span-7">Subject (Name &amp; Code)</div>
+                      <div className="col-span-2 text-center">Full Marks</div>
+                      <div className="col-span-3 text-center">Marks Obtained</div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-12 gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider px-3 pb-1 border-b border-gray-100">
+                      <div className="col-span-6">Subject (Name &amp; Code)</div>
+                      <div className="col-span-2 text-center">Marks</div>
+                      <div className="col-span-2 text-center">{formCategory === Category.DIPLOMA ? "CGPA / GP" : "GPA"}</div>
+                      <div className="col-span-2 text-center">Grade</div>
+                    </div>
+                  )}
                   {formSubjects.some((s) => s.year !== undefined) ? (
                     ["FIRST YEAR", "SECOND YEAR", "THIRD YEAR", "FOURTH YEAR"].map((yr) => {
                       const yearItems = formSubjects
@@ -1633,6 +1827,52 @@ export default function AdminPanel({
                     })
                   ) : (
                     formSubjects.map((sub, index) => {
+                      if (isPre2001Division) {
+                        return (
+                          <div 
+                            key={`${sub.subjectName}-${index}`}
+                            className="bg-gray-50 border border-gray-100 p-2.5 rounded-xl grid grid-cols-12 gap-2 items-center hover:border-[#006a4e]/20 hover:bg-white hover:shadow-xs transition-all"
+                          >
+                            {/* Subject detail */}
+                            <div className="col-span-7 pr-1 flex items-center space-x-2">
+                              <img 
+                                src={getSubjectImage(sub.subjectName)} 
+                                alt={sub.subjectName} 
+                                className="w-7 h-7 rounded-md object-cover bg-gray-150 shrink-0 border border-gray-200"
+                                referrerPolicy="no-referrer"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[11px] font-bold text-gray-800 line-clamp-1">
+                                  {sub.subjectName}
+                                </p>
+                                <span className="text-[10px] font-mono text-gray-400 font-semibold">
+                                  Code: <span className="text-gray-600 font-bold">{sub.subjectCode || getSubjectCode(sub.subjectName)}</span>
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Full Marks */}
+                            <div className="col-span-2 text-center font-mono font-bold text-xs text-gray-500">
+                              100
+                            </div>
+
+                            {/* Marks Input */}
+                            <div className="col-span-3">
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                required
+                                value={sub.marks !== undefined ? sub.marks : ""}
+                                onChange={(e) => handleSubjectMarksChange(index, e.target.value)}
+                                className="w-full bg-white border border-gray-300 rounded-lg px-2 py-1.5 text-xs text-center font-bold font-mono focus:border-[#006a4e] focus:ring-1 focus:ring-[#006a4e] text-gray-900"
+                                placeholder="Marks"
+                              />
+                            </div>
+                          </div>
+                        );
+                      }
+
                       const is4PointScale = formCategory === Category.DIPLOMA;
                       const letterGrade = is4PointScale ? getDiplomaLetterGrade(sub.gradePoint) : (
                         sub.gradePoint >= 5.0 ? "A+" :
@@ -1711,33 +1951,78 @@ export default function AdminPanel({
                 </div>
 
                 {/* Dynamic GPA & Marks Estimation Board */}
-                <div className="grid grid-cols-2 gap-3 pt-1">
-                  <div className="bg-[#006a4e]/5 border border-[#006a4e]/20 rounded-xl p-3 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wider block">
-                        Estimated {formCategory === Category.DIPLOMA ? "CGPA" : "GPA"}
-                      </span>
-                      <span className="text-[9px] text-gray-400 font-normal block font-semibold">Auto-recalculated</span>
+                {isPre2001Division ? (
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div className="bg-[#006a4e]/5 border border-[#006a4e]/20 rounded-xl p-3 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wider block">
+                          Result / Division
+                        </span>
+                        <span className="text-[9px] text-[#006a4e] font-semibold block">Pre-2001 Board Rule</span>
+                      </div>
+                      <div className="text-right">
+                        <select
+                          value={formDivision}
+                          onChange={(e) => setFormDivision(e.target.value)}
+                          className="bg-white border border-emerald-300 rounded-lg px-2 py-1 text-xs font-bold text-[#006a4e] focus:outline-hidden"
+                        >
+                          <option value="First Division (Star Marks)">1st Division (Star)</option>
+                          <option value="First Division">First Division</option>
+                          <option value="Second Division">Second Division</option>
+                          <option value="Third Division">Third Division</option>
+                          <option value="Failed">Failed</option>
+                        </select>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-lg font-black font-mono text-[#006a4e]">
-                        {(formCategory === Category.DIPLOMA ? calculateDiplomaGpa(formSubjects) : calculateFinalGpa(formSubjects)).toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
 
-                  <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wider block">Total Marks</span>
-                      <span className="text-[9px] text-gray-400 font-normal block font-semibold">Accumulated sum</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-lg font-black font-mono text-amber-600">
-                        {formSubjects.reduce((sum, sub) => sum + (sub.marks || 0), 0)}
-                      </span>
+                    <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wider block">Total Marks</span>
+                        <span className="text-[9px] text-gray-400 font-normal block font-semibold">
+                          {formSubjects.length * 100} Full Marks
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-lg font-black font-mono text-amber-600">
+                          {formSubjects.reduce((sum, sub) => sum + (sub.marks || 0), 0)}
+                        </span>
+                        <span className="text-[10px] text-gray-500 font-mono block">
+                          {formSubjects.length > 0
+                            ? `${((formSubjects.reduce((sum, sub) => sum + (sub.marks || 0), 0) / (formSubjects.length * 100)) * 100).toFixed(1)}%`
+                            : ""}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div className="bg-[#006a4e]/5 border border-[#006a4e]/20 rounded-xl p-3 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wider block">
+                          Estimated {formCategory === Category.DIPLOMA ? "CGPA" : "GPA"}
+                        </span>
+                        <span className="text-[9px] text-gray-400 font-normal block font-semibold">Auto-recalculated</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-lg font-black font-mono text-[#006a4e]">
+                          {(formCategory === Category.DIPLOMA ? calculateDiplomaGpa(formSubjects) : calculateFinalGpa(formSubjects)).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wider block">Total Marks</span>
+                        <span className="text-[9px] text-gray-400 font-normal block font-semibold">Accumulated sum</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-lg font-black font-mono text-amber-600">
+                          {formSubjects.reduce((sum, sub) => sum + (sub.marks || 0), 0)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Modal Actions Footer */}

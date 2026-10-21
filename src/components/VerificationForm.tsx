@@ -433,6 +433,56 @@ export default function VerificationForm({
             </div>
           )}
 
+          {/* Quick Demo Test Samples */}
+          <div className="bg-emerald-50/50 border border-emerald-200/60 rounded-xl p-3 space-y-2">
+            <span className="text-[10px] font-bold text-gray-700 uppercase tracking-wider block">
+              Quick Test Samples:
+            </span>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setCategory(Category.SSC);
+                  setRollNumber("184920");
+                  setRegistrationNumber("8472910");
+                  setCaptchaAnswer(captcha.result.toString());
+                  setSearchError("");
+                }}
+                className="inline-flex items-center gap-1 bg-white hover:bg-emerald-50 border border-emerald-300 text-[#006a4e] px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer shadow-3xs"
+              >
+                <span>★ 1998 SSC (Division System — No GPA)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setCategory(Category.HSC);
+                  setRollNumber("394821");
+                  setRegistrationNumber("9482715");
+                  setCaptchaAnswer(captcha.result.toString());
+                  setSearchError("");
+                }}
+                className="inline-flex items-center gap-1 bg-white hover:bg-emerald-50 border border-emerald-300 text-[#006a4e] px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer shadow-3xs"
+              >
+                <span>★ 2000 HSC (Division System — No GPA)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setCategory(Category.SSC);
+                  setRollNumber("102938");
+                  setRegistrationNumber("2019384756");
+                  setCaptchaAnswer(captcha.result.toString());
+                  setSearchError("");
+                }}
+                className="inline-flex items-center gap-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors cursor-pointer shadow-3xs"
+              >
+                <span>2024 SSC (GPA 5.00 Scale)</span>
+              </button>
+            </div>
+          </div>
+
           {/* Verification Button */}
           <button
             type="submit"

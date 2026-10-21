@@ -78,7 +78,7 @@ export function getDefaultDurationYears(academicLevel: string, programCode?: str
   if (academicLevel === "Degree Pass") return 3;
   if (academicLevel === "Masters") {
     const code = (programCode || "").toUpperCase();
-    if (code.includes("1Y") || code.includes("EMBA")) return 1;
+    if (code.includes("1Y") || code.includes("EMBA") || code === "MBA-ACC" || code.includes("1-YEAR")) return 1;
     return 2;
   }
   // Honours & BBA

@@ -17,7 +17,8 @@ import {
   DegreeProgram, 
   getProgramsByLevel, 
   generateDefaultSemesterResults,
-  getBbaAccountingCurriculum
+  getBbaAccountingCurriculum,
+  getMbaAccountingCurriculum
 } from "../data/degreeProgramsCatalog";
 import { 
   generateAutomaticRollNumber,
@@ -245,6 +246,30 @@ export default function DegreeStudentForm({
   // Sync when program changes
   const handleProgramChange = (code: string) => {
     setSelectedProgramCode(code);
+    if (code === "MBA-ACC") {
+      const mba = getMbaAccountingCurriculum();
+      setDepartment(mba.department);
+      setMajorSubject("Accounting");
+      setCourseDuration("1 Year");
+      setCurrentPeriod("2nd Semester (Final)");
+      const timeline = calculateAcademicTimeline({
+        academicLevel: "Masters",
+        programCode: code,
+        session,
+        manualAdmissionYear: admissionYear,
+        manualDurationYears: 1
+      });
+      setCourseDuration(timeline.courseDuration);
+      setExpectedCompletionYear(timeline.expectedCompletionYear);
+      setExaminationYear(timeline.examinationYear);
+      setPassingYear(timeline.examinationYear);
+      setResultPublicationDate(timeline.suggestedPublicationDate);
+      setCertificateIssueDate(timeline.suggestedCertificateIssueDate);
+      refreshAutoNumbers("Masters", code, session, admissionYear);
+      setSemesters(generateDefaultSemesterResults(mba));
+      return;
+    }
+
     const p = DEGREE_PROGRAMS_CATALOG.find((item) => item.code === code);
     if (p) {
       setDepartment(p.department);
@@ -285,15 +310,43 @@ export default function DegreeStudentForm({
     refreshAutoNumbers(academicLevel, selectedProgramCode, newSession, adm);
   };
 
-  // Sync when major changes
+  // Sync when major changes (automatically load official curriculum)
   const handleMajorChange = (newMajor: string) => {
     setMajorSubject(newMajor);
-    if (
-      newMajor.toLowerCase().includes("accounting") &&
-      (selectedProgramCode.includes("BBA") || currentProgram?.name.includes("Business Administration"))
-    ) {
-      const bba = getBbaAccountingCurriculum();
-      setSemesters(generateDefaultSemesterResults(bba));
+    const isAccounting = newMajor.toLowerCase().includes("accounting");
+    if (isAccounting) {
+      if (
+        academicLevel === "Masters" ||
+        selectedProgramCode.includes("MBA") ||
+        currentProgram?.name.toLowerCase().includes("master of business")
+      ) {
+        const mba = getMbaAccountingCurriculum();
+        setSelectedProgramCode(mba.code);
+        setDepartment(mba.department);
+        setCourseDuration("1 Year");
+        setCurrentPeriod("2nd Semester (Final)");
+        const timeline = calculateAcademicTimeline({
+          academicLevel: "Masters",
+          programCode: mba.code,
+          session,
+          manualAdmissionYear: admissionYear,
+          manualDurationYears: 1
+        });
+        setCourseDuration(timeline.courseDuration);
+        setExpectedCompletionYear(timeline.expectedCompletionYear);
+        setExaminationYear(timeline.examinationYear);
+        setPassingYear(timeline.examinationYear);
+        setResultPublicationDate(timeline.suggestedPublicationDate);
+        setCertificateIssueDate(timeline.suggestedCertificateIssueDate);
+        refreshAutoNumbers("Masters", mba.code, session, admissionYear);
+        setSemesters(generateDefaultSemesterResults(mba));
+      } else if (
+        selectedProgramCode.includes("BBA") ||
+        currentProgram?.name.includes("Business Administration")
+      ) {
+        const bba = getBbaAccountingCurriculum();
+        setSemesters(generateDefaultSemesterResults(bba));
+      }
     }
   };
 
@@ -305,6 +358,32 @@ export default function DegreeStudentForm({
     setMajorSubject("Accounting");
     setCurrentPeriod("8th Semester (Final)");
     setSemesters(generateDefaultSemesterResults(bba));
+  };
+
+  // Explicit helper to load official MBA in Accounting 48-Credit Curriculum (15 Subjects)
+  const handleLoadMbaAccountingCurriculum = () => {
+    const mba = getMbaAccountingCurriculum();
+    setAcademicLevel("Masters");
+    setSelectedProgramCode(mba.code);
+    setDepartment(mba.department);
+    setMajorSubject("Accounting");
+    setCourseDuration("1 Year");
+    setCurrentPeriod("2nd Semester (Final)");
+    const timeline = calculateAcademicTimeline({
+      academicLevel: "Masters",
+      programCode: mba.code,
+      session,
+      manualAdmissionYear: admissionYear,
+      manualDurationYears: 1
+    });
+    setCourseDuration(timeline.courseDuration);
+    setExpectedCompletionYear(timeline.expectedCompletionYear);
+    setExaminationYear(timeline.examinationYear);
+    setPassingYear(timeline.examinationYear);
+    setResultPublicationDate(timeline.suggestedPublicationDate);
+    setCertificateIssueDate(timeline.suggestedCertificateIssueDate);
+    refreshAutoNumbers("Masters", mba.code, session, admissionYear);
+    setSemesters(generateDefaultSemesterResults(mba));
   };
 
   // Calculate CGPA dynamically from semesters
@@ -803,8 +882,32 @@ export default function DegreeStudentForm({
             </div>
           </div>
 
+          {/* MBA in Accounting Curriculum Active Notice */}
+          {(academicLevel === "Masters" || selectedProgramCode.includes("MBA")) && majorSubject.toLowerCase().includes("accounting") && (
+            <div className="mt-3 bg-emerald-50 border border-emerald-300/80 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs text-emerald-950">
+              <div className="flex items-center gap-2">
+                <GraduationCap className="w-4 h-4 text-[#006a4e] shrink-0" />
+                <span>
+                  <strong>MBA in Accounting Default Curriculum:</strong> 1 Year • 2 Semesters • 15 Subjects (48 Credits) • 14 Core (3 Credits each) + Internship, Project Paper &amp; Defense (6 Credits) = <strong>48 Total Program Credits</strong>
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono font-bold bg-white px-2 py-0.5 rounded border border-emerald-300 text-[#006a4e]">
+                  Current Credits: {totalProgramCredits} / 48
+                </span>
+                <button
+                  type="button"
+                  onClick={handleLoadMbaAccountingCurriculum}
+                  className="bg-[#006a4e] text-white px-2.5 py-1 rounded-lg font-bold text-[11px] hover:bg-[#005a42] transition-colors cursor-pointer"
+                >
+                  Load Standard 48-Cr MBA Accounting Curriculum
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* BBA in Accounting Curriculum Active Notice */}
-          {(selectedProgramCode.includes("BBA") || majorSubject.toLowerCase().includes("accounting")) && (
+          {academicLevel !== "Masters" && !selectedProgramCode.includes("MBA") && (selectedProgramCode.includes("BBA") || majorSubject.toLowerCase().includes("accounting")) && (
             <div className="mt-3 bg-emerald-50 border border-emerald-300/80 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs text-emerald-950">
               <div className="flex items-center gap-2">
                 <GraduationCap className="w-4 h-4 text-[#006a4e] shrink-0" />
@@ -1556,7 +1659,8 @@ export default function DegreeStudentForm({
                         <table className="w-full text-left text-xs border-collapse">
                           <thead>
                             <tr className="border-b border-gray-200 text-[10px] font-bold uppercase text-gray-600 bg-gray-50/50">
-                              <th className="py-2 px-2.5">Code</th>
+                              <th className="py-2 px-2 text-center w-10">SL</th>
+                              <th className="py-2 px-2.5 w-24">Code</th>
                               <th className="py-2 px-2.5">Course Title</th>
                               <th className="py-2 px-2.5 w-20 text-center">Credit</th>
                               <th className="py-2 px-2.5 w-20 text-center">Marks (100)</th>
@@ -1568,6 +1672,9 @@ export default function DegreeStudentForm({
                           <tbody className="divide-y divide-gray-100">
                             {sem.subjects.map((sub, subIdx) => (
                               <tr key={subIdx} className="hover:bg-gray-50/60">
+                                <td className="py-2 px-2 text-center font-mono font-bold text-gray-500 text-[11px]">
+                                  {sub.serialNo || (sub.displayOrder ? String(sub.displayOrder).padStart(2, "0") : String(subIdx + 1).padStart(2, "0"))}
+                                </td>
                                 <td className="py-2 px-2.5">
                                   <input
                                     type="text"

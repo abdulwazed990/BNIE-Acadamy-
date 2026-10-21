@@ -118,7 +118,70 @@ mechanicalGrades.forEach((g, idx) => {
   g.gradePoint = 3.88;
 });
 
+// Pre-2001 Bangladesh Board Division System presets (Subject Marks & Divisions, No GPA)
+const pre2001SscGrades = generateEmptySubjectGrades(Category.SSC, Group.SCIENCE, Religion.ISLAM);
+const ssc1998Marks = [82, 79, 74, 76, 92, 85, 84, 88, 72, 86, 80];
+pre2001SscGrades.forEach((g, idx) => {
+  g.marks = ssc1998Marks[idx % ssc1998Marks.length];
+  g.gradePoint = 0;
+});
+
+const pre2001HscGrades = generateEmptySubjectGrades(Category.HSC, Group.SCIENCE, Religion.ISLAM);
+const hsc2000Marks = [68, 72, 65, 70, 78, 64, 75, 70, 62, 74, 66];
+pre2001HscGrades.forEach((g, idx) => {
+  g.marks = hsc2000Marks[idx % hsc2000Marks.length];
+  g.gradePoint = 0;
+});
+
 export const DEFAULT_STUDENTS: Student[] = [
+  {
+    id: "stud_pre2001_ssc",
+    category: Category.SSC,
+    group: Group.SCIENCE,
+    religion: Religion.ISLAM,
+    name: "Kazi Nurul Islam",
+    fatherName: "Kazi Rafiqul Islam",
+    motherName: "Begum Jahanara Islam",
+    dob: "1982-04-12",
+    rollNumber: "184920",
+    registrationNumber: "8472910",
+    instituteName: "Dhaka Collegiate School, Dhaka",
+    session: "1996-1997",
+    passingYear: "1998",
+    certificateSerialNumber: "BNIE-SSC-1998-4412",
+    issueDate: "1998-07-28",
+    photoUrl: PASSPORT_AVATARS.male1,
+    subjects: pre2001SscGrades,
+    finalGpa: 0.00,
+    gradingSystem: "Division",
+    division: "First Division (Star Marks)",
+    totalMarks: 898,
+    secureToken: "bnie_sec_ssc_1998_star_8472910"
+  },
+  {
+    id: "stud_pre2001_hsc",
+    category: Category.HSC,
+    group: Group.SCIENCE,
+    religion: Religion.ISLAM,
+    name: "Shahana Parveen",
+    fatherName: "Anwar Hossain",
+    motherName: "Laila Anwar",
+    dob: "1984-09-20",
+    rollNumber: "394821",
+    registrationNumber: "9482715",
+    instituteName: "Dhaka City College, Dhaka",
+    session: "1998-2000",
+    passingYear: "2000",
+    certificateSerialNumber: "BNIE-HSC-2000-7219",
+    issueDate: "2000-08-30",
+    photoUrl: PASSPORT_AVATARS.female1,
+    subjects: pre2001HscGrades,
+    finalGpa: 0.00,
+    gradingSystem: "Division",
+    division: "First Division",
+    totalMarks: 754,
+    secureToken: "bnie_sec_hsc_2000_div_9482715"
+  },
   {
     id: "stud_1",
     category: Category.SSC,

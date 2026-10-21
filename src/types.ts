@@ -27,6 +27,9 @@ export enum Religion {
 }
 
 export interface SubjectGrade {
+  id?: string; // unique subject ID (e.g. "mba-acc-sub-01")
+  serialNo?: string | number; // serial number e.g. "01", "02"
+  displayOrder?: number; // strict serial display order (1 to 15)
   subjectName: string;
   gradePoint: number; // 0.00 to 5.00 or 0.00 to 4.00
   subjectCode?: string;
@@ -67,6 +70,8 @@ export interface Student {
   subjects: SubjectGrade[];
   finalGpa: number; // calculated automatically (CGPA on 4.00 scale for Degree/Honours/Masters/Diploma, 5.00 for SSC/HSC)
   totalMarks?: number; // optional total marks
+  gradingSystem?: "GPA" | "Division"; // "Division" for 1995-2000 (pre-2001) SSC/HSC, "GPA" for 2001+
+  division?: string; // "First Division", "Second Division", "Third Division", "First Division (Star Marks)", "Failed"
 
   // Degree Pass, Honours & Masters Specific Fields
   academicLevel?: "Degree Pass" | "Honours" | "Masters";
@@ -94,6 +99,93 @@ export interface Student {
     details: string;
     changedBy?: string;
   }>;
+}
+
+/**
+ * Checks if a student qualifies for the traditional Bangladesh Board Division System
+ * Prior to 2001 (e.g. 1995-2000), SSC and HSC had no GPA system; results were exclusively in Marks & Divisions.
+ */
+export function isDivisionSystemStudent(student?: {
+  category?: Category | string;
+  passingYear?: string;
+  gradingSystem?: string;
+}): boolean {
+  if (!student) return false;
+  if (student.gradingSystem === "Division") return true;
+  if (student.category === Category.SSC || student.category === Category.HSC || student.category === "SSC" || student.category === "HSC") {
+    const year = parseInt(student.passingYear || "0", 10);
+    if (!isNaN(year) && year > 1950 && year <= 2000) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Calculates Bangladesh Board Division System result based on subject marks
+ */
+export function calculateDivisionFromMarks(subjects: SubjectGrade[] = []): {
+  totalMarks: number;
+  totalFullMarks: number;
+  percentage: number;
+  division: string;
+  isPassed: boolean;
+  hasStarMarks: boolean;
+} {
+  if (subjects.length === 0) {
+    return {
+      totalMarks: 0,
+      totalFullMarks: 0,
+      percentage: 0,
+      division: "Failed",
+      isPassed: false,
+      hasStarMarks: false
+    };
+  }
+
+  let totalMarks = 0;
+  const totalFullMarks = subjects.length * 100;
+  let hasFailedSubject = false;
+
+  for (const s of subjects) {
+    const mark = typeof s.marks === "number" ? s.marks : 0;
+    totalMarks += mark;
+    if (mark < 33) {
+      hasFailedSubject = true;
+    }
+  }
+
+  const percentage = totalFullMarks > 0 ? (totalMarks / totalFullMarks) * 100 : 0;
+  const hasStarMarks = !hasFailedSubject && percentage >= 75;
+
+  let division = "Failed";
+  let isPassed = false;
+
+  if (hasFailedSubject || percentage < 33) {
+    division = "Failed";
+    isPassed = false;
+  } else if (percentage >= 75) {
+    division = "First Division (Star Marks)";
+    isPassed = true;
+  } else if (percentage >= 60) {
+    division = "First Division";
+    isPassed = true;
+  } else if (percentage >= 45) {
+    division = "Second Division";
+    isPassed = true;
+  } else {
+    division = "Third Division";
+    isPassed = true;
+  }
+
+  return {
+    totalMarks,
+    totalFullMarks,
+    percentage: Math.round(percentage * 10) / 10,
+    division,
+    isPassed,
+    hasStarMarks
+  };
 }
 
 export type LeadershipPosition =

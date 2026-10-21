@@ -12,7 +12,7 @@ import {
 } from "firebase/firestore";
 import { Student, SemesterResult } from "../types";
 import { DEFAULT_STUDENTS } from "../data/defaultStudents";
-import { getBbaAccountingCurriculum, generateDefaultSemesterResults } from "../data/degreeProgramsCatalog";
+import { getBbaAccountingCurriculum, getMbaAccountingCurriculum, generateDefaultSemesterResults } from "../data/degreeProgramsCatalog";
 
 const firebaseConfig = {
   apiKey: "AIzaSyChRPYx_95hDfi7ZRDSnrVFcmZQnYdWDaM",
@@ -170,6 +170,28 @@ export function getDefaultBbaCurriculumRecord(): ProgramCurriculumRecord {
 }
 
 /**
+ * Generate standard MBA in Accounting curriculum record (48 Credits, 2 Semesters, 15 Subjects)
+ */
+export function getDefaultMbaCurriculumRecord(): ProgramCurriculumRecord {
+  const mbaProg = getMbaAccountingCurriculum();
+  const defaultSemesters = generateDefaultSemesterResults(mbaProg);
+  return {
+    id: "mba-accounting",
+    programCode: "MBA-ACC",
+    programName: "Master of Business Administration (MBA)",
+    major: "Accounting",
+    duration: "1 Year",
+    totalSemesters: 2,
+    totalCredits: 48,
+    courseCredits: 42,
+    oralExamCredits: 0,
+    internshipCredits: 6,
+    semesters: defaultSemesters,
+    updatedAt: new Date().toISOString()
+  };
+}
+
+/**
  * Persistently save program curriculum template in Firestore database
  */
 export async function saveCurriculumToDb(curriculum: ProgramCurriculumRecord): Promise<void> {
@@ -212,8 +234,8 @@ export async function fetchCurriculumFromDb(id: string): Promise<ProgramCurricul
     console.warn("Failed to read local curriculum backup:", e);
   }
 
-  // Fallback to default BBA in Accounting curriculum record
-  const defaultRecord = getDefaultBbaCurriculumRecord();
+  // Fallback to default curriculum record based on id
+  const defaultRecord = id === "mba-accounting" ? getDefaultMbaCurriculumRecord() : getDefaultBbaCurriculumRecord();
   // Automatically seed to DB in background
   saveCurriculumToDb(defaultRecord).catch(() => {});
   return defaultRecord;

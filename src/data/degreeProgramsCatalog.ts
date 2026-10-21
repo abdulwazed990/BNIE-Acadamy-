@@ -1,6 +1,9 @@
 import { SemesterResult, SubjectGrade, getDiplomaGradePointFromMarks, getDiplomaLetterGrade } from "../types";
 
 export interface DegreeCourse {
+  id?: string;
+  serialNo?: string | number;
+  displayOrder?: number;
   subjectCode: string;
   subjectName: string;
   credits: number;
@@ -590,6 +593,178 @@ export const DEGREE_PROGRAMS_CATALOG: DegreeProgram[] = [
       { subjectCode: "MECO-801", subjectName: "Master's Thesis Research Project & Defense", credits: 6, period: "4th Semester", defaultMarks: 93 }
     ]
   },
+  // ==================== MASTER OF BUSINESS ADMINISTRATION (MBA) — MAJOR IN ACCOUNTING ====================
+  {
+    code: "MBA-ACC",
+    name: "Master of Business Administration (MBA)",
+    nameBn: "মাস্টার্স অব বিজনেস অ্যাডমিনিস্ট্রেশন (এমবিএ - অ্যাকাউন্টিং)",
+    academicLevel: "Masters",
+    department: "Department of Accounting & Information Systems",
+    duration: "1 Year",
+    structureType: "Semester-wise",
+    periods: ["1st Semester", "2nd Semester"],
+    majorSubjects: [
+      "Accounting",
+      "Accounting & Information Systems (AIS)",
+      "Financial Management & Banking",
+      "Strategic Management & Corporate Governance"
+    ],
+    defaultCourses: [
+      // 1st Semester — 7 Subjects (21 Credits)
+      {
+        id: "mba-acc-sub-01",
+        serialNo: "01",
+        displayOrder: 1,
+        subjectCode: "ACT-601",
+        subjectName: "Accounting Theory & Standards",
+        credits: 3,
+        period: "1st Semester",
+        defaultMarks: 86
+      },
+      {
+        id: "mba-acc-sub-02",
+        serialNo: "02",
+        displayOrder: 2,
+        subjectCode: "ACT-602",
+        subjectName: "Cost Accounting",
+        credits: 3,
+        period: "1st Semester",
+        defaultMarks: 84
+      },
+      {
+        id: "mba-acc-sub-03",
+        serialNo: "03",
+        displayOrder: 3,
+        subjectCode: "ACT-603",
+        subjectName: "Management Accounting",
+        credits: 3,
+        period: "1st Semester",
+        defaultMarks: 85
+      },
+      {
+        id: "mba-acc-sub-04",
+        serialNo: "04",
+        displayOrder: 4,
+        subjectCode: "ACT-604",
+        subjectName: "Financial Management",
+        credits: 3,
+        period: "1st Semester",
+        defaultMarks: 87
+      },
+      {
+        id: "mba-acc-sub-05",
+        serialNo: "05",
+        displayOrder: 5,
+        subjectCode: "ACT-605",
+        subjectName: "Advanced Financial Accounting",
+        credits: 3,
+        period: "1st Semester",
+        defaultMarks: 88
+      },
+      {
+        id: "mba-acc-sub-06",
+        serialNo: "06",
+        displayOrder: 6,
+        subjectCode: "ACT-606",
+        subjectName: "Strategic Management",
+        credits: 3,
+        period: "1st Semester",
+        defaultMarks: 85
+      },
+      {
+        id: "mba-acc-sub-07",
+        serialNo: "07",
+        displayOrder: 7,
+        subjectCode: "ACT-607",
+        subjectName: "International Finance",
+        credits: 3,
+        period: "1st Semester",
+        defaultMarks: 84
+      },
+
+      // 2nd Semester — 8 Subjects (27 Credits)
+      {
+        id: "mba-acc-sub-08",
+        serialNo: "08",
+        displayOrder: 8,
+        subjectCode: "ACT-608",
+        subjectName: "Corporate Governance",
+        credits: 3,
+        period: "2nd Semester",
+        defaultMarks: 86
+      },
+      {
+        id: "mba-acc-sub-09",
+        serialNo: "09",
+        displayOrder: 9,
+        subjectCode: "ACT-609",
+        subjectName: "Research Methodology",
+        credits: 3,
+        period: "2nd Semester",
+        defaultMarks: 88
+      },
+      {
+        id: "mba-acc-sub-10",
+        serialNo: "10",
+        displayOrder: 10,
+        subjectCode: "ACT-610",
+        subjectName: "Contemporary Accounting Issues",
+        credits: 3,
+        period: "2nd Semester",
+        defaultMarks: 85
+      },
+      {
+        id: "mba-acc-sub-11",
+        serialNo: "11",
+        displayOrder: 11,
+        subjectCode: "ACT-611",
+        subjectName: "Advanced Cost & Management Accounting",
+        credits: 3,
+        period: "2nd Semester",
+        defaultMarks: 87
+      },
+      {
+        id: "mba-acc-sub-12",
+        serialNo: "12",
+        displayOrder: 12,
+        subjectCode: "ACT-612",
+        subjectName: "Corporate Tax Planning",
+        credits: 3,
+        period: "2nd Semester",
+        defaultMarks: 86
+      },
+      {
+        id: "mba-acc-sub-13",
+        serialNo: "13",
+        displayOrder: 13,
+        subjectCode: "ACT-613",
+        subjectName: "Managerial Control Accounting",
+        credits: 3,
+        period: "2nd Semester",
+        defaultMarks: 88
+      },
+      {
+        id: "mba-acc-sub-14",
+        serialNo: "14",
+        displayOrder: 14,
+        subjectCode: "ACT-614",
+        subjectName: "Forensic Accounting",
+        credits: 3,
+        period: "2nd Semester",
+        defaultMarks: 89
+      },
+      {
+        id: "mba-acc-sub-15",
+        serialNo: "15",
+        displayOrder: 15,
+        subjectCode: "ACT-615",
+        subjectName: "Internship, Project Paper and Defense",
+        credits: 6,
+        period: "2nd Semester",
+        defaultMarks: 95
+      }
+    ]
+  },
   {
     code: "MBA-EXEC",
     name: "Master of Business Administration (Executive / Regular MBA)",
@@ -676,6 +851,12 @@ export function getProgramByCode(code: string): DegreeProgram | undefined {
   if (clean === "bba" || clean === "bba-acc" || clean === "bba-ais") {
     return DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "BBA-ACC" || p.code === "BBA-AIS");
   }
+  if (clean === "mba-acc" || clean === "mba-accounting") {
+    return DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "MBA-ACC");
+  }
+  if (clean === "mba" || clean === "mba-gen" || clean === "mba-exec") {
+    return DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "MBA-ACC" || p.code === "MBA-EXEC");
+  }
   return DEGREE_PROGRAMS_CATALOG.find((p) => p.code.toLowerCase() === clean);
 }
 
@@ -684,6 +865,14 @@ export function getProgramByCode(code: string): DegreeProgram | undefined {
  */
 export function getBbaAccountingCurriculum(): DegreeProgram {
   const prog = DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "BBA-ACC")!;
+  return prog;
+}
+
+/**
+ * Returns the standardized default MBA in Accounting curriculum (48 Credits, 2 Semesters, 15 Subjects)
+ */
+export function getMbaAccountingCurriculum(): DegreeProgram {
+  const prog = DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "MBA-ACC")!;
   return prog;
 }
 
@@ -705,15 +894,19 @@ export function generateDefaultSemesterResults(program: DegreeProgram, marksOffs
           { subjectCode: `${program.code}-${period.replace(/\s+/g, "").toUpperCase()}-03`, subjectName: `${program.name} - Elective / Practical`, credits: 3, period, defaultMarks: 85 }
         ];
 
-    const subjects: SubjectGrade[] = coursesToUse.map((c) => {
+    const subjects: SubjectGrade[] = coursesToUse.map((c, cIdx) => {
       const marks = Math.min(98, Math.max(45, (c.defaultMarks || 80) + marksOffset));
       const gp = getDiplomaGradePointFromMarks(marks);
       return {
+        id: c.id || `${program.code.toLowerCase()}-${period.replace(/\s+/g, "").toLowerCase()}-${cIdx + 1}`,
+        serialNo: c.serialNo || String(cIdx + 1).padStart(2, "0"),
+        displayOrder: c.displayOrder || cIdx + 1,
         subjectCode: c.subjectCode,
         subjectName: c.subjectName,
         marks: marks,
         gradePoint: gp,
         credit: c.credits,
+        credits: c.credits,
         letterGrade: getDiplomaLetterGrade(gp),
         year: period
       };

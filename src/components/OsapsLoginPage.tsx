@@ -4,7 +4,7 @@ import {
   Calendar, Award, ArrowLeft, ChevronRight, LogOut, Printer, School, ExternalLink 
 } from "lucide-react";
 import { motion } from "motion/react";
-import { Student, getDiplomaLetterGrade, Category } from "../types";
+import { Student, getDiplomaLetterGrade, Category, isDivisionSystemStudent, calculateDivisionFromMarks } from "../types";
 import Logo from "./Logo";
 
 interface OsapsLoginPageProps {
@@ -266,13 +266,27 @@ export default function OsapsLoginPage({
             {/* Quick Metrics Bar */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-2xs">
-                <span className="text-[10px] font-bold uppercase text-gray-400 block">Grading Result</span>
-                <span className="text-xl sm:text-2xl font-black text-[#006a4e] mt-1 block">
-                  {loggedInStudent.finalGpa.toFixed(2)} / {loggedInStudent.category.includes("DIPLOMA") ? "4.00" : "5.00"}
-                </span>
-                <span className="text-[10px] text-emerald-700 font-bold block mt-0.5">
-                  CGPA System Authenticated
-                </span>
+                {isDivisionSystemStudent(loggedInStudent) ? (
+                  <>
+                    <span className="text-[10px] font-bold uppercase text-gray-400 block">Board Division</span>
+                    <span className="text-lg sm:text-xl font-black text-[#006a4e] mt-1 block truncate" title={loggedInStudent.division || calculateDivisionFromMarks(loggedInStudent.subjects).division}>
+                      {loggedInStudent.division || calculateDivisionFromMarks(loggedInStudent.subjects).division}
+                    </span>
+                    <span className="text-[10px] text-emerald-700 font-bold block mt-0.5">
+                      Total Marks: {loggedInStudent.totalMarks !== undefined ? loggedInStudent.totalMarks : loggedInStudent.subjects.reduce((sum, s) => sum + (s.marks || 0), 0)}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-[10px] font-bold uppercase text-gray-400 block">Grading Result</span>
+                    <span className="text-xl sm:text-2xl font-black text-[#006a4e] mt-1 block">
+                      {loggedInStudent.finalGpa.toFixed(2)} / {loggedInStudent.category.includes("DIPLOMA") ? "4.00" : "5.00"}
+                    </span>
+                    <span className="text-[10px] text-emerald-700 font-bold block mt-0.5">
+                      CGPA System Authenticated
+                    </span>
+                  </>
+                )}
               </div>
 
               <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-2xs">

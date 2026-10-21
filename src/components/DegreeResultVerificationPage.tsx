@@ -852,10 +852,9 @@ export default function DegreeResultVerificationPage({
                       <table className="w-full text-left text-xs border-collapse print-compact-table">
                         <thead>
                           <tr className="border-b border-gray-200 text-[10px] font-bold uppercase text-gray-600 bg-gray-50">
+                            <th className="py-1.5 px-2 text-center w-8">SL</th>
                             <th className="py-1.5 px-3">Subject Code</th>
-                            <th className={`py-1.5 px-3 print-hide-title print:hidden ${viewMode === "compact_preview" ? "hidden" : ""}`}>
-                              Course Title / Subject Name
-                            </th>
+                            <th className="py-1.5 px-3">Course Title / Subject Name</th>
                             <th className="py-1.5 px-2 text-center">Credit</th>
                             <th className="py-1.5 px-2 text-center">Marks</th>
                             <th className="py-1.5 px-2 text-center">Grade Point</th>
@@ -866,10 +865,13 @@ export default function DegreeResultVerificationPage({
                         <tbody className="divide-y divide-gray-100 text-[11px]">
                           {sem.subjects.map((sub, subIdx) => (
                             <tr key={subIdx} className="hover:bg-gray-50/50">
+                              <td className="py-1.5 px-2 text-center font-mono font-bold text-gray-700">
+                                {sub.serialNo || (sub.displayOrder ? String(sub.displayOrder).padStart(2, "0") : String(subIdx + 1).padStart(2, "0"))}
+                              </td>
                               <td className="py-1.5 px-3 font-mono font-bold text-gray-950">
                                 {sub.subjectCode || "N/A"}
                               </td>
-                              <td className={`py-1.5 px-3 font-medium text-gray-950 print-hide-title print:hidden ${viewMode === "compact_preview" ? "hidden" : ""}`}>
+                              <td className="py-1.5 px-3 font-medium text-gray-950">
                                 {sub.subjectName}
                               </td>
                               <td className="py-1.5 px-2 text-center font-mono text-gray-700">
@@ -987,10 +989,9 @@ export default function DegreeResultVerificationPage({
                         <table className="w-full text-left text-xs border-collapse print-compact-table">
                           <thead>
                             <tr className="border-b border-gray-200 text-[10px] font-bold uppercase text-gray-600 bg-gray-50">
+                              <th className="py-1.5 px-2 text-center w-8">SL</th>
                               <th className="py-1.5 px-3">Subject Code</th>
-                              <th className={`py-1.5 px-3 print-hide-title print:hidden ${viewMode === "compact_preview" ? "hidden" : ""}`}>
-                                Course Title / Subject Name
-                              </th>
+                              <th className="py-1.5 px-3">Course Title / Subject Name</th>
                               <th className="py-1.5 px-2 text-center">Credit</th>
                               <th className="py-1.5 px-2 text-center">Marks</th>
                               <th className="py-1.5 px-2 text-center">Grade Point</th>
@@ -1001,10 +1002,13 @@ export default function DegreeResultVerificationPage({
                           <tbody className="divide-y divide-gray-100 text-[11px]">
                             {sem.subjects.map((sub, subIdx) => (
                               <tr key={subIdx} className="hover:bg-gray-50/50">
+                                <td className="py-1.5 px-2 text-center font-mono font-bold text-gray-700">
+                                  {sub.serialNo || (sub.displayOrder ? String(sub.displayOrder).padStart(2, "0") : String(subIdx + 1).padStart(2, "0"))}
+                                </td>
                                 <td className="py-1.5 px-3 font-mono font-bold text-gray-950">
                                   {sub.subjectCode || "N/A"}
                                 </td>
-                                <td className={`py-1.5 px-3 font-medium text-gray-950 print-hide-title print:hidden ${viewMode === "compact_preview" ? "hidden" : ""}`}>
+                                <td className="py-1.5 px-3 font-medium text-gray-950">
                                   {sub.subjectName}
                                 </td>
                                 <td className="py-1.5 px-2 text-center font-mono text-gray-700">
