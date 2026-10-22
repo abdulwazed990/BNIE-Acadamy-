@@ -11,7 +11,7 @@ import Logo from "./Logo";
 import { 
   Plus, Edit2, Trash2, Eye, ShieldCheck, LogOut, Search, User, Key, 
   Calendar, FileText, School, Clock, Upload, ArrowRight, Save, X, Image as ImageIcon,
-  BookOpen, Tablet, CheckCircle2, Lock, ToggleLeft, ToggleRight
+  BookOpen, Tablet, CheckCircle2, Lock, ToggleLeft, ToggleRight, RefreshCw, Unlock
 } from "lucide-react";
 import { motion } from "motion/react";
 import { 
@@ -20,6 +20,10 @@ import {
 } from "../data/resourcesData";
 import LeadershipAdminModule from "./LeadershipAdminModule";
 import DegreeStudentForm from "./DegreeStudentForm";
+import { 
+  generateSchoolRollNumber, 
+  generateSchoolRegistrationNumber 
+} from "../lib/academicNumberingService";
 
 interface AdminPanelProps {
   students: Student[];
@@ -78,6 +82,10 @@ export default function AdminPanel({
   const [formDob, setFormDob] = useState("");
   const [formRoll, setFormRoll] = useState("");
   const [formReg, setFormReg] = useState("");
+  const [formRegistrationYear, setFormRegistrationYear] = useState("");
+  const [formAdmissionYear, setFormAdmissionYear] = useState("");
+  const [formExaminationYear, setFormExaminationYear] = useState("");
+  const [isRegRollUnlocked, setIsRegRollUnlocked] = useState(false);
   const [formInstitute, setFormInstitute] = useState("");
   const [formSession, setFormSession] = useState("");
   const [formPassingYear, setFormPassingYear] = useState("");
@@ -162,17 +170,32 @@ export default function AdminPanel({
       return;
     }
 
+    const initialPassingYear = "2024";
+    const initialSession = "2022-2023";
+    const initialRegYear = "2024";
+    const generatedRoll = generateSchoolRollNumber(students);
+    const { registrationNumber: generatedReg } = generateSchoolRegistrationNumber({
+      registrationYear: initialRegYear,
+      passingYear: initialPassingYear,
+      session: initialSession,
+      existingStudents: students
+    });
+
     setFormGroup(cat === Category.DIPLOMA ? Group.MECHANICAL_ENGINEERING : Group.SCIENCE);
     setFormReligion(Religion.ISLAM);
     setFormName("");
     setFormFatherName("");
     setFormMotherName("");
     setFormDob("");
-    setFormRoll("");
-    setFormReg("");
+    setFormRoll(generatedRoll);
+    setFormReg(generatedReg);
+    setFormRegistrationYear(initialRegYear);
+    setFormAdmissionYear("2022");
+    setFormExaminationYear("2024");
+    setIsRegRollUnlocked(true);
     setFormInstitute("Bangladesh National Institute of Education");
-    setFormSession("2022-2023");
-    setFormPassingYear("2024");
+    setFormSession(initialSession);
+    setFormPassingYear(initialPassingYear);
     setFormCertificateSerial(`BNIE-${cat}-2024-${Math.floor(Math.random() * 89999 + 10000)}`);
     setFormIssueDate("2024-06-20");
     setFormPhoto(PASSPORT_AVATARS.male1);
@@ -183,6 +206,25 @@ export default function AdminPanel({
     const initialSubjects = generateEmptySubjectGrades(cat, cat === Category.DIPLOMA ? Group.MECHANICAL_ENGINEERING : Group.SCIENCE, Religion.ISLAM);
     setFormSubjects(initialSubjects);
     setIsFormOpen(true);
+  };
+
+  // Re-generate unique 6-digit roll number for new student
+  const handleRegenerateSchoolRoll = () => {
+    const newRoll = generateSchoolRollNumber(students);
+    setFormRoll(newRoll);
+  };
+
+  // Re-generate year-based registration number for new student
+  const handleRegenerateSchoolReg = () => {
+    const targetYr = formRegistrationYear || formPassingYear || "2024";
+    const { registrationNumber: newReg, registrationYear: actualYear } = generateSchoolRegistrationNumber({
+      registrationYear: targetYr,
+      passingYear: formPassingYear,
+      session: formSession,
+      existingStudents: students
+    });
+    setFormReg(newReg);
+    setFormRegistrationYear(actualYear);
   };
 
   // Triggered when clicking "Edit"
@@ -207,8 +249,13 @@ export default function AdminPanel({
     setFormFatherName(student.fatherName);
     setFormMotherName(student.motherName);
     setFormDob(student.dob);
+    // Preserve existing student roll & registration permanently without alteration
     setFormRoll(student.rollNumber);
     setFormReg(student.registrationNumber);
+    setFormRegistrationYear(student.registrationYear || student.passingYear || "");
+    setFormAdmissionYear(student.admissionYear || "");
+    setFormExaminationYear(student.examinationYear || student.passingYear || "");
+    setIsRegRollUnlocked(false);
     setFormInstitute(student.instituteName);
     setFormSession(student.session);
     setFormPassingYear(student.passingYear);
@@ -353,6 +400,9 @@ export default function AdminPanel({
       instituteName: formInstitute.trim(),
       session: formSession.trim(),
       passingYear: formPassingYear.trim(),
+      registrationYear: formRegistrationYear.trim() || formPassingYear.trim(),
+      admissionYear: formAdmissionYear.trim() || undefined,
+      examinationYear: formExaminationYear.trim() || formPassingYear.trim(),
       certificateSerialNumber: formCertificateSerial.trim(),
       issueDate: formIssueDate,
       photoUrl: formPhoto,
@@ -1408,35 +1458,199 @@ export default function AdminPanel({
                   </div>
                 </div>
 
-                {/* Roll & Reg numbers */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-1">
-                      Roll Number {formCategory === Category.DIPLOMA ? "(Alphanumeric / Numbers allowed)" : ""}
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder=""
-                      value={formRoll}
-                      onChange={(e) => setFormRoll(e.target.value.replace(/[^a-zA-Z0-9\-_/]/g, ""))}
-                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium font-mono"
-                    />
+                {/* Year-Based Academic Timeline Section */}
+                <div className="p-3.5 bg-emerald-50/50 rounded-xl border border-emerald-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-[#006a4e] uppercase tracking-wider block">
+                      Academic Timeline &amp; Year Allocation
+                    </span>
+                    <span className="text-[10px] text-gray-500 font-mono">
+                      Policy: Year-Based Reg.
+                    </span>
                   </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-1">
-                      Registration Number {formCategory === Category.DIPLOMA ? "(Alphanumeric / Numbers allowed)" : ""}
-                    </label>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {/* Registration Year */}
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wider block mb-1">
+                        Reg. Year <span className="text-[#006a4e]">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={4}
+                        placeholder="e.g. 2012"
+                        value={formRegistrationYear}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "");
+                          setFormRegistrationYear(val);
+                          if (!editingStudentId && val.length === 4) {
+                            const { registrationNumber: newReg } = generateSchoolRegistrationNumber({
+                              registrationYear: val,
+                              passingYear: formPassingYear,
+                              session: formSession,
+                              existingStudents: students
+                            });
+                            setFormReg(newReg);
+                          }
+                        }}
+                        className="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold text-gray-900 focus:border-[#006a4e]"
+                      />
+                    </div>
+
+                    {/* Admission Year */}
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wider block mb-1">
+                        Admission Year
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={4}
+                        placeholder="e.g. 2010"
+                        value={formAdmissionYear}
+                        onChange={(e) => setFormAdmissionYear(e.target.value.replace(/\D/g, ""))}
+                        className="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs font-mono font-medium text-gray-900 focus:border-[#006a4e]"
+                      />
+                    </div>
+
+                    {/* Examination Year */}
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wider block mb-1">
+                        Exam Year
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={4}
+                        placeholder="e.g. 2012"
+                        value={formExaminationYear}
+                        onChange={(e) => setFormExaminationYear(e.target.value.replace(/\D/g, ""))}
+                        className="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs font-mono font-medium text-gray-900 focus:border-[#006a4e]"
+                      />
+                    </div>
+
+                    {/* Passing Year */}
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wider block mb-1">
+                        Passing Year <span className="text-[#006a4e]">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        maxLength={4}
+                        placeholder="e.g. 2012"
+                        value={formPassingYear}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "");
+                          setFormPassingYear(val);
+                          if (!editingStudentId && (!formRegistrationYear || formRegistrationYear === formPassingYear) && val.length === 4) {
+                            setFormRegistrationYear(val);
+                            const { registrationNumber: newReg } = generateSchoolRegistrationNumber({
+                              registrationYear: val,
+                              passingYear: val,
+                              session: formSession,
+                              existingStudents: students
+                            });
+                            setFormReg(newReg);
+                          }
+                          const yr = parseInt(val, 10);
+                          if (!isNaN(yr) && yr > 1950 && yr <= 2000 && (formCategory === Category.SSC || formCategory === Category.HSC)) {
+                            const divRes = calculateDivisionFromMarks(formSubjects);
+                            setFormDivision(divRes.division);
+                          }
+                        }}
+                        className="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold text-gray-900 focus:border-[#006a4e]"
+                      />
+                    </div>
+                  </div>
+                  {isPre2001Division && (
+                    <span className="text-[10px] text-amber-700 font-bold block">
+                      ★ Pre-2001 Division System (1995–2000)
+                    </span>
+                  )}
+                </div>
+
+                {/* Roll & Reg numbers with Authenticity & Protection */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Roll Number */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block">
+                        Roll Number (6-Digit Numeric)
+                      </label>
+                      {!editingStudentId && (
+                        <button
+                          type="button"
+                          onClick={handleRegenerateSchoolRoll}
+                          className="text-[10px] font-bold text-[#006a4e] hover:underline flex items-center gap-1 cursor-pointer"
+                          title="Generate new collision-free 6-digit roll"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          <span>Generate New</span>
+                        </button>
+                      )}
+                    </div>
                     <input
                       type="text"
                       required
-                      placeholder=""
-                      value={formReg}
-                      onChange={(e) => setFormReg(e.target.value.replace(/[^a-zA-Z0-9\-_/]/g, ""))}
-                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium font-mono"
+                      placeholder="e.g. 584217"
+                      value={formRoll}
+                      disabled={Boolean(editingStudentId && !isRegRollUnlocked)}
+                      onChange={(e) => setFormRoll(e.target.value.replace(/\D/g, ""))}
+                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-bold font-mono tracking-wider disabled:bg-gray-100 disabled:text-gray-600"
                     />
+                    <span className="text-[10px] text-gray-500">
+                      {editingStudentId ? "Preserved permanent roll number" : "Randomized authentic 6-digit roll"}
+                    </span>
+                  </div>
+
+                  {/* Registration Number */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block">
+                        Reg. Number (YYYYNNNNNN)
+                      </label>
+                      {!editingStudentId && (
+                        <button
+                          type="button"
+                          onClick={handleRegenerateSchoolReg}
+                          className="text-[10px] font-bold text-[#006a4e] hover:underline flex items-center gap-1 cursor-pointer"
+                          title="Generate new year-based registration number"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          <span>Generate New</span>
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 2012005831"
+                      value={formReg}
+                      disabled={Boolean(editingStudentId && !isRegRollUnlocked)}
+                      onChange={(e) => setFormReg(e.target.value.replace(/\D/g, ""))}
+                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-bold font-mono tracking-wider disabled:bg-gray-100 disabled:text-gray-600"
+                    />
+                    <span className="text-[10px] text-gray-500">
+                      {editingStudentId ? "Permanent year-based registration" : `Begins with ${formRegistrationYear || formPassingYear || "YYYY"} + 6-digit unique number`}
+                    </span>
                   </div>
                 </div>
+
+                {/* Unlock control for audited editing */}
+                {editingStudentId && (
+                  <div className="flex items-center justify-between p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-xs">
+                    <div className="flex items-center gap-2 text-amber-800">
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Roll &amp; Registration are permanently locked to preserve academic integrity.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsRegRollUnlocked(!isRegRollUnlocked)}
+                      className="text-[11px] font-bold text-amber-900 underline hover:text-amber-950 cursor-pointer"
+                    >
+                      {isRegRollUnlocked ? "Relock Numbers" : "Audited Correction"}
+                    </button>
+                  </div>
+                )}
 
                 {/* Institute & Session */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1463,33 +1677,8 @@ export default function AdminPanel({
                     />
                   </div>
                 </div>
-
-                {/* Passing Year & Certificate Serial */}
+                {/* Certificate Serial & Issue Date */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-1">Passing Year</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder=""
-                      value={formPassingYear}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, "");
-                        setFormPassingYear(val);
-                        const yr = parseInt(val, 10);
-                        if (!isNaN(yr) && yr > 1950 && yr <= 2000 && (formCategory === Category.SSC || formCategory === Category.HSC)) {
-                          const divRes = calculateDivisionFromMarks(formSubjects);
-                          setFormDivision(divRes.division);
-                        }
-                      }}
-                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium font-mono"
-                    />
-                    {isPre2001Division && (
-                      <span className="text-[10px] text-amber-700 font-bold block mt-1">
-                        ★ Pre-2001 Division System (1995–2000)
-                      </span>
-                    )}
-                  </div>
                   <div>
                     <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-1">Certificate Serial</label>
                     <input
@@ -1501,18 +1690,16 @@ export default function AdminPanel({
                       className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium font-mono"
                     />
                   </div>
-                </div>
-
-                {/* Issue Date */}
-                <div>
-                  <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-1">Issue Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={formIssueDate}
-                    onChange={(e) => setFormIssueDate(e.target.value)}
-                    className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium"
-                  />
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block mb-1">Issue Date</label>
+                    <input
+                      type="date"
+                      required
+                      value={formIssueDate}
+                      onChange={(e) => setFormIssueDate(e.target.value)}
+                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs focus:border-[#006a4e] text-gray-900 font-medium"
+                    />
+                  </div>
                 </div>
 
                 {/* Image Base64 Uploader */}

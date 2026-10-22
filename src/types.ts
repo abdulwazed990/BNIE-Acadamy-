@@ -85,6 +85,7 @@ export interface Student {
   semesterResults?: SemesterResult[];
 
   // Automatic Academic Numbering, Timeline & Certification Fields
+  registrationYear?: string; // e.g. "2012"
   admissionYear?: string; // e.g. "2020"
   courseDuration?: string; // e.g. "4 Years", "3 Years", "2 Years", "1 Year"
   expectedCompletionYear?: string; // e.g. "2024"

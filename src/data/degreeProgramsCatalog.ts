@@ -205,6 +205,83 @@ export const DEGREE_PROGRAMS_CATALOG: DegreeProgram[] = [
       { subjectCode: "BEN-801", subjectName: "গবেষণা সন্দর্ভ ও চূড়ান্ত মৌখিক পরীক্ষা", credits: 3, period: "8th Semester", defaultMarks: 91 }
     ]
   },
+  // ==================== BACHELOR OF ARTS (BA) — MAJOR IN HISTORY (4-YEAR / 8 SEMESTERS) ====================
+  {
+    code: "BA-HIS",
+    name: "Bachelor of Arts (BA)",
+    nameBn: "ব্যাচেলর অব আর্টস (বি.এ. অনার্স) — ইতিহাস",
+    academicLevel: "Honours",
+    department: "Department of History",
+    duration: "4 Years (8 Semesters)",
+    structureType: "Semester-wise",
+    periods: ["1st Semester", "2nd Semester", "3rd Semester", "4th Semester", "5th Semester", "6th Semester", "7th Semester", "8th Semester"],
+    majorSubjects: [
+      "History",
+      "History of Bengal & Liberation War",
+      "Ancient & Medieval History",
+      "South Asian & Modern World History",
+      "Heritage & Archival Studies"
+    ],
+    defaultCourses: [
+      // SEMESTER 1 (5 Subjects, 15 Credits)
+      { id: "his-1101", serialNo: "01", displayOrder: 1, subjectCode: "HIS 1101", subjectName: "Ancient History", credits: 3, period: "1st Semester", defaultMarks: 82 },
+      { id: "his-1102", serialNo: "02", displayOrder: 2, subjectCode: "HIS 1102", subjectName: "History of Bengal", credits: 3, period: "1st Semester", defaultMarks: 84 },
+      { id: "his-1103", serialNo: "03", displayOrder: 3, subjectCode: "HIS 1103", subjectName: "World Civilization", credits: 3, period: "1st Semester", defaultMarks: 80 },
+      { id: "his-1104", serialNo: "04", displayOrder: 4, subjectCode: "HIS 1104", subjectName: "Historical Methods", credits: 3, period: "1st Semester", defaultMarks: 85 },
+      { id: "his-1105", serialNo: "05", displayOrder: 5, subjectCode: "HIS 1105", subjectName: "Bangladesh Studies", credits: 3, period: "1st Semester", defaultMarks: 86 },
+
+      // SEMESTER 2 (5 Subjects, 15 Credits)
+      { id: "his-1201", serialNo: "06", displayOrder: 6, subjectCode: "HIS 1201", subjectName: "Medieval History", credits: 3, period: "2nd Semester", defaultMarks: 81 },
+      { id: "his-1202", serialNo: "07", displayOrder: 7, subjectCode: "HIS 1202", subjectName: "Muslim History", credits: 3, period: "2nd Semester", defaultMarks: 83 },
+      { id: "his-1203", serialNo: "08", displayOrder: 8, subjectCode: "HIS 1203", subjectName: "South Asian History", credits: 3, period: "2nd Semester", defaultMarks: 82 },
+      { id: "his-1204", serialNo: "09", displayOrder: 9, subjectCode: "HIS 1204", subjectName: "Modern World History", credits: 3, period: "2nd Semester", defaultMarks: 85 },
+      { id: "his-1205", serialNo: "10", displayOrder: 10, subjectCode: "HIS 1205", subjectName: "History of Islam", credits: 3, period: "2nd Semester", defaultMarks: 84 },
+
+      // SEMESTER 3 (5 Subjects, 15 Credits)
+      { id: "his-2101", serialNo: "11", displayOrder: 11, subjectCode: "HIS 2101", subjectName: "Modern Bengal", credits: 3, period: "3rd Semester", defaultMarks: 84 },
+      { id: "his-2102", serialNo: "12", displayOrder: 12, subjectCode: "HIS 2102", subjectName: "British India", credits: 3, period: "3rd Semester", defaultMarks: 83 },
+      { id: "his-2103", serialNo: "13", displayOrder: 13, subjectCode: "HIS 2103", subjectName: "European History", credits: 3, period: "3rd Semester", defaultMarks: 82 },
+      { id: "his-2104", serialNo: "14", displayOrder: 14, subjectCode: "HIS 2104", subjectName: "Ancient India", credits: 3, period: "3rd Semester", defaultMarks: 85 },
+      { id: "his-2105", serialNo: "15", displayOrder: 15, subjectCode: "HIS 2105", subjectName: "Historical Research", credits: 3, period: "3rd Semester", defaultMarks: 86 },
+
+      // SEMESTER 4 (5 Subjects, 15 Credits)
+      { id: "his-2201", serialNo: "16", displayOrder: 16, subjectCode: "HIS 2201", subjectName: "Mughal History", credits: 3, period: "4th Semester", defaultMarks: 87 },
+      { id: "his-2202", serialNo: "17", displayOrder: 17, subjectCode: "HIS 2202", subjectName: "Colonial Bengal", credits: 3, period: "4th Semester", defaultMarks: 85 },
+      { id: "his-2203", serialNo: "18", displayOrder: 18, subjectCode: "HIS 2203", subjectName: "Modern Asia", credits: 3, period: "4th Semester", defaultMarks: 83 },
+      { id: "his-2204", serialNo: "19", displayOrder: 19, subjectCode: "HIS 2204", subjectName: "American History", credits: 3, period: "4th Semester", defaultMarks: 82 },
+      { id: "his-2205", serialNo: "20", displayOrder: 20, subjectCode: "HIS 2205", subjectName: "History of Europe", credits: 3, period: "4th Semester", defaultMarks: 84 },
+
+      // SEMESTER 5 (5 Subjects, 15 Credits)
+      { id: "his-3101", serialNo: "21", displayOrder: 21, subjectCode: "HIS 3101", subjectName: "Bengal Renaissance", credits: 3, period: "5th Semester", defaultMarks: 86 },
+      { id: "his-3102", serialNo: "22", displayOrder: 22, subjectCode: "HIS 3102", subjectName: "Pakistan Period", credits: 3, period: "5th Semester", defaultMarks: 85 },
+      { id: "his-3103", serialNo: "23", displayOrder: 23, subjectCode: "HIS 3103", subjectName: "Liberation War", credits: 3, period: "5th Semester", defaultMarks: 90 },
+      { id: "his-3104", serialNo: "24", displayOrder: 24, subjectCode: "HIS 3104", subjectName: "Modern Middle East", credits: 3, period: "5th Semester", defaultMarks: 84 },
+      { id: "his-3105", serialNo: "25", displayOrder: 25, subjectCode: "HIS 3105", subjectName: "Economic History", credits: 3, period: "5th Semester", defaultMarks: 83 },
+
+      // SEMESTER 6 (5 Subjects, 15 Credits)
+      { id: "his-3201", serialNo: "26", displayOrder: 26, subjectCode: "HIS 3201", subjectName: "Political History", credits: 3, period: "6th Semester", defaultMarks: 85 },
+      { id: "his-3202", serialNo: "27", displayOrder: 27, subjectCode: "HIS 3202", subjectName: "Social History", credits: 3, period: "6th Semester", defaultMarks: 86 },
+      { id: "his-3203", serialNo: "28", displayOrder: 28, subjectCode: "HIS 3203", subjectName: "Cultural History", credits: 3, period: "6th Semester", defaultMarks: 87 },
+      { id: "his-3204", serialNo: "29", displayOrder: 29, subjectCode: "HIS 3204", subjectName: "History of China", credits: 3, period: "6th Semester", defaultMarks: 84 },
+      { id: "his-3205", serialNo: "30", displayOrder: 30, subjectCode: "HIS 3205", subjectName: "History of Japan", credits: 3, period: "6th Semester", defaultMarks: 85 },
+
+      // SEMESTER 7 (5 Subjects, 15 Credits)
+      { id: "his-4101", serialNo: "31", displayOrder: 31, subjectCode: "HIS 4101", subjectName: "Historical Geography", credits: 3, period: "7th Semester", defaultMarks: 86 },
+      { id: "his-4102", serialNo: "32", displayOrder: 32, subjectCode: "HIS 4102", subjectName: "History of Science", credits: 3, period: "7th Semester", defaultMarks: 85 },
+      { id: "his-4103", serialNo: "33", displayOrder: 33, subjectCode: "HIS 4103", subjectName: "Gender History", credits: 3, period: "7th Semester", defaultMarks: 87 },
+      { id: "his-4104", serialNo: "34", displayOrder: 34, subjectCode: "HIS 4104", subjectName: "Comparative History", credits: 3, period: "7th Semester", defaultMarks: 86 },
+      { id: "his-4105", serialNo: "35", displayOrder: 35, subjectCode: "HIS 4105", subjectName: "Research Seminar", credits: 3, period: "7th Semester", defaultMarks: 88 },
+
+      // SEMESTER 8 (7 Subjects, 20 Credits: 6 x 3 Credits + 1 x 2 Credits = 20 Credits)
+      { id: "his-4201", serialNo: "36", displayOrder: 36, subjectCode: "HIS 4201", subjectName: "Contemporary History", credits: 3, period: "8th Semester", defaultMarks: 88 },
+      { id: "his-4202", serialNo: "37", displayOrder: 37, subjectCode: "HIS 4202", subjectName: "Global History", credits: 3, period: "8th Semester", defaultMarks: 87 },
+      { id: "his-4203", serialNo: "38", displayOrder: 38, subjectCode: "HIS 4203", subjectName: "Historical Theory", credits: 3, period: "8th Semester", defaultMarks: 89 },
+      { id: "his-4204", serialNo: "39", displayOrder: 39, subjectCode: "HIS 4204", subjectName: "Heritage Studies", credits: 3, period: "8th Semester", defaultMarks: 88 },
+      { id: "his-4205", serialNo: "40", displayOrder: 40, subjectCode: "HIS 4205", subjectName: "Archival Studies", credits: 3, period: "8th Semester", defaultMarks: 86 },
+      { id: "his-4206", serialNo: "41", displayOrder: 41, subjectCode: "HIS 4206", subjectName: "Research Project", credits: 3, period: "8th Semester", defaultMarks: 92 },
+      { id: "his-4207", serialNo: "42", displayOrder: 42, subjectCode: "HIS 4207", subjectName: "Viva Voce", credits: 2, period: "8th Semester", defaultMarks: 94 }
+    ]
+  },
   {
     code: "IS-HON",
     name: "Bachelor of Arts (Honours) in Islamic Studies",
@@ -857,6 +934,9 @@ export function getProgramByCode(code: string): DegreeProgram | undefined {
   if (clean === "mba" || clean === "mba-gen" || clean === "mba-exec") {
     return DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "MBA-ACC" || p.code === "MBA-EXEC");
   }
+  if (clean === "ba-his" || clean === "ba-history" || clean === "history") {
+    return DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "BA-HIS");
+  }
   return DEGREE_PROGRAMS_CATALOG.find((p) => p.code.toLowerCase() === clean);
 }
 
@@ -873,6 +953,14 @@ export function getBbaAccountingCurriculum(): DegreeProgram {
  */
 export function getMbaAccountingCurriculum(): DegreeProgram {
   const prog = DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "MBA-ACC")!;
+  return prog;
+}
+
+/**
+ * Returns the standardized default Bachelor of Arts (BA) in History curriculum (125 Credits, 8 Semesters, 42 Subjects)
+ */
+export function getBaHistoryCurriculum(): DegreeProgram {
+  const prog = DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "BA-HIS")!;
   return prog;
 }
 

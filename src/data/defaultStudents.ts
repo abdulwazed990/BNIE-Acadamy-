@@ -485,6 +485,47 @@ export const DEFAULT_STUDENTS: Student[] = [
       ? generateDefaultSemesterResults(DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "BBA-ACC")!, 4).flatMap(s => s.subjects)
       : [],
     secureToken: "bnie_sec_bba_661001"
+  },
+  {
+    id: "BNIE-BA-5001",
+    category: Category.HONOURS,
+    academicLevel: "Honours",
+    programCode: "BA-HIS",
+    programName: "Bachelor of Arts (BA)",
+    department: "Department of History",
+    majorSubject: "History",
+    group: Group.HUMANITIES,
+    religion: Religion.ISLAM,
+    name: "Ahsan Habib",
+    fatherName: "Mokbul Hossain",
+    motherName: "Fatema Begum",
+    dob: "2000-03-14",
+    rollNumber: "771001",
+    registrationNumber: "2003829105",
+    instituteName: "Bangladesh National Institute of Education (BNIE)",
+    session: "2020-2024",
+    currentSemesterOrYear: "8th Semester (Final)",
+    admissionYear: "2020",
+    courseDuration: "4 Years",
+    expectedCompletionYear: "2024",
+    examinationYear: "2024",
+    passingYear: "2024",
+    resultPublicationDate: "2024-05-20",
+    certificateSerialNumber: "BNIE-BA-2024-77105",
+    certificateNumber: "BNIE-BA-CERT-2024-0025",
+    certificateStatus: "Issued",
+    issueDate: "2024-09-15",
+    certificateIssueDate: "2024-11-16",
+    photoUrl: PASSPORT_AVATARS.male1,
+    finalGpa: 3.84,
+    resultStatus: "First Class with Honours",
+    semesterResults: DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "BA-HIS")
+      ? generateDefaultSemesterResults(DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "BA-HIS")!, 3)
+      : [],
+    subjects: DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "BA-HIS")
+      ? generateDefaultSemesterResults(DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "BA-HIS")!, 3).flatMap(s => s.subjects)
+      : [],
+    secureToken: "bnie_sec_ba_771001"
   }
 ];
 

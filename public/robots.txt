@@ -1,0 +1,50 @@
+User-agent: *
+Allow: /
+Disallow: /?page=admin*
+Disallow: /admin
+Disallow: /*?token=*
+Disallow: /*?id=*
+
+User-agent: Googlebot
+Allow: /
+Disallow: /?page=admin*
+Disallow: /admin
+Disallow: /*?token=*
+Disallow: /*?id=*
+
+User-agent: Bingbot
+Allow: /
+Disallow: /?page=admin*
+Disallow: /admin
+Disallow: /*?token=*
+Disallow: /*?id=*
+
+User-agent: GPTBot
+Allow: /
+Disallow: /?page=admin*
+Disallow: /admin
+Disallow: /*?token=*
+Disallow: /*?id=*
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /?page=admin*
+Disallow: /admin
+Disallow: /*?token=*
+Disallow: /*?id=*
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /?page=admin*
+Disallow: /admin
+Disallow: /*?token=*
+Disallow: /*?id=*
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /?page=admin*
+Disallow: /admin
+Disallow: /*?token=*
+Disallow: /*?id=*
+
+Sitemap: https://bnie.edu.bd/sitemap.xml

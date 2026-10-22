@@ -18,7 +18,8 @@ import {
   getProgramsByLevel, 
   generateDefaultSemesterResults,
   getBbaAccountingCurriculum,
-  getMbaAccountingCurriculum
+  getMbaAccountingCurriculum,
+  getBaHistoryCurriculum
 } from "../data/degreeProgramsCatalog";
 import { 
   generateAutomaticRollNumber,
@@ -270,6 +271,30 @@ export default function DegreeStudentForm({
       return;
     }
 
+    if (code === "BA-HIS") {
+      const his = getBaHistoryCurriculum();
+      setDepartment(his.department);
+      setMajorSubject("History");
+      setCourseDuration("4 Years (8 Semesters)");
+      setCurrentPeriod("8th Semester (Final)");
+      const timeline = calculateAcademicTimeline({
+        academicLevel: "Honours",
+        programCode: code,
+        session,
+        manualAdmissionYear: admissionYear,
+        manualDurationYears: 4
+      });
+      setCourseDuration(timeline.courseDuration);
+      setExpectedCompletionYear(timeline.expectedCompletionYear);
+      setExaminationYear(timeline.examinationYear);
+      setPassingYear(timeline.examinationYear);
+      setResultPublicationDate(timeline.suggestedPublicationDate);
+      setCertificateIssueDate(timeline.suggestedCertificateIssueDate);
+      refreshAutoNumbers("Honours", code, session, admissionYear);
+      setSemesters(generateDefaultSemesterResults(his));
+      return;
+    }
+
     const p = DEGREE_PROGRAMS_CATALOG.find((item) => item.code === code);
     if (p) {
       setDepartment(p.department);
@@ -314,6 +339,33 @@ export default function DegreeStudentForm({
   const handleMajorChange = (newMajor: string) => {
     setMajorSubject(newMajor);
     const isAccounting = newMajor.toLowerCase().includes("accounting");
+    const isHistory = newMajor.toLowerCase().includes("history");
+
+    if (isHistory) {
+      const his = getBaHistoryCurriculum();
+      setAcademicLevel("Honours");
+      setSelectedProgramCode(his.code);
+      setDepartment(his.department);
+      setCourseDuration("4 Years (8 Semesters)");
+      setCurrentPeriod("8th Semester (Final)");
+      const timeline = calculateAcademicTimeline({
+        academicLevel: "Honours",
+        programCode: his.code,
+        session,
+        manualAdmissionYear: admissionYear,
+        manualDurationYears: 4
+      });
+      setCourseDuration(timeline.courseDuration);
+      setExpectedCompletionYear(timeline.expectedCompletionYear);
+      setExaminationYear(timeline.examinationYear);
+      setPassingYear(timeline.examinationYear);
+      setResultPublicationDate(timeline.suggestedPublicationDate);
+      setCertificateIssueDate(timeline.suggestedCertificateIssueDate);
+      refreshAutoNumbers("Honours", his.code, session, admissionYear);
+      setSemesters(generateDefaultSemesterResults(his));
+      return;
+    }
+
     if (isAccounting) {
       if (
         academicLevel === "Masters" ||
@@ -384,6 +436,32 @@ export default function DegreeStudentForm({
     setCertificateIssueDate(timeline.suggestedCertificateIssueDate);
     refreshAutoNumbers("Masters", mba.code, session, admissionYear);
     setSemesters(generateDefaultSemesterResults(mba));
+  };
+
+  // Explicit helper to load official BA in History 125-Credit Curriculum (42 Subjects, 8 Semesters)
+  const handleLoadBaHistoryCurriculum = () => {
+    const his = getBaHistoryCurriculum();
+    setAcademicLevel("Honours");
+    setSelectedProgramCode(his.code);
+    setDepartment(his.department);
+    setMajorSubject("History");
+    setCourseDuration("4 Years (8 Semesters)");
+    setCurrentPeriod("8th Semester (Final)");
+    const timeline = calculateAcademicTimeline({
+      academicLevel: "Honours",
+      programCode: his.code,
+      session,
+      manualAdmissionYear: admissionYear,
+      manualDurationYears: 4
+    });
+    setCourseDuration(timeline.courseDuration);
+    setExpectedCompletionYear(timeline.expectedCompletionYear);
+    setExaminationYear(timeline.examinationYear);
+    setPassingYear(timeline.examinationYear);
+    setResultPublicationDate(timeline.suggestedPublicationDate);
+    setCertificateIssueDate(timeline.suggestedCertificateIssueDate);
+    refreshAutoNumbers("Honours", his.code, session, admissionYear);
+    setSemesters(generateDefaultSemesterResults(his));
   };
 
   // Calculate CGPA dynamically from semesters
@@ -925,6 +1003,30 @@ export default function DegreeStudentForm({
                   className="bg-[#006a4e] text-white px-2.5 py-1 rounded-lg font-bold text-[11px] hover:bg-[#005a42] transition-colors cursor-pointer"
                 >
                   Load Standard 126-Cr Curriculum
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* BA in History Curriculum Active Notice */}
+          {(selectedProgramCode === "BA-HIS" || majorSubject.toLowerCase().includes("history")) && (
+            <div className="mt-3 bg-amber-50/90 border border-amber-300 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs text-amber-950">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-amber-700 shrink-0" />
+                <span>
+                  <strong>BA in History Default Curriculum:</strong> 4 Years • 8 Semesters • 42 Subjects • 125 Total Credits (Semesters 1–7: 5 subjects/15 cr each; Semester 8: 6 subjects/18 cr + Viva Voce 2 cr = 20 cr) = <strong>125 Total Program Credits</strong>
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono font-bold bg-white px-2 py-0.5 rounded border border-amber-300 text-amber-900">
+                  Current Credits: {totalProgramCredits} / 125
+                </span>
+                <button
+                  type="button"
+                  onClick={handleLoadBaHistoryCurriculum}
+                  className="bg-amber-700 text-white px-2.5 py-1 rounded-lg font-bold text-[11px] hover:bg-amber-800 transition-colors cursor-pointer"
+                >
+                  Load Standard 125-Cr History Curriculum
                 </button>
               </div>
             </div>

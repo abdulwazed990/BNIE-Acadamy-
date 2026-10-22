@@ -38,6 +38,9 @@ export default function VerificationForm({
   const [captcha, setCaptcha] = useState<Captcha>({ num1: 10, num2: 5, operation: "+", result: 15 });
   const [captchaError, setCaptchaError] = useState("");
   const [searchError, setSearchError] = useState("");
+  const [rollError, setRollError] = useState("");
+  const [regError, setRegError] = useState("");
+  const [degreeCrossMatch, setDegreeCrossMatch] = useState<Student | null>(null);
 
   // Generate random Math Captcha
   const generateCaptcha = () => {
@@ -148,6 +151,9 @@ export default function VerificationForm({
     setIsTokenLoaded(false);
     setTokenError("");
     setSearchError("");
+    setRollError("");
+    setRegError("");
+    setDegreeCrossMatch(null);
     setCaptchaAnswer("");
     generateCaptcha();
   };
@@ -156,8 +162,42 @@ export default function VerificationForm({
     e.preventDefault();
     setCaptchaError("");
     setSearchError("");
+    setRollError("");
+    setRegError("");
+    setDegreeCrossMatch(null);
 
-    // 1. Verify Captcha
+    const cleanRoll = rollNumber.trim().toLowerCase();
+    const cleanReg = registrationNumber.trim().toLowerCase();
+
+    // 1. Validation for Roll Number
+    if (!cleanRoll) {
+      setRollError("Please enter your Roll Number.");
+      return;
+    }
+    if (cleanRoll.length < 4) {
+      setRollError("Roll Number must be at least 4 digits/characters.");
+      return;
+    }
+    if (/[<>{};$%\\^`~]/.test(rollNumber)) {
+      setRollError("Invalid characters detected in Roll Number.");
+      return;
+    }
+
+    // 2. Validation for Registration Number
+    if (!cleanReg) {
+      setRegError("Please enter your Registration Number.");
+      return;
+    }
+    if (cleanReg.length < 4) {
+      setRegError("Registration Number must be at least 4 digits/characters.");
+      return;
+    }
+    if (/[<>{};$%\\^`~]/.test(registrationNumber)) {
+      setRegError("Invalid characters detected in Registration Number.");
+      return;
+    }
+
+    // 3. Verify Captcha
     const parsedAnswer = parseInt(captchaAnswer.trim(), 10);
     if (isNaN(parsedAnswer) || parsedAnswer !== captcha.result) {
       setCaptchaError("Your Captcha Is Not Correct.");
@@ -165,10 +205,7 @@ export default function VerificationForm({
       return;
     }
 
-    // 2. Search Student Record
-    const cleanRoll = rollNumber.trim().toLowerCase();
-    const cleanReg = registrationNumber.trim().toLowerCase();
-
+    // 4. Search Student Record
     // Check with selected category first
     let matched = students.find(
       (s) =>
@@ -182,7 +219,8 @@ export default function VerificationForm({
       const matchedAnyCategory = students.find(
         (s) =>
           s.rollNumber.trim().toLowerCase() === cleanRoll &&
-          s.registrationNumber.trim().toLowerCase() === cleanReg
+          s.registrationNumber.trim().toLowerCase() === cleanReg &&
+          (s.category === Category.SSC || s.category === Category.HSC || s.category === Category.DIPLOMA)
       );
       if (matchedAnyCategory) {
         setCategory(matchedAnyCategory.category);
@@ -193,9 +231,25 @@ export default function VerificationForm({
     if (matched) {
       onVerifySuccess(matched);
     } else {
-      setSearchError(
-        `No Record Found. Please verify the Roll Number, Registration Number and make sure you have selected the correct Category.`
+      // Cross-portal check: Did the user search for a Degree / Honours / Masters student on the SSC/HSC form?
+      const higherEdMatch = students.find(
+        (s) =>
+          (s.category === Category.DEGREE_PASS ||
+           s.category === Category.HONOURS ||
+           s.category === Category.MASTERS ||
+           Boolean(s.academicLevel)) &&
+          (s.rollNumber.trim().toLowerCase() === cleanRoll ||
+           s.registrationNumber.trim().toLowerCase() === cleanReg ||
+           s.id.toLowerCase() === cleanRoll)
       );
+
+      if (higherEdMatch) {
+        setDegreeCrossMatch(higherEdMatch);
+      } else {
+        setSearchError(
+          `No Record Found. Please verify the Roll Number, Registration Number and make sure you have selected the correct Category.`
+        );
+      }
       generateCaptcha(); // Refresh captcha on failure
     }
   };
@@ -347,16 +401,26 @@ export default function VerificationForm({
               </label>
               <input
                 type="text"
-                required
                 disabled={isTokenLoaded}
-                placeholder=""
+                placeholder="6-digit Roll Number"
                 value={rollNumber}
                 onChange={(e) => {
                   setRollNumber(e.target.value.replace(/[^a-zA-Z0-9\-_/]/g, ""));
                   setSearchError("");
+                  if (rollError) setRollError("");
                 }}
-                className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-hidden focus:border-[#006a4e] focus:ring-1 focus:ring-[#006a4e] disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed font-semibold font-mono"
+                className={`w-full bg-white border rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-hidden focus:ring-1 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed font-semibold font-mono transition-all ${
+                  rollError ? "border-red-500 ring-2 ring-red-100 bg-red-50/20" : "border-gray-300 focus:border-[#006a4e] focus:ring-[#006a4e]"
+                }`}
               />
+              {rollError ? (
+                <p className="text-[11px] font-semibold text-red-600 mt-1.5 flex items-center gap-1">
+                  <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+                  <span>{rollError}</span>
+                </p>
+              ) : (
+                <p className="text-[10px] text-gray-400 mt-1">e.g. 184920, 584217, 731846</p>
+              )}
             </div>
 
             {/* Registration Number input */}
@@ -366,16 +430,26 @@ export default function VerificationForm({
               </label>
               <input
                 type="text"
-                required
                 disabled={isTokenLoaded}
-                placeholder=""
+                placeholder="Year-based Registration (YYYYNNNNNN)"
                 value={registrationNumber}
                 onChange={(e) => {
                   setRegistrationNumber(e.target.value.replace(/[^a-zA-Z0-9\-_/]/g, ""));
                   setSearchError("");
+                  if (regError) setRegError("");
                 }}
-                className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-hidden focus:border-[#006a4e] focus:ring-1 focus:ring-[#006a4e] disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed font-semibold font-mono"
+                className={`w-full bg-white border rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-hidden focus:ring-1 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed font-semibold font-mono transition-all ${
+                  regError ? "border-red-500 ring-2 ring-red-100 bg-red-50/20" : "border-gray-300 focus:border-[#006a4e] focus:ring-[#006a4e]"
+                }`}
               />
+              {regError ? (
+                <p className="text-[11px] font-semibold text-red-600 mt-1.5 flex items-center gap-1">
+                  <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+                  <span>{regError}</span>
+                </p>
+              ) : (
+                <p className="text-[10px] text-gray-400 mt-1">e.g. 2012005831, 8472910</p>
+              )}
             </div>
 
             {/* Security Verification Math Captcha */}
@@ -425,8 +499,49 @@ export default function VerificationForm({
             </div>
           </div>
 
+          {/* DEGREE / HONOURS / MASTERS CANDIDATE DETECTED BANNER */}
+          {degreeCrossMatch && (
+            <div className="bg-emerald-50 border-2 border-[#006a4e]/40 rounded-2xl p-5 space-y-3 shadow-xs">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#006a4e] text-white flex items-center justify-center shrink-0">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-200 text-[#006a4e]">
+                      {degreeCrossMatch.academicLevel || degreeCrossMatch.category}
+                    </span>
+                    <span className="text-[10px] font-mono text-gray-500 font-bold">Higher Education Division</span>
+                  </div>
+                  <h4 className="text-sm font-extrabold text-gray-950 font-sans">
+                    Candidate Record Located in Higher Education System
+                  </h4>
+                  <p className="text-xs text-gray-700 leading-relaxed">
+                    Student <strong className="text-gray-950">{degreeCrossMatch.name}</strong> is registered under <strong>{degreeCrossMatch.programName || degreeCrossMatch.academicLevel}</strong> (Roll: {degreeCrossMatch.rollNumber}, Reg: {degreeCrossMatch.registrationNumber}). This form verifies SSC, HSC, and Polytechnic Diploma records.
+                  </p>
+                </div>
+              </div>
+
+              {onNavigateToDegreeVerify && (
+                <div className="pt-2 border-t border-emerald-200 flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-xs text-emerald-900 font-medium">
+                    Click to inspect the verified full marksheet in the Degree portal:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={onNavigateToDegreeVerify}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#006a4e] hover:bg-[#005a42] text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                  >
+                    <GraduationCap className="w-4 h-4" />
+                    <span>Open Degree / Honours / Masters Marksheet Portal</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Search Result Failure Message */}
-          {searchError && (
+          {searchError && !degreeCrossMatch && (
             <div className="flex items-start space-x-2 text-red-700 bg-red-50 px-4 py-3.5 rounded-xl border border-red-200 text-xs leading-relaxed font-semibold">
               <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-[#f42a41]" />
               <span>{searchError}</span>

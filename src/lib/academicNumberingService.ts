@@ -269,3 +269,83 @@ export function generateOfficialCertificateNumber(params: {
   const nextSeq = maxSeq + 1;
   return `${basePrefix}${nextSeq}`;
 }
+
+/**
+ * Generate a unique 6-digit numeric Roll Number for SSC, HSC, and Diploma students.
+ * Looks natural and pseudo-random (e.g. 584217, 731846, 462915, 895273).
+ * Validates uniqueness across all existing students.
+ */
+export function generateSchoolRollNumber(existingStudents: Student[]): string {
+  const existingRolls = new Set(
+    existingStudents.map((s) => (s.rollNumber ? s.rollNumber.trim() : "")).filter(Boolean)
+  );
+
+  let attempts = 0;
+  while (attempts < 10000) {
+    // Generate 6-digit number between 100000 and 999999
+    const candidate = Math.floor(100000 + Math.random() * 900000).toString();
+    if (!existingRolls.has(candidate)) {
+      return candidate;
+    }
+    attempts++;
+  }
+  return Math.floor(100000 + (Date.now() % 900000)).toString();
+}
+
+/**
+ * Generate a year-based Registration Number for SSC, HSC, and Diploma students.
+ * Format: YYYYNNNNNN (10 digits total: 4-digit Year + 6-digit unique numeric portion).
+ * Examples for Registration Year 2012: 2012005831, 2012741962, 2012184057, 2012967314
+ */
+export function generateSchoolRegistrationNumber(params: {
+  registrationYear?: string;
+  passingYear?: string;
+  session?: string;
+  existingStudents: Student[];
+}): { registrationNumber: string; registrationYear: string } {
+  // Determine registration year: user-specified regYear, or passingYear, or admission year from session
+  let regYear = params.registrationYear?.trim() || "";
+  if (!regYear || regYear.length !== 4) {
+    regYear = params.passingYear?.trim() || "";
+  }
+  if (!regYear || regYear.length !== 4) {
+    regYear = extractAdmissionYearFromSession(params.session || "");
+  }
+  if (!regYear || regYear.length !== 4) {
+    regYear = new Date().getFullYear().toString();
+  }
+
+  const existingRegs = new Set(
+    params.existingStudents
+      .map((s) => (s.registrationNumber ? s.registrationNumber.trim() : ""))
+      .filter(Boolean)
+  );
+
+  const prefix = regYear;
+  let attempts = 0;
+  while (attempts < 10000) {
+    // Generate natural-looking 6-digit numeric portion
+    const sixDigit = Math.floor(Math.random() * 1000000).toString().padStart(6, "0");
+    const candidate = `${prefix}${sixDigit}`;
+    if (!existingRegs.has(candidate)) {
+      return { registrationNumber: candidate, registrationYear: regYear };
+    }
+    attempts++;
+  }
+
+  // Fallback sequential allocation if random collisions occur
+  let counter = 1000;
+  while (counter < 999999) {
+    const candidate = `${prefix}${counter.toString().padStart(6, "0")}`;
+    if (!existingRegs.has(candidate)) {
+      return { registrationNumber: candidate, registrationYear: regYear };
+    }
+    counter++;
+  }
+
+  return {
+    registrationNumber: `${prefix}${Math.floor(100000 + Math.random() * 900000)}`,
+    registrationYear: regYear
+  };
+}
+

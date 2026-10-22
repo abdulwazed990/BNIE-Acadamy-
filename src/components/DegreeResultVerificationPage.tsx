@@ -17,12 +17,16 @@ import {
   FileCheck2,
   FileText,
   Eye,
-  Check
+  Check,
+  Loader2
 } from "lucide-react";
 import Logo from "./Logo";
 import { motion } from "motion/react";
 import { QRCodeCanvas } from "qrcode.react";
 import { PASSPORT_AVATARS } from "../data/defaultStudents";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import { patchGetComputedStyle } from "../lib/colorUtils";
 
 interface DegreeResultVerificationPageProps {
   students: Student[];
@@ -42,25 +46,28 @@ export interface PeriodOption {
 
 export const EXAM_TYPE_PERIODS: Record<ExamType, PeriodOption[]> = {
   "Degree Pass": [
-    { value: "Year 1", label: "Year 1 (First Year)", index: 1 },
+    { value: "ALL", label: "Complete 3-Year Academic Transcript (All Years)", index: 99 },
+    { value: "Year 3", label: "Year 3 (Third / Final Year)", index: 3 },
     { value: "Year 2", label: "Year 2 (Second Year)", index: 2 },
-    { value: "Year 3", label: "Year 3 (Third / Final Year)", index: 3 }
+    { value: "Year 1", label: "Year 1 (First Year)", index: 1 }
   ],
   "Honours": [
-    { value: "Semester 1", label: "Semester 1", index: 1 },
-    { value: "Semester 2", label: "Semester 2", index: 2 },
-    { value: "Semester 3", label: "Semester 3", index: 3 },
-    { value: "Semester 4", label: "Semester 4", index: 4 },
-    { value: "Semester 5", label: "Semester 5", index: 5 },
-    { value: "Semester 6", label: "Semester 6", index: 6 },
+    { value: "ALL", label: "Complete 4-Year Academic Transcript (All Semesters)", index: 99 },
+    { value: "Semester 8", label: "Semester 8 (Final)", index: 8 },
     { value: "Semester 7", label: "Semester 7", index: 7 },
-    { value: "Semester 8", label: "Semester 8 (Final)", index: 8 }
+    { value: "Semester 6", label: "Semester 6", index: 6 },
+    { value: "Semester 5", label: "Semester 5", index: 5 },
+    { value: "Semester 4", label: "Semester 4", index: 4 },
+    { value: "Semester 3", label: "Semester 3", index: 3 },
+    { value: "Semester 2", label: "Semester 2", index: 2 },
+    { value: "Semester 1", label: "Semester 1", index: 1 }
   ],
   "Masters": [
-    { value: "Semester 1", label: "Semester 1", index: 1 },
-    { value: "Semester 2", label: "Semester 2", index: 2 },
+    { value: "ALL", label: "Complete Academic Transcript (All Semesters)", index: 99 },
+    { value: "Semester 4", label: "Semester 4 (Final)", index: 4 },
     { value: "Semester 3", label: "Semester 3", index: 3 },
-    { value: "Semester 4", label: "Semester 4 (Final)", index: 4 }
+    { value: "Semester 2", label: "Semester 2", index: 2 },
+    { value: "Semester 1", label: "Semester 1", index: 1 }
   ]
 };
 
@@ -79,18 +86,90 @@ export default function DegreeResultVerificationPage({
 
   // Search Results State
   const [matchedStudent, setMatchedStudent] = useState<Student | null>(null);
+  const [multiMatchStudents, setMultiMatchStudents] = useState<Student[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [searchError, setSearchError] = useState("");
-  const [displayedEndpointPeriod, setDisplayedEndpointPeriod] = useState<string>("Semester 8");
+  const [validationError, setValidationError] = useState("");
+  const [crossPortalMatches, setCrossPortalMatches] = useState<Student[]>([]);
+  const [autoSwitchNotice, setAutoSwitchNotice] = useState<string | null>(null);
+  const [displayedEndpointPeriod, setDisplayedEndpointPeriod] = useState<string>("ALL");
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  // Real-time format recognition hint helper
+  const getFormatHint = (input: string): { type: "info" | "success" | "warning"; text: string } | null => {
+    const trimmed = input.trim();
+    if (!trimmed) return null;
+    
+    // Check for prohibited injection characters
+    if (/[<>{};$%\\^`~]/.test(trimmed)) {
+      return {
+        type: "warning",
+        text: "Special characters detected. Please use only letters, numbers, hyphens, and spaces."
+      };
+    }
+    
+    // 6-digit numeric roll number
+    if (/^\d{6}$/.test(trimmed)) {
+      return {
+        type: "success",
+        text: "Detected: 6-Digit Numeric Roll Number (e.g., 771001, 584217, 731846)"
+      };
+    }
+    
+    // 10-digit year-based registration number (YYYYNNNNNN)
+    if (/^(19|20)\d{8}$/.test(trimmed)) {
+      return {
+        type: "success",
+        text: `Detected: Year-Based Registration Number (Registration Year: ${trimmed.slice(0, 4)})`
+      };
+    }
+    
+    // Standard registration number
+    if (/^\d{7,12}$/.test(trimmed)) {
+      return {
+        type: "info",
+        text: "Detected: Numeric Registration Number"
+      };
+    }
+    
+    // Institutional prefix IDs (BNIE-..., ENG-..., BBA-..., MBA-..., BA-...)
+    if (/^(bnie|eng|bba|mba|ba|bsc|mss|ma|act|his)-/i.test(trimmed)) {
+      return {
+        type: "success",
+        text: "Detected: Institutional Student ID / Program Code"
+      };
+    }
+    
+    // Student Name query
+    if (/^[a-zA-Z\s.]{3,}$/.test(trimmed)) {
+      return {
+        type: "info",
+        text: "Detected: Candidate Name search query"
+      };
+    }
+    
+    return {
+      type: "info",
+      text: "Format: Student ID, Roll No (6 digits), or Registration No"
+    };
+  };
 
   // View mode toggle: standard on-screen vs print/PDF preview (compact subject codes)
   const [viewMode, setViewMode] = useState<"standard" | "compact_preview">("standard");
+
+  // Dynamic available passing years: include "ALL", all distinct years from students, plus years 1990 - currentYear+2
+  const availableYears = (() => {
+    const studentYears = students.map((s) => s.passingYear).filter(Boolean);
+    const standardYears = Array.from({ length: 36 }, (_, i) => (new Date().getFullYear() + 1 - i).toString());
+    const unique = Array.from(new Set([...studentYears, ...standardYears])).sort((a, b) => parseInt(b, 10) - parseInt(a, 10));
+    return ["ALL", ...unique];
+  })();
 
   // Whenever Exam Type changes, update default selected period
   const handleExamTypeChange = (newType: ExamType) => {
     setExamType(newType);
     const periods = EXAM_TYPE_PERIODS[newType];
-    const defaultPeriod = periods[periods.length - 1].value;
+    const defaultPeriod = periods[0]?.value || "ALL";
     setSelectedPeriod(defaultPeriod);
   };
 
@@ -123,26 +202,56 @@ export default function DegreeResultVerificationPage({
       setSelectedPeriod(periodParam);
     } else {
       const periods = EXAM_TYPE_PERIODS[initialExam];
-      setSelectedPeriod(periods[periods.length - 1].value);
+      setSelectedPeriod(periods[0]?.value || "ALL");
     }
 
     if (id && students.length > 0) {
       setStudentIdInput(id);
-      performSearch(id, initialExam, yearParam || passingYear, periodParam || (EXAM_TYPE_PERIODS[initialExam][EXAM_TYPE_PERIODS[initialExam].length - 1].value));
+      performSearch(id, initialExam, yearParam || passingYear, periodParam || "ALL");
     }
   }, [students]);
 
-  // Execute Search
+  // Execute Search with Strict Validation, Multi-Record Disambiguation & Cross-Portal Detection
   const performSearch = (
     queryId: string, 
     type: ExamType, 
     year: string, 
     period: string
   ) => {
-    const cleanId = queryId.trim().toLowerCase();
+    const rawTrimmed = queryId.trim();
+    const cleanId = rawTrimmed.toLowerCase();
+    
+    // Reset transient feedback
+    setValidationError("");
+    setCrossPortalMatches([]);
+    setAutoSwitchNotice(null);
+
+    // Validation 1: Required / Empty input check
     if (!cleanId) {
-      setSearchError("Please enter a Student ID, Roll Number, or Registration Number.");
+      setValidationError("Please enter a Student ID, Roll Number, or Registration Number.");
+      setSearchError("Please enter a valid credential identifier before searching.");
       setMatchedStudent(null);
+      setMultiMatchStudents([]);
+      setHasSearched(true);
+      return;
+    }
+
+    // Validation 2: Minimum length constraint
+    if (cleanId.length < 3) {
+      setValidationError("Search query must be at least 3 characters in length.");
+      setSearchError("Search query is too short (minimum 3 characters required).");
+      setMatchedStudent(null);
+      setMultiMatchStudents([]);
+      setHasSearched(true);
+      return;
+    }
+
+    // Validation 3: Prohibited characters / injection protection
+    if (/[<>{};$%\\^`~]/.test(rawTrimmed)) {
+      setValidationError("Invalid characters detected. Please enter only letters, numbers, spaces, and hyphens.");
+      setSearchError("Search query contains prohibited characters. Please sanitize your query and retry.");
+      setMatchedStudent(null);
+      setMultiMatchStudents([]);
       setHasSearched(true);
       return;
     }
@@ -157,67 +266,106 @@ export default function DegreeResultVerificationPage({
         Boolean(s.programCode)
     );
 
-    // Primary search matching ID/Roll/Reg AND Exam Type
-    let found = higherEdStudents.find((s) => {
+    const isMatchIdent = (s: Student) => {
       const matchId = s.id && s.id.toLowerCase() === cleanId;
       const matchRoll = s.rollNumber && s.rollNumber.toLowerCase() === cleanId;
       const matchReg = s.registrationNumber && s.registrationNumber.toLowerCase() === cleanId;
       const matchToken = s.secureToken && s.secureToken.toLowerCase() === cleanId;
       const matchCert = s.certificateSerialNumber && s.certificateSerialNumber.toLowerCase() === cleanId;
       const matchCert2 = s.certificateNumber && s.certificateNumber.toLowerCase() === cleanId;
-
-      // Allow searching by exact mixed numeric suffix (e.g. "5837", "7294", "4168", "846291")
       const matchRollSuffix = s.rollNumber && s.rollNumber.toLowerCase().endsWith(`-${cleanId}`);
       const matchRegSuffix = s.registrationNumber && s.registrationNumber.toLowerCase().endsWith(`-${cleanId}`);
+      const matchName = s.name && s.name.toLowerCase().includes(cleanId) && cleanId.length > 2;
+      return Boolean(matchId || matchRoll || matchReg || matchToken || matchCert || matchCert2 || matchRollSuffix || matchRegSuffix || matchName);
+    };
 
-      const matchesIdentifier = matchId || matchRoll || matchReg || matchToken || matchCert || matchCert2 || matchRollSuffix || matchRegSuffix;
-      if (!matchesIdentifier) return false;
-
-      // Check category/academicLevel
-      if (type === "Degree Pass") {
-        return s.category === Category.DEGREE_PASS || s.academicLevel === "Degree Pass";
-      } else if (type === "Honours") {
-        return s.category === Category.HONOURS || s.academicLevel === "Honours";
-      } else if (type === "Masters") {
-        return s.category === Category.MASTERS || s.academicLevel === "Masters";
-      }
+    const isMatchCat = (s: Student, t: ExamType) => {
+      if (t === "Degree Pass") return s.category === Category.DEGREE_PASS || s.academicLevel === "Degree Pass";
+      if (t === "Honours") return s.category === Category.HONOURS || s.academicLevel === "Honours";
+      if (t === "Masters") return s.category === Category.MASTERS || s.academicLevel === "Masters";
       return true;
-    });
+    };
 
-    // Fallback: If not found under exact type, look for candidate across any higher education type
-    if (!found) {
-      found = higherEdStudents.find((s) => {
-        const matchId = s.id && s.id.toLowerCase() === cleanId;
-        const matchRoll = s.rollNumber && s.rollNumber.toLowerCase() === cleanId;
-        const matchReg = s.registrationNumber && s.registrationNumber.toLowerCase() === cleanId;
-        const matchToken = s.secureToken && s.secureToken.toLowerCase() === cleanId;
-        const matchCert = s.certificateSerialNumber && s.certificateSerialNumber.toLowerCase() === cleanId;
-        const matchCert2 = s.certificateNumber && s.certificateNumber.toLowerCase() === cleanId;
-        const matchRollSuffix = s.rollNumber && s.rollNumber.toLowerCase().endsWith(`-${cleanId}`);
-        const matchRegSuffix = s.registrationNumber && s.registrationNumber.toLowerCase().endsWith(`-${cleanId}`);
-        return matchId || matchRoll || matchReg || matchToken || matchCert || matchCert2 || matchRollSuffix || matchRegSuffix;
-      });
-      if (found) {
-        if (found.category === Category.DEGREE_PASS || found.academicLevel === "Degree Pass") {
-          setExamType("Degree Pass");
-        } else if (found.category === Category.MASTERS || found.academicLevel === "Masters") {
-          setExamType("Masters");
-        } else {
-          setExamType("Honours");
-        }
-      }
+    const isMatchYr = (s: Student, yr: string) => {
+      if (!yr || yr === "ALL") return true;
+      return s.passingYear === yr;
+    };
+
+    // Step 1: Matching identifier, category AND year
+    let matches = higherEdStudents.filter((s) => isMatchIdent(s) && isMatchCat(s, type) && isMatchYr(s, year));
+
+    // Step 2: If none found and a specific year was picked, look without the year filter
+    if (matches.length === 0 && year !== "ALL") {
+      matches = higherEdStudents.filter((s) => isMatchIdent(s) && isMatchCat(s, type));
     }
 
-    if (found) {
-      setMatchedStudent(found);
+    // Step 3: If still none found under selected category, search across all higher ed qualifications
+    if (matches.length === 0) {
+      matches = higherEdStudents.filter((s) => isMatchIdent(s));
+    }
+
+    if (matches.length === 1) {
+      const single = matches[0];
+      setMatchedStudent(single);
+      setMultiMatchStudents([]);
+      setSearchError("");
+      setDisplayedEndpointPeriod(period);
+
+      // Detect if qualification auto-switched
+      const actualLevel: ExamType = 
+        single.category === Category.DEGREE_PASS || single.academicLevel === "Degree Pass"
+          ? "Degree Pass"
+          : single.category === Category.MASTERS || single.academicLevel === "Masters"
+          ? "Masters"
+          : "Honours";
+
+      if (actualLevel !== type) {
+        setAutoSwitchNotice(`Auto-detected qualification: ${actualLevel} (switched from ${type}).`);
+        setExamType(actualLevel);
+      }
+    } else if (matches.length > 1) {
+      setMatchedStudent(null);
+      setMultiMatchStudents(matches);
       setSearchError("");
       setDisplayedEndpointPeriod(period);
     } else {
+      // Step 4: Cross-Portal Detection: Check if query matches an SSC, HSC or Diploma student
+      const crossMatches = students.filter(
+        (s) =>
+          (s.category === Category.SSC ||
+           s.category === Category.HSC ||
+           s.category === Category.DIPLOMA) &&
+          (s.rollNumber?.toLowerCase() === cleanId ||
+           s.registrationNumber?.toLowerCase() === cleanId ||
+           s.id?.toLowerCase() === cleanId ||
+           (s.name?.toLowerCase().includes(cleanId) && cleanId.length > 3))
+      );
+
       setMatchedStudent(null);
-      setSearchError(`No accredited record found matching "${queryId}" under ${type} (${year}).`);
+      setMultiMatchStudents([]);
+      if (crossMatches.length > 0) {
+        setCrossPortalMatches(crossMatches);
+        setSearchError("");
+      } else {
+        setSearchError(`No accredited record found matching "${rawTrimmed}" under ${type}${year !== "ALL" ? ` (${year})` : ""}.`);
+      }
     }
 
     setHasSearched(true);
+  };
+
+  const handleSelectDisambiguatedStudent = (selected: Student) => {
+    setMatchedStudent(selected);
+    setMultiMatchStudents([]);
+    setSearchError("");
+    setDisplayedEndpointPeriod(selectedPeriod);
+    if (selected.category === Category.DEGREE_PASS || selected.academicLevel === "Degree Pass") {
+      setExamType("Degree Pass");
+    } else if (selected.category === Category.MASTERS || selected.academicLevel === "Masters") {
+      setExamType("Masters");
+    } else {
+      setExamType("Honours");
+    }
   };
 
   const handleFormSubmit = (e: FormEvent) => {
@@ -228,8 +376,12 @@ export default function DegreeResultVerificationPage({
   const handleReset = () => {
     setStudentIdInput("");
     setMatchedStudent(null);
+    setMultiMatchStudents([]);
     setHasSearched(false);
     setSearchError("");
+    setValidationError("");
+    setCrossPortalMatches([]);
+    setAutoSwitchNotice(null);
   };
 
   // Filter semesterResults according to selected academic period
@@ -238,7 +390,11 @@ export default function DegreeResultVerificationPage({
       return [];
     }
 
-    let targetIndex = 8;
+    if (periodValue === "ALL") {
+      return student.semesterResults;
+    }
+
+    let targetIndex = student.semesterResults.length;
     if (examType === "Degree Pass") {
       if (periodValue === "Year 1") targetIndex = 1;
       else if (periodValue === "Year 2") targetIndex = 2;
@@ -291,9 +447,6 @@ export default function DegreeResultVerificationPage({
   // =========================================================================
   // TWO-PAGE A4 DIVISION LOGIC
   // =========================================================================
-  // Display the complete final result across exactly 2 consecutive A4 portrait pages.
-  // Page 1: Student/institution details + first portion of academic results.
-  // Page 2: Remaining academic results + final CGPA + status + seals & signatures.
   const isTwoPage = filteredSemesters.length > 1;
   const splitIndex = filteredSemesters.length <= 1 
     ? 1 
@@ -304,9 +457,91 @@ export default function DegreeResultVerificationPage({
   const page1Semesters = filteredSemesters.slice(0, splitIndex);
   const page2Semesters = filteredSemesters.slice(splitIndex);
 
-  // Trigger print with advice
+  // Trigger browser direct print dialog
   const handlePrint = () => {
     window.print();
+  };
+
+  // High-fidelity Multi-Page A4 PDF Generator
+  const handleDownloadPDF = async () => {
+    const page1Element = document.getElementById("marksheet-page-1");
+    if (!page1Element) {
+      alert("Marksheet document not found!");
+      return;
+    }
+
+    setIsGeneratingPdf(true);
+    const restoreWindowStyles = patchGetComputedStyle(window);
+
+    try {
+      const renderScale = 2.5;
+
+      // Render Page 1
+      const canvas1 = await html2canvas(page1Element, {
+        scale: renderScale,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+        windowWidth: 1024,
+      });
+
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pdfWidth = 210;
+      const pdfHeight = 297;
+      const margin = 5;
+      const printableWidth = pdfWidth - margin * 2;
+      const printableHeight = pdfHeight - margin * 2;
+
+      // Add Page 1 to PDF
+      const img1Data = canvas1.toDataURL("image/jpeg", 0.95);
+      const ratio1 = canvas1.height / canvas1.width;
+      let img1Height = printableWidth * ratio1;
+      let img1Width = printableWidth;
+      if (img1Height > printableHeight) {
+        img1Height = printableHeight;
+        img1Width = printableHeight / ratio1;
+      }
+      const x1 = margin + (printableWidth - img1Width) / 2;
+      pdf.addImage(img1Data, "JPEG", x1, margin, img1Width, img1Height);
+
+      // Render Page 2 if applicable
+      const page2Element = document.getElementById("marksheet-page-2");
+      if (isTwoPage && page2Element) {
+        const canvas2 = await html2canvas(page2Element, {
+          scale: renderScale,
+          useCORS: true,
+          logging: false,
+          backgroundColor: "#ffffff",
+          windowWidth: 1024,
+        });
+
+        const img2Data = canvas2.toDataURL("image/jpeg", 0.95);
+        const ratio2 = canvas2.height / canvas2.width;
+        let img2Height = printableWidth * ratio2;
+        let img2Width = printableWidth;
+        if (img2Height > printableHeight) {
+          img2Height = printableHeight;
+          img2Width = printableHeight / ratio2;
+        }
+        const x2 = margin + (printableWidth - img2Width) / 2;
+        pdf.addPage();
+        pdf.addImage(img2Data, "JPEG", x2, margin, img2Width, img2Height);
+      }
+
+      const cleanFileName = `BNIE-Marksheet-${matchedStudent?.rollNumber || matchedStudent?.id || "transcript"}.pdf`.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+      pdf.save(cleanFileName);
+    } catch (err) {
+      console.error("PDF generation error, falling back to print:", err);
+      window.print();
+    } finally {
+      restoreWindowStyles();
+      setIsGeneratingPdf(false);
+    }
   };
 
   return (
@@ -446,14 +681,46 @@ export default function DegreeResultVerificationPage({
                 <div className="relative">
                   <input
                     type="text"
-                    required
                     value={studentIdInput}
-                    onChange={(e) => setStudentIdInput(e.target.value)}
-                    placeholder=""
-                    className="w-full bg-gray-50/70 border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-gray-900 focus:bg-white focus:border-[#006a4e] focus:outline-hidden"
+                    onChange={(e) => {
+                      setStudentIdInput(e.target.value);
+                      if (validationError) setValidationError("");
+                    }}
+                    placeholder="e.g. 771001, 2003829105, BNIE-BA-5001"
+                    className={`w-full bg-gray-50/70 border rounded-xl px-3.5 py-2.5 text-xs font-semibold text-gray-900 focus:bg-white focus:outline-hidden transition-all ${
+                      validationError 
+                        ? "border-red-500 ring-2 ring-red-100 bg-red-50/20" 
+                        : "border-gray-300 focus:border-[#006a4e]"
+                    }`}
                   />
                 </div>
-                <span className="text-[10px] text-gray-500">Student ID, Roll No, or Registration No</span>
+                {/* Real-time Format Hint or Validation Error */}
+                {validationError ? (
+                  <p className="text-[11px] font-semibold text-red-600 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{validationError}</span>
+                  </p>
+                ) : (() => {
+                  const hint = getFormatHint(studentIdInput);
+                  if (hint) {
+                    return (
+                      <p className={`text-[10px] font-medium flex items-center gap-1 mt-1 ${
+                        hint.type === "success" 
+                          ? "text-emerald-700" 
+                          : hint.type === "warning" 
+                          ? "text-amber-700" 
+                          : "text-gray-600"
+                      }`}>
+                        {hint.type === "success" && <Check className="w-3 h-3 text-emerald-600 shrink-0" />}
+                        {hint.type === "warning" && <AlertCircle className="w-3 h-3 text-amber-600 shrink-0" />}
+                        <span>{hint.text}</span>
+                      </p>
+                    );
+                  }
+                  return (
+                    <span className="text-[10px] text-gray-500">Student ID, 6-digit Roll No, or 10-digit Year Reg</span>
+                  );
+                })()}
               </div>
 
               {/* Field 2: Exam Type */}
@@ -483,8 +750,10 @@ export default function DegreeResultVerificationPage({
                   onChange={(e) => setPassingYear(e.target.value)}
                   className="w-full bg-gray-50/70 border border-gray-300 rounded-xl px-3 py-2.5 text-xs font-semibold text-gray-900 focus:bg-white focus:border-[#006a4e] focus:outline-hidden cursor-pointer"
                 >
-                  {["2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018"].map((yr) => (
-                    <option key={yr} value={yr}>{yr}</option>
+                  {availableYears.map((yr) => (
+                    <option key={yr} value={yr}>
+                      {yr === "ALL" ? "All Passing Years (Any Year)" : yr}
+                    </option>
                   ))}
                 </select>
                 <span className="text-[10px] text-gray-500">Year of Exam / Degree</span>
@@ -518,10 +787,10 @@ export default function DegreeResultVerificationPage({
                 <span className="font-semibold text-gray-900">Period Retrieval Mode:</span>
                 <span>
                   {examType === "Degree Pass" 
-                    ? "Year 1 (1st Year Only) • Year 2 (Year 1 to 2) • Year 3 (Complete 3-Year History)" 
+                    ? "ALL (Complete 3-Year History) • Year 1 (1st Year) • Year 2 (Year 1 to 2) • Year 3 (Final Year)" 
                     : examType === "Honours" 
-                    ? "Semester 1 through 8 (Retrieves cumulative history up to selected semester)" 
-                    : "Semester 1 through 4 (Retrieves cumulative history up to selected semester)"}
+                    ? "ALL (Complete 4-Year History) • Semester 1 through 8 (Cumulative history up to selected semester)" 
+                    : "ALL (Complete Master's History) • Semester 1 through 4 (Cumulative history up to selected semester)"}
                 </span>
               </div>
               <span className="font-mono text-gray-500">4.00 CGPA Scale</span>
@@ -553,8 +822,152 @@ export default function DegreeResultVerificationPage({
           </form>
         </div>
 
+        {/* MULTI-RECORD MATCH DISAMBIGUATION LIST */}
+        {hasSearched && multiMatchStudents.length > 1 && (
+          <div className="bg-white rounded-3xl border-2 border-emerald-300 p-6 sm:p-8 space-y-4 shadow-sm no-print">
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-[#006a4e] flex items-center justify-center shrink-0">
+                <Layers className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-black text-gray-950 font-sans">
+                  Multiple Academic Records Found ({multiMatchStudents.length})
+                </h3>
+                <p className="text-xs text-gray-600">
+                  Multiple qualification records match your search query. Please select the specific record to view the verified two-page marksheet:
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              {multiMatchStudents.map((st) => (
+                <div 
+                  key={st.id}
+                  className="p-4 rounded-2xl border border-gray-200 hover:border-[#006a4e] bg-gray-50/60 hover:bg-emerald-50/30 transition-all space-y-3 flex flex-col justify-between"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#006a4e] border border-emerald-200">
+                        {st.academicLevel || st.category}
+                      </span>
+                      <span className="text-[10px] font-mono text-gray-500">
+                        Passing Year: <strong>{st.passingYear}</strong>
+                      </span>
+                    </div>
+
+                    <div>
+                      <h4 className="text-sm font-black text-gray-950 font-sans">{st.name}</h4>
+                      <p className="text-xs font-semibold text-gray-800">
+                        {st.programName || (st.academicLevel ? `${st.academicLevel} Program` : st.category)}
+                      </p>
+                      {st.majorSubject && (
+                        <p className="text-[11px] text-gray-600">
+                          Major: <span className="font-semibold text-gray-900">{st.majorSubject}</span>
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-[10px] font-mono text-gray-600 bg-white p-2 rounded-xl border border-gray-200">
+                      <div><span className="text-gray-400">ID:</span> {st.id}</div>
+                      <div><span className="text-gray-400">Roll:</span> {st.rollNumber}</div>
+                      <div><span className="text-gray-400">Reg:</span> {st.registrationNumber}</div>
+                      <div><span className="text-gray-400">Session:</span> {st.session}</div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSelectDisambiguatedStudent(st)}
+                    className="w-full py-2 px-4 bg-[#006a4e] hover:bg-[#005a42] text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>View &amp; Print Full Marksheet</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* QUALIFICATION AUTO-SWITCH FEEDBACK BANNER */}
+        {hasSearched && matchedStudent && autoSwitchNotice && (
+          <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-2xs text-emerald-950 text-xs no-print">
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div>
+                <p className="font-extrabold text-emerald-900">Program Qualification Auto-Matched</p>
+                <p className="text-emerald-800 text-[11px]">{autoSwitchNotice}</p>
+              </div>
+            </div>
+            <span className="px-2.5 py-1 bg-white font-mono text-[10px] font-bold text-[#006a4e] rounded-lg border border-emerald-200">
+              Verified Candidate
+            </span>
+          </div>
+        )}
+
+        {/* CROSS-PORTAL DETECTED: FOUND IN SSC / HSC / DIPLOMA SYSTEM */}
+        {hasSearched && crossPortalMatches.length > 0 && (
+          <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-green-50 border-2 border-[#006a4e]/40 rounded-3xl p-6 sm:p-7 space-y-4 shadow-sm no-print">
+            <div className="flex items-start gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-[#006a4e] text-white flex items-center justify-center shrink-0 shadow-xs">
+                <GraduationCap className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#006a4e] bg-white px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    Cross-Portal Record Found
+                  </span>
+                  <span className="text-xs font-mono text-gray-500 font-bold">School &amp; Polytechnic Division</span>
+                </div>
+                <h3 className="text-base sm:text-lg font-black text-gray-950 font-sans">
+                  Candidate Found in SSC / HSC / Polytechnic Diploma System
+                </h3>
+                <p className="text-xs text-gray-700 leading-relaxed">
+                  Your search query <strong className="font-mono text-gray-950">"{studentIdInput}"</strong> does not belong to the Higher Education (Degree / Honours / Masters) catalog, but was found in the <strong>SSC / HSC / Diploma Ledger</strong>:
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              {crossPortalMatches.map((cMatch) => (
+                <div key={cMatch.id} className="p-3.5 bg-white rounded-xl border border-emerald-200 space-y-1.5 shadow-2xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-100 text-[#006a4e]">
+                      {cMatch.category}
+                    </span>
+                    <span className="text-[10px] font-mono text-gray-500">
+                      Passing Year: <strong>{cMatch.passingYear}</strong>
+                    </span>
+                  </div>
+                  <h4 className="text-xs font-bold text-gray-900">{cMatch.name}</h4>
+                  <div className="text-[10px] font-mono text-gray-600 flex gap-4">
+                    <span>Roll: <strong className="text-gray-900">{cMatch.rollNumber}</strong></span>
+                    <span>Reg: <strong className="text-gray-900">{cMatch.registrationNumber}</strong></span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-emerald-200/70">
+              <span className="text-xs text-emerald-950 font-medium">
+                Click below to open the dedicated School &amp; Diploma Marksheet Verification Portal:
+              </span>
+              {onNavigateToSscHscVerify && (
+                <button
+                  type="button"
+                  onClick={onNavigateToSscHscVerify}
+                  className="px-5 py-2.5 bg-[#006a4e] hover:bg-[#005a42] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4 rotate-180" />
+                  <span>Open SSC / HSC / Diploma Verification Portal</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* SEARCH ERROR / NOT FOUND BANNER */}
-        {hasSearched && !matchedStudent && (
+        {hasSearched && !matchedStudent && multiMatchStudents.length === 0 && crossPortalMatches.length === 0 && (
           <div className="bg-white rounded-2xl border-2 border-red-200 p-8 text-center space-y-3 shadow-xs no-print">
             <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 mx-auto flex items-center justify-center">
               <AlertCircle className="w-6 h-6" />
@@ -611,15 +1024,36 @@ export default function DegreeResultVerificationPage({
               </div>
 
               <div className="flex items-center gap-2">
-                {/* Download PDF Button Only */}
+                {/* Download PDF Button */}
+                <button
+                  type="button"
+                  disabled={isGeneratingPdf}
+                  onClick={handleDownloadPDF}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#006a4e] hover:bg-[#005a42] text-white rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow cursor-pointer disabled:opacity-60"
+                  title="Download two-page A4 Marksheet PDF"
+                >
+                  {isGeneratingPdf ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Generating A4 PDF...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      <span>Download PDF</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Print Marksheet Button */}
                 <button
                   type="button"
                   onClick={handlePrint}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#006a4e] hover:bg-[#005a42] text-white rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow cursor-pointer"
-                  title="Download two-page A4 Marksheet PDF"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                  title="Direct Print (A4 Portrait)"
                 >
-                  <Download className="w-4 h-4" />
-                  <span>Download PDF</span>
+                  <Printer className="w-4 h-4 text-gray-700" />
+                  <span>Print Marksheet</span>
                 </button>
               </div>
             </div>
