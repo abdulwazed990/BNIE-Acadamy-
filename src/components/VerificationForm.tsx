@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent } from "react";
 import { Category, Student } from "../types";
-import { RefreshCw, SearchCode, ShieldAlert, CheckCircle2, FileKey2, GraduationCap } from "lucide-react";
+import { RefreshCw, SearchCode, ShieldAlert, CheckCircle2, FileKey2, GraduationCap, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 
 interface VerificationFormProps {
@@ -41,6 +41,38 @@ export default function VerificationForm({
   const [rollError, setRollError] = useState("");
   const [regError, setRegError] = useState("");
   const [degreeCrossMatch, setDegreeCrossMatch] = useState<Student | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Input Touched States for Immediate Accessible Feedback
+  const [rollTouched, setRollTouched] = useState(false);
+  const [regTouched, setRegTouched] = useState(false);
+
+  // Sanitization helper
+  const sanitizeCredential = (val: string): string => {
+    return val.replace(/[<>{};$%\\^`~]/g, "").trim();
+  };
+
+  // Immediate Roll validation
+  const validateRoll = (val: string): string => {
+    const clean = val.trim();
+    if (!clean) return "Please enter your Roll Number.";
+    if (/[<>{};$%\\^`~]/.test(val)) return "Invalid characters detected. Only letters, numbers, and hyphens are allowed.";
+    if (clean.length < 4) return `Roll Number must be at least 4 characters (currently ${clean.length}).`;
+    if (clean.length > 20) return "Roll Number cannot exceed 20 characters.";
+    if (!/^[a-zA-Z0-9\-_/]+$/.test(clean)) return "Roll Number may only contain numbers, letters, hyphens, and slashes.";
+    return "";
+  };
+
+  // Immediate Registration validation
+  const validateReg = (val: string): string => {
+    const clean = val.trim();
+    if (!clean) return "Please enter your Registration Number.";
+    if (/[<>{};$%\\^`~]/.test(val)) return "Invalid characters detected. Only letters, numbers, and hyphens are allowed.";
+    if (clean.length < 6) return `Registration Number must be at least 6 characters (currently ${clean.length}).`;
+    if (clean.length > 25) return "Registration Number cannot exceed 25 characters.";
+    if (!/^[a-zA-Z0-9\-_/]+$/.test(clean)) return "Registration Number may only contain numbers, letters, hyphens, and slashes.";
+    return "";
+  };
 
   // Generate random Math Captcha
   const generateCaptcha = () => {
@@ -153,49 +185,41 @@ export default function VerificationForm({
     setSearchError("");
     setRollError("");
     setRegError("");
+    setRollTouched(false);
+    setRegTouched(false);
     setDegreeCrossMatch(null);
     setCaptchaAnswer("");
     generateCaptcha();
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (isSearching || isDbLoading) return;
+
     setCaptchaError("");
     setSearchError("");
-    setRollError("");
-    setRegError("");
     setDegreeCrossMatch(null);
 
-    const cleanRoll = rollNumber.trim().toLowerCase();
-    const cleanReg = registrationNumber.trim().toLowerCase();
+    const cleanRoll = sanitizeCredential(rollNumber).toLowerCase();
+    const cleanReg = sanitizeCredential(registrationNumber).toLowerCase();
 
-    // 1. Validation for Roll Number
-    if (!cleanRoll) {
-      setRollError("Please enter your Roll Number.");
+    // 1. Client-Side Input Sanitization and Validation for Roll Number
+    setRollTouched(true);
+    const rollValidationErr = validateRoll(cleanRoll);
+    if (rollValidationErr) {
+      setRollError(rollValidationErr);
       return;
     }
-    if (cleanRoll.length < 4) {
-      setRollError("Roll Number must be at least 4 digits/characters.");
-      return;
-    }
-    if (/[<>{};$%\\^`~]/.test(rollNumber)) {
-      setRollError("Invalid characters detected in Roll Number.");
-      return;
-    }
+    setRollError("");
 
-    // 2. Validation for Registration Number
-    if (!cleanReg) {
-      setRegError("Please enter your Registration Number.");
+    // 2. Client-Side Input Sanitization and Validation for Registration Number
+    setRegTouched(true);
+    const regValidationErr = validateReg(cleanReg);
+    if (regValidationErr) {
+      setRegError(regValidationErr);
       return;
     }
-    if (cleanReg.length < 4) {
-      setRegError("Registration Number must be at least 4 digits/characters.");
-      return;
-    }
-    if (/[<>{};$%\\^`~]/.test(registrationNumber)) {
-      setRegError("Invalid characters detected in Registration Number.");
-      return;
-    }
+    setRegError("");
 
     // 3. Verify Captcha
     const parsedAnswer = parseInt(captchaAnswer.trim(), 10);
@@ -205,52 +229,60 @@ export default function VerificationForm({
       return;
     }
 
-    // 4. Search Student Record
-    // Check with selected category first
-    let matched = students.find(
-      (s) =>
-        s.rollNumber.trim().toLowerCase() === cleanRoll &&
-        s.registrationNumber.trim().toLowerCase() === cleanReg &&
-        s.category === category
-    );
+    // 4. Search Student Record with loading state (Initiate database query only after client-side validation passes)
+    setIsSearching(true);
+    try {
+      // Short delay for visual spinner and preventing rapid duplicate clicks
+      await new Promise((resolve) => setTimeout(resolve, 400));
 
-    // If not found with the selected category, search globally by Roll & Reg across all categories
-    if (!matched) {
-      const matchedAnyCategory = students.find(
+      // Check with selected category first
+      let matched = students.find(
         (s) =>
           s.rollNumber.trim().toLowerCase() === cleanRoll &&
           s.registrationNumber.trim().toLowerCase() === cleanReg &&
-          (s.category === Category.SSC || s.category === Category.HSC || s.category === Category.DIPLOMA)
-      );
-      if (matchedAnyCategory) {
-        setCategory(matchedAnyCategory.category);
-        matched = matchedAnyCategory;
-      }
-    }
-
-    if (matched) {
-      onVerifySuccess(matched);
-    } else {
-      // Cross-portal check: Did the user search for a Degree / Honours / Masters student on the SSC/HSC form?
-      const higherEdMatch = students.find(
-        (s) =>
-          (s.category === Category.DEGREE_PASS ||
-           s.category === Category.HONOURS ||
-           s.category === Category.MASTERS ||
-           Boolean(s.academicLevel)) &&
-          (s.rollNumber.trim().toLowerCase() === cleanRoll ||
-           s.registrationNumber.trim().toLowerCase() === cleanReg ||
-           s.id.toLowerCase() === cleanRoll)
+          s.category === category
       );
 
-      if (higherEdMatch) {
-        setDegreeCrossMatch(higherEdMatch);
-      } else {
-        setSearchError(
-          `No Record Found. Please verify the Roll Number, Registration Number and make sure you have selected the correct Category.`
+      // If not found with the selected category, search globally by Roll & Reg across all categories
+      if (!matched) {
+        const matchedAnyCategory = students.find(
+          (s) =>
+            s.rollNumber.trim().toLowerCase() === cleanRoll &&
+            s.registrationNumber.trim().toLowerCase() === cleanReg &&
+            (s.category === Category.SSC || s.category === Category.HSC || s.category === Category.DIPLOMA)
         );
+        if (matchedAnyCategory) {
+          setCategory(matchedAnyCategory.category);
+          matched = matchedAnyCategory;
+        }
       }
-      generateCaptcha(); // Refresh captcha on failure
+
+      if (matched) {
+        onVerifySuccess(matched);
+      } else {
+        // Cross-portal check: Did the user search for a Degree / Honours / Masters student on the SSC/HSC form?
+        const higherEdMatch = students.find(
+          (s) =>
+            (s.category === Category.DEGREE_PASS ||
+             s.category === Category.HONOURS ||
+             s.category === Category.MASTERS ||
+             Boolean(s.academicLevel)) &&
+            (s.rollNumber.trim().toLowerCase() === cleanRoll ||
+             s.registrationNumber.trim().toLowerCase() === cleanReg ||
+             s.id.toLowerCase() === cleanRoll)
+        );
+
+        if (higherEdMatch) {
+          setDegreeCrossMatch(higherEdMatch);
+        } else {
+          setSearchError(
+            `No Record Found. Please verify the Roll Number, Registration Number and make sure you have selected the correct Category.`
+          );
+        }
+        generateCaptcha(); // Refresh captcha on failure
+      }
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -379,7 +411,7 @@ export default function VerificationForm({
               <div className="relative">
                 <select
                   id="exam-category-select"
-                  disabled={isTokenLoaded}
+                  disabled={isTokenLoaded || isSearching}
                   value={category}
                   onChange={(e) => {
                     setCategory(e.target.value as Category);
@@ -396,59 +428,135 @@ export default function VerificationForm({
 
             {/* Roll Number input */}
             <div className="md:col-span-6">
-              <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">
+              <label 
+                htmlFor="verification-roll-number"
+                className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2"
+              >
                 Roll Number <span className="text-[#f42a41]">*</span>
               </label>
               <input
+                id="verification-roll-number"
                 type="text"
-                disabled={isTokenLoaded}
+                disabled={isTokenLoaded || isSearching}
                 placeholder="6-digit Roll Number"
                 value={rollNumber}
+                aria-required="true"
+                aria-invalid={Boolean(rollTouched && rollError)}
+                aria-describedby={
+                  rollTouched && rollError 
+                    ? "roll-error-alert" 
+                    : rollNumber.trim().length >= 4 
+                    ? "roll-valid-msg" 
+                    : "roll-hint"
+                }
+                onBlur={() => {
+                  setRollTouched(true);
+                  setRollError(validateRoll(rollNumber));
+                }}
                 onChange={(e) => {
-                  setRollNumber(e.target.value.replace(/[^a-zA-Z0-9\-_/]/g, ""));
+                  const sanitized = e.target.value.replace(/[^a-zA-Z0-9\-_/]/g, "");
+                  setRollNumber(sanitized);
                   setSearchError("");
-                  if (rollError) setRollError("");
+                  if (rollTouched || sanitized.length > 0) {
+                    setRollError(validateRoll(sanitized));
+                  }
                 }}
                 className={`w-full bg-white border rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-hidden focus:ring-1 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed font-semibold font-mono transition-all ${
-                  rollError ? "border-red-500 ring-2 ring-red-100 bg-red-50/20" : "border-gray-300 focus:border-[#006a4e] focus:ring-[#006a4e]"
+                  rollTouched && rollError 
+                    ? "border-red-500 ring-2 ring-red-100 bg-red-50/20" 
+                    : "border-gray-300 focus:border-[#006a4e] focus:ring-[#006a4e]"
                 }`}
               />
-              {rollError ? (
-                <p className="text-[11px] font-semibold text-red-600 mt-1.5 flex items-center gap-1">
-                  <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+              {rollTouched && rollError ? (
+                <div 
+                  id="roll-error-alert" 
+                  role="alert" 
+                  aria-live="polite" 
+                  className="text-[11px] font-semibold text-red-600 mt-1.5 flex items-center gap-1.5 bg-red-50 p-2 rounded-lg border border-red-200"
+                >
+                  <ShieldAlert className="w-3.5 h-3.5 text-red-600 shrink-0" />
                   <span>{rollError}</span>
-                </p>
+                </div>
+              ) : rollNumber.trim().length >= 4 ? (
+                <div 
+                  id="roll-valid-msg" 
+                  aria-live="polite" 
+                  className="text-[11px] font-semibold text-emerald-700 mt-1.5 flex items-center gap-1.5"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>Valid Roll Format ({rollNumber.trim().length} chars)</span>
+                </div>
               ) : (
-                <p className="text-[10px] text-gray-400 mt-1">e.g. 184920, 584217, 731846</p>
+                <p id="roll-hint" className="text-[10px] text-gray-400 mt-1">
+                  Minimum 4 characters (e.g. 184920, 584217, 731846)
+                </p>
               )}
             </div>
 
             {/* Registration Number input */}
             <div className="md:col-span-6">
-              <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">
+              <label 
+                htmlFor="verification-reg-number"
+                className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2"
+              >
                 Registration Number <span className="text-[#f42a41]">*</span>
               </label>
               <input
+                id="verification-reg-number"
                 type="text"
-                disabled={isTokenLoaded}
+                disabled={isTokenLoaded || isSearching}
                 placeholder="Year-based Registration (YYYYNNNNNN)"
                 value={registrationNumber}
+                aria-required="true"
+                aria-invalid={Boolean(regTouched && regError)}
+                aria-describedby={
+                  regTouched && regError 
+                    ? "reg-error-alert" 
+                    : registrationNumber.trim().length >= 6 
+                    ? "reg-valid-msg" 
+                    : "reg-hint"
+                }
+                onBlur={() => {
+                  setRegTouched(true);
+                  setRegError(validateReg(registrationNumber));
+                }}
                 onChange={(e) => {
-                  setRegistrationNumber(e.target.value.replace(/[^a-zA-Z0-9\-_/]/g, ""));
+                  const sanitized = e.target.value.replace(/[^a-zA-Z0-9\-_/]/g, "");
+                  setRegistrationNumber(sanitized);
                   setSearchError("");
-                  if (regError) setRegError("");
+                  if (regTouched || sanitized.length > 0) {
+                    setRegError(validateReg(sanitized));
+                  }
                 }}
                 className={`w-full bg-white border rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-hidden focus:ring-1 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed font-semibold font-mono transition-all ${
-                  regError ? "border-red-500 ring-2 ring-red-100 bg-red-50/20" : "border-gray-300 focus:border-[#006a4e] focus:ring-[#006a4e]"
+                  regTouched && regError 
+                    ? "border-red-500 ring-2 ring-red-100 bg-red-50/20" 
+                    : "border-gray-300 focus:border-[#006a4e] focus:ring-[#006a4e]"
                 }`}
               />
-              {regError ? (
-                <p className="text-[11px] font-semibold text-red-600 mt-1.5 flex items-center gap-1">
-                  <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+              {regTouched && regError ? (
+                <div 
+                  id="reg-error-alert" 
+                  role="alert" 
+                  aria-live="polite" 
+                  className="text-[11px] font-semibold text-red-600 mt-1.5 flex items-center gap-1.5 bg-red-50 p-2 rounded-lg border border-red-200"
+                >
+                  <ShieldAlert className="w-3.5 h-3.5 text-red-600 shrink-0" />
                   <span>{regError}</span>
-                </p>
+                </div>
+              ) : registrationNumber.trim().length >= 6 ? (
+                <div 
+                  id="reg-valid-msg" 
+                  aria-live="polite" 
+                  className="text-[11px] font-semibold text-emerald-700 mt-1.5 flex items-center gap-1.5"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>Valid Registration Format ({registrationNumber.trim().length} chars)</span>
+                </div>
               ) : (
-                <p className="text-[10px] text-gray-400 mt-1">e.g. 2012005831, 8472910</p>
+                <p id="reg-hint" className="text-[10px] text-gray-400 mt-1">
+                  Minimum 6 characters (e.g. 2012005831, 8472910)
+                </p>
               )}
             </div>
 
@@ -472,10 +580,11 @@ export default function VerificationForm({
                   <input
                     type="text"
                     required
+                    disabled={isSearching}
                     placeholder="?"
                     value={captchaAnswer}
                     onChange={(e) => setCaptchaAnswer(e.target.value.trim())}
-                    className="w-16 text-center font-mono font-bold text-base border-b-2 border-gray-300 focus:border-[#006a4e] focus:outline-hidden bg-transparent py-0.5 text-gray-900"
+                    className="w-16 text-center font-mono font-bold text-base border-b-2 border-gray-300 focus:border-[#006a4e] focus:outline-hidden bg-transparent py-0.5 text-gray-900 disabled:opacity-50"
                   />
 
                   <button
@@ -601,10 +710,20 @@ export default function VerificationForm({
           {/* Verification Button */}
           <button
             type="submit"
-            className="w-full bg-[#006a4e] hover:bg-[#00563f] text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg flex items-center justify-center space-x-2 uppercase text-sm tracking-wider"
+            disabled={isSearching || isDbLoading}
+            className="w-full bg-[#006a4e] hover:bg-[#00563f] text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg flex items-center justify-center space-x-2 uppercase text-sm tracking-wider disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <CheckCircle2 className="w-5 h-5 text-emerald-200" />
-            <span>Verify Certificate</span>
+            {isSearching ? (
+              <>
+                <Loader2 className="w-5 h-5 text-emerald-200 animate-spin" />
+                <span>Querying Verification Database...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-5 h-5 text-emerald-200" />
+                <span>Verify Certificate</span>
+              </>
+            )}
           </button>
         </form>
 

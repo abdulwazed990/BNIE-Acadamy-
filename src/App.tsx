@@ -78,6 +78,162 @@ const getInitialPage = (): string => {
   return "home";
 };
 
+interface PageSeoMetadata {
+  title: string;
+  description: string;
+  canonicalPath: string;
+  breadcrumbName: string;
+  noIndex?: boolean;
+}
+
+const PAGE_SEO_CONFIG: Record<string, PageSeoMetadata> = {
+  home: {
+    title: "Bangladesh National Institute of Education (BNIE) | Official Website",
+    description: "Bangladesh National Institute of Education (BNIE) — explore available academic programs, student results, certificate verification and educational services through the institution’s website.",
+    canonicalPath: "/",
+    breadcrumbName: "Home"
+  },
+  "degree-marksheet-result": {
+    title: "Degree, Honours & Masters Marksheet Result | BNIE",
+    description: "Verify official Degree Pass, Honours, and Masters marksheets with semester-wise GPA, CGPA calculation, and transcript downloads from BNIE.",
+    canonicalPath: "/?page=degree-marksheet-result",
+    breadcrumbName: "Degree Marksheet Result"
+  },
+  verify: {
+    title: "SSC, HSC & Diploma Certificate Verification | BNIE",
+    description: "Online certificate verification for SSC, HSC, and Diploma programs by Bangladesh National Institute of Education (BNIE). Fast, secure credential checking.",
+    canonicalPath: "/?page=verify",
+    breadcrumbName: "Certificate Verification"
+  },
+  report: {
+    title: "Verified Academic Transcript & Certificate Report | BNIE",
+    description: "Official verified academic dossier and transcript report from Bangladesh National Institute of Education (BNIE) credential verification system.",
+    canonicalPath: "/?page=report",
+    breadcrumbName: "Transcript Report"
+  },
+  "find-program": {
+    title: "Academic Programs & Curriculum Catalog | BNIE",
+    description: "Browse Bachelor Degree, Honours, Masters, and Vocational Diploma courses offered by Bangladesh National Institute of Education (BNIE).",
+    canonicalPath: "/?page=find-program",
+    breadcrumbName: "Academic Programs"
+  },
+  "online-admission": {
+    title: "Online Admission & Enrollment | BNIE",
+    description: "Apply online for undergraduate degrees, honours, masters, and professional engineering diploma courses at Bangladesh National Institute of Education.",
+    canonicalPath: "/?page=online-admission",
+    breadcrumbName: "Online Admission"
+  },
+  accreditation: {
+    title: "Institutional Framework & Affiliations | BNIE",
+    description: "Institutional accreditations, curriculum standards, and educational authorizations of Bangladesh National Institute of Education (BNIE).",
+    canonicalPath: "/?page=accreditation",
+    breadcrumbName: "Accreditation"
+  },
+  services: {
+    title: "Academic & Student Services | BNIE",
+    description: "Comprehensive student services: transcript issuance, marksheet corrections, migration certificates, and academic support at BNIE.",
+    canonicalPath: "/?page=services",
+    breadcrumbName: "Student Services"
+  },
+  notices: {
+    title: "Official Notices & Academic Circulars | BNIE",
+    description: "Latest institutional notices, examination schedules, academic calendar announcements, and advisories from BNIE.",
+    canonicalPath: "/?page=notices",
+    breadcrumbName: "Notices"
+  },
+  "research-publications": {
+    title: "Research, Journals & Publications | BNIE",
+    description: "Academic journals, scholarly research, conference proceedings, and faculty publications from Bangladesh National Institute of Education.",
+    canonicalPath: "/?page=research-publications",
+    breadcrumbName: "Research Publications"
+  },
+  "regional-centers": {
+    title: "Regional Resource Centers | BNIE",
+    description: "Divisional and regional learning centers, academic support hubs, and liaison points of Bangladesh National Institute of Education across Bangladesh.",
+    canonicalPath: "/?page=regional-centers",
+    breadcrumbName: "Regional Centers"
+  },
+  leadership: {
+    title: "Leadership & Administration | BNIE",
+    description: "Governing body, Academic Council, Syndicate, and administrative leadership of Bangladesh National Institute of Education (BNIE).",
+    canonicalPath: "/?page=leadership",
+    breadcrumbName: "Leadership & Governance"
+  },
+  "student-handbooks": {
+    title: "Student Handbooks & Code of Conduct | BNIE",
+    description: "Download official student handbooks, examination rules, grading guidelines, and academic policies of BNIE.",
+    canonicalPath: "/?page=student-handbooks",
+    breadcrumbName: "Student Handbooks"
+  },
+  "vc-message": {
+    title: "Message from the Vice-Chancellor | BNIE",
+    description: "Executive address and strategic educational vision from the Vice-Chancellor of Bangladesh National Institute of Education.",
+    canonicalPath: "/?page=vc-message",
+    breadcrumbName: "Vice-Chancellor Message"
+  },
+  "complaints-services": {
+    title: "Citizen Charter & Grievance Redress | BNIE",
+    description: "Student grievance redressal system, citizen charter, and service dispute resolution cell at BNIE.",
+    canonicalPath: "/?page=complaints-services",
+    breadcrumbName: "Citizen Charter"
+  },
+  "help-center": {
+    title: "Help Center & Student FAQs | BNIE",
+    description: "Frequently asked questions regarding admissions, examinations, marksheets, and certificate verification at BNIE.",
+    canonicalPath: "/?page=help-center",
+    breadcrumbName: "Help Center"
+  },
+  "privacy-policy": {
+    title: "Privacy Policy & Data Protection | BNIE",
+    description: "Student data privacy principles, verification record security, and digital privacy policy of Bangladesh National Institute of Education.",
+    canonicalPath: "/?page=privacy-policy",
+    breadcrumbName: "Privacy Policy"
+  },
+  "terms-conditions": {
+    title: "Terms of Service & Usage Conditions | BNIE",
+    description: "Terms of service governing use of the BNIE portal, online certificate verification, and institutional digital resources.",
+    canonicalPath: "/?page=terms-conditions",
+    breadcrumbName: "Terms & Conditions"
+  },
+  "osaps-login": {
+    title: "OSAPS Online Student Access Portal | BNIE",
+    description: "Student login portal for OSAPS course registration, marksheet checks, and student records at BNIE.",
+    canonicalPath: "/?page=osaps-login",
+    breadcrumbName: "OSAPS Student Portal"
+  },
+  ebook: {
+    title: "Digital E-Library & Academic Resources | BNIE",
+    description: "Open educational resources, lecture textbooks, and course syllabus readers for BNIE students.",
+    canonicalPath: "/?page=ebook",
+    breadcrumbName: "E-Library"
+  },
+  "web-email": {
+    title: "Institutional Webmail Gateway | BNIE",
+    description: "Official webmail and communication gateway for BNIE students, faculty, and administrative staff.",
+    canonicalPath: "/?page=web-email",
+    breadcrumbName: "Webmail"
+  },
+  courses: {
+    title: "Diploma in Engineering Programs | BNIE",
+    description: "Engineering diploma programs: Civil, Electrical, Mechanical, Computer, and Electronics at BNIE.",
+    canonicalPath: "/?page=courses",
+    breadcrumbName: "Diploma Courses"
+  },
+  specializations: {
+    title: "Vocational & Professional Specializations | BNIE",
+    description: "Explore vocational trade certifications, skill development tracks, and technology programs at BNIE.",
+    canonicalPath: "/?page=specializations",
+    breadcrumbName: "Vocational Specializations"
+  },
+  "admin-login": {
+    title: "Administrative Registry Console | BNIE",
+    description: "Secure credential management console for authorized BNIE registry officers only.",
+    canonicalPath: "/?page=admin-login",
+    breadcrumbName: "Admin Registry",
+    noIndex: true
+  }
+};
+
 export default function App() {
   // Navigation State with full browser refresh and URL parameter persistence
   const [currentPage, setCurrentPage] = useState<string>(getInitialPage);
@@ -194,6 +350,82 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setIsSideDrawerOpen(false);
   };
+
+  // Dynamic Route-Based SEO synchronization for Google, Gemini, ChatGPT & AI Search Crawlers
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    const seo = PAGE_SEO_CONFIG[currentPage] || PAGE_SEO_CONFIG.home;
+    const baseOrigin = "https://bnie.edu.bd";
+    const canonicalUrl = `${baseOrigin}${seo.canonicalPath}`;
+
+    // 1. Document Title
+    document.title = seo.title;
+
+    // 2. Helper to set/update meta tag
+    const setMetaTag = (selector: string, attr: "name" | "property", attrVal: string, content: string) => {
+      let tag = document.querySelector(selector) as HTMLMetaElement | null;
+      if (!tag) {
+        tag = document.createElement("meta");
+        tag.setAttribute(attr, attrVal);
+        document.head.appendChild(tag);
+      }
+      tag.content = content;
+    };
+
+    setMetaTag('meta[name="title"]', "name", "title", seo.title);
+    setMetaTag('meta[name="description"]', "name", "description", seo.description);
+    setMetaTag('meta[property="og:title"]', "property", "og:title", seo.title);
+    setMetaTag('meta[property="og:description"]', "property", "og:description", seo.description);
+    setMetaTag('meta[property="og:url"]', "property", "og:url", canonicalUrl);
+    setMetaTag('meta[name="twitter:title"]', "name", "twitter:title", seo.title);
+    setMetaTag('meta[name="twitter:description"]', "name", "twitter:description", seo.description);
+
+    // 3. Robots directive (block private admin, allow public pages)
+    if (seo.noIndex) {
+      setMetaTag('meta[name="robots"]', "name", "robots", "noindex, nofollow");
+    } else {
+      setMetaTag('meta[name="robots"]', "name", "robots", "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1");
+    }
+
+    // 4. Canonical Link Tag
+    let canonicalTag = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonicalTag) {
+      canonicalTag = document.createElement("link");
+      canonicalTag.rel = "canonical";
+      document.head.appendChild(canonicalTag);
+    }
+    canonicalTag.href = canonicalUrl;
+
+    // 5. Dynamic Breadcrumbs Structured Data (JSON-LD)
+    let breadcrumbScript = document.getElementById("bnie-route-breadcrumbs") as HTMLScriptElement | null;
+    if (!breadcrumbScript) {
+      breadcrumbScript = document.createElement("script");
+      breadcrumbScript.id = "bnie-route-breadcrumbs";
+      breadcrumbScript.type = "application/ld+json";
+      document.head.appendChild(breadcrumbScript);
+    }
+
+    const breadcrumbsData = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": baseOrigin + "/"
+        },
+        ...(currentPage !== "home" ? [{
+          "@type": "ListItem",
+          "position": 2,
+          "name": seo.breadcrumbName,
+          "item": canonicalUrl
+        }] : [])
+      ]
+    };
+    breadcrumbScript.text = JSON.stringify(breadcrumbsData);
+  }, [currentPage, leadershipSection]);
 
   // Callback when student is successfully queried
   const handleVerifySuccess = (student: Student) => {
