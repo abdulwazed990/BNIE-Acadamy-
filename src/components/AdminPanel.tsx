@@ -11,7 +11,8 @@ import Logo from "./Logo";
 import { 
   Plus, Edit2, Trash2, Eye, ShieldCheck, LogOut, Search, User, Key, 
   Calendar, FileText, School, Clock, Upload, ArrowRight, Save, X, Image as ImageIcon,
-  BookOpen, Tablet, CheckCircle2, Lock, ToggleLeft, ToggleRight, RefreshCw, Unlock
+  BookOpen, Tablet, CheckCircle2, Lock, ToggleLeft, ToggleRight, RefreshCw, Unlock,
+  Loader2, AlertCircle
 } from "lucide-react";
 import { motion } from "motion/react";
 import { 
@@ -27,9 +28,9 @@ import {
 
 interface AdminPanelProps {
   students: Student[];
-  onAddStudent: (student: Student) => void;
-  onUpdateStudent: (student: Student) => void;
-  onDeleteStudent: (id: string) => void;
+  onAddStudent: (student: Student) => Promise<void> | void;
+  onUpdateStudent: (student: Student) => Promise<void> | void;
+  onDeleteStudent: (id: string) => Promise<void> | void;
   onViewStudent: (student: Student) => void;
 }
 
@@ -71,6 +72,8 @@ export default function AdminPanel({
   // Add / Edit Form Modal state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
+  const [isSavingStudent, setIsSavingStudent] = useState(false);
+  const [saveStudentError, setSaveStudentError] = useState("");
 
   // Form Fields
   const [formCategory, setFormCategory] = useState<Category>(Category.SSC);
@@ -341,9 +344,11 @@ export default function AdminPanel({
     }
   };
 
-  // Save the student (Create or Update)
-  const handleSaveStudent = (e: FormEvent) => {
+  // Save the student (Create or Update) with authoritative database save confirmation
+  const handleSaveStudent = async (e: FormEvent) => {
     e.preventDefault();
+    if (isSavingStudent) return;
+    setSaveStudentError("");
 
     const is4PointScale = formCategory === Category.DIPLOMA;
     const maxScale = is4PointScale ? 4.00 : 5.00;
@@ -414,24 +419,37 @@ export default function AdminPanel({
       division: isPre2001Division ? (formDivision || divisionResult.division) : undefined
     };
 
-    if (editingStudentId) {
-      onUpdateStudent(studentData);
-    } else {
-      // Check if roll and reg already exist in the selected category to prevent duplicates
-      const exists = students.some(
-        (s) => 
-          s.rollNumber === studentData.rollNumber && 
-          s.registrationNumber === studentData.registrationNumber && 
-          s.category === studentData.category
-      );
-      if (exists) {
-        alert("A student with this Roll, Registration, and Category already exists!");
-        return;
+    try {
+      setIsSavingStudent(true);
+      if (editingStudentId) {
+        await onUpdateStudent(studentData);
+      } else {
+        // Check if roll and reg already exist in the selected category to prevent duplicates
+        const exists = students.some(
+          (s) => 
+            s.rollNumber === studentData.rollNumber && 
+            s.registrationNumber === studentData.registrationNumber && 
+            s.category === studentData.category
+        );
+        if (exists) {
+          alert("A student with this Roll, Registration, and Category already exists!");
+          setIsSavingStudent(false);
+          return;
+        }
+        await onAddStudent(studentData);
       }
-      onAddStudent(studentData);
-    }
 
-    setIsFormOpen(false);
+      // Only close modal once database write has strictly succeeded
+      setIsFormOpen(false);
+      setSaveStudentError("");
+    } catch (saveErr) {
+      console.error("Save student error in AdminPanel:", saveErr);
+      setSaveStudentError(
+        saveErr instanceof Error ? saveErr.message : "Failed to save student record to persistent database. Form data has been preserved."
+      );
+    } finally {
+      setIsSavingStudent(false);
+    }
   };
 
   // Update a single subject's grade point and automatically update marks
@@ -1261,13 +1279,21 @@ export default function AdminPanel({
                 }
                 existingStudent={editingStudentId ? students.find((s) => s.id === editingStudentId) : null}
                 allStudents={students}
-                onSaveStudent={(savedStudent) => {
-                  if (editingStudentId) {
-                    onUpdateStudent(savedStudent);
-                  } else {
-                    onAddStudent(savedStudent);
+                onSaveStudent={async (savedStudent) => {
+                  try {
+                    setIsSavingStudent(true);
+                    if (editingStudentId) {
+                      await onUpdateStudent(savedStudent);
+                    } else {
+                      await onAddStudent(savedStudent);
+                    }
+                    setIsFormOpen(false);
+                  } catch (err) {
+                    console.error("Degree student save failed in AdminPanel:", err);
+                    throw err;
+                  } finally {
+                    setIsSavingStudent(false);
                   }
-                  setIsFormOpen(false);
                 }}
                 onCancel={() => setIsFormOpen(false)}
                 onSwitchToSchoolSystem={(cat) => {
@@ -2212,21 +2238,40 @@ export default function AdminPanel({
                 )}
               </div>
 
+              {/* Database Error Banner if save fails */}
+              {saveStudentError && (
+                <div className="md:col-span-12 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-2 text-xs text-red-700 font-bold">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>{saveStudentError}</span>
+                </div>
+              )}
+
               {/* Modal Actions Footer */}
               <div className="md:col-span-12 border-t border-gray-200 pt-6 flex items-center justify-end space-x-3 shrink-0">
                 <button
                   type="button"
+                  disabled={isSavingStudent}
                   onClick={() => setIsFormOpen(false)}
-                  className="bg-white border border-gray-200 text-gray-600 hover:text-gray-950 font-bold text-xs px-5 py-2.5 rounded-xl transition-colors cursor-pointer"
+                  className="bg-white border border-gray-200 text-gray-600 hover:text-gray-950 font-bold text-xs px-5 py-2.5 rounded-xl transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#006a4e] hover:bg-[#00563f] text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-colors cursor-pointer flex items-center space-x-2 border border-[#00563f]"
+                  disabled={isSavingStudent}
+                  className="bg-[#006a4e] hover:bg-[#00563f] text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-colors cursor-pointer flex items-center space-x-2 border border-[#00563f] disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  <Save className="w-4 h-4 text-emerald-200" />
-                  <span>{editingStudentId ? "Update Student" : "Register Student"}</span>
+                  {isSavingStudent ? (
+                    <>
+                      <Loader2 className="w-4 h-4 text-emerald-200 animate-spin" />
+                      <span>Saving to Database...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 text-emerald-200" />
+                      <span>{editingStudentId ? "Update Student" : "Register Student"}</span>
+                    </>
+                  )}
                 </button>
               </div>
 

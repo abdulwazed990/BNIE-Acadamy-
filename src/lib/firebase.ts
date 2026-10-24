@@ -8,9 +8,11 @@ import {
   setDoc, 
   updateDoc, 
   deleteDoc,
-  writeBatch
+  writeBatch,
+  query,
+  where
 } from "firebase/firestore";
-import { Student, SemesterResult } from "../types";
+import { Student, SemesterResult, Category } from "../types";
 import { DEFAULT_STUDENTS } from "../data/defaultStudents";
 import { getBbaAccountingCurriculum, getMbaAccountingCurriculum, generateDefaultSemesterResults } from "../data/degreeProgramsCatalog";
 
@@ -31,6 +33,31 @@ export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 const STUDENTS_COLLECTION = "students";
 
 /**
+ * Recursively remove all `undefined` values from an object or nested arrays/objects.
+ * Firestore strictly rejects documents containing undefined fields.
+ */
+export function sanitizeForFirestore<T>(data: T): T {
+  if (data === null || data === undefined) {
+    return null as unknown as T;
+  }
+  if (Array.isArray(data)) {
+    return data
+      .filter((item) => item !== undefined)
+      .map((item) => sanitizeForFirestore(item)) as unknown as T;
+  }
+  if (typeof data === "object" && !(data instanceof Date)) {
+    const cleanObj: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(data as Record<string, unknown>)) {
+      if (val !== undefined) {
+        cleanObj[key] = sanitizeForFirestore(val);
+      }
+    }
+    return cleanObj as T;
+  }
+  return data;
+}
+
+/**
  * Seed the database with default students if it is empty.
  */
 export async function seedDatabaseIfEmpty(): Promise<Student[]> {
@@ -47,7 +74,7 @@ export async function seedDatabaseIfEmpty(): Promise<Student[]> {
       const batch = writeBatch(db);
       for (const student of DEFAULT_STUDENTS) {
         const docRef = doc(db, STUDENTS_COLLECTION, student.id);
-        batch.set(docRef, student);
+        batch.set(docRef, sanitizeForFirestore(student));
       }
       await batch.commit();
       console.log("Database seeded successfully.");
@@ -89,13 +116,14 @@ export async function fetchAllStudents(): Promise<Student[]> {
 }
 
 /**
- * Add a new student record to Firestore
+ * Add a new student record to Firestore permanently
  */
 export async function addStudentToDb(student: Student): Promise<void> {
   try {
     const docRef = doc(db, STUDENTS_COLLECTION, student.id);
-    await setDoc(docRef, student);
-    console.log(`Saved student ${student.name} to Firestore.`);
+    const sanitizedStudent = sanitizeForFirestore(student);
+    await setDoc(docRef, sanitizedStudent);
+    console.log(`Saved student ${student.name} (Roll: ${student.rollNumber}, Reg: ${student.registrationNumber}) permanently to Firestore.`);
   } catch (error) {
     console.error("Error adding student to Firestore:", error);
     throw error;
@@ -108,7 +136,8 @@ export async function addStudentToDb(student: Student): Promise<void> {
 export async function updateStudentInDb(student: Student): Promise<void> {
   try {
     const docRef = doc(db, STUDENTS_COLLECTION, student.id);
-    await setDoc(docRef, student);
+    const sanitizedStudent = sanitizeForFirestore(student);
+    await setDoc(docRef, sanitizedStudent);
     console.log(`Updated student ${student.name} in Firestore.`);
   } catch (error) {
     console.error("Error updating student in Firestore:", error);
@@ -127,6 +156,66 @@ export async function deleteStudentFromDb(id: string): Promise<void> {
   } catch (error) {
     console.error("Error deleting student from Firestore:", error);
     throw error;
+  }
+}
+
+/**
+ * Authoritative live query against Firestore to locate student records across windows/devices
+ * Searches by Roll Number and Registration Number, handling whitespace and leading zeros.
+ */
+export async function findStudentInDatabase(
+  rollNumber: string,
+  registrationNumber: string,
+  category?: Category
+): Promise<Student | null> {
+  try {
+    const cleanRoll = rollNumber.trim();
+    const cleanReg = registrationNumber.trim();
+
+    if (!cleanRoll || !cleanReg) return null;
+
+    // 1. Direct query by exact rollNumber
+    const rollQuery = query(
+      collection(db, STUDENTS_COLLECTION),
+      where("rollNumber", "==", cleanRoll)
+    );
+    const snap = await getDocs(rollQuery);
+
+    let candidates: Student[] = [];
+    snap.forEach((d) => {
+      candidates.push(d.data() as Student);
+    });
+
+    // Match registrationNumber (case-insensitive & trimmed)
+    let matched = candidates.find((s) => {
+      const sReg = (s.registrationNumber || "").trim().toLowerCase();
+      const targetReg = cleanReg.toLowerCase();
+      if (sReg !== targetReg) return false;
+      if (category && s.category === category) return true;
+      return true;
+    });
+
+    if (matched) return matched;
+
+    // 2. Query by registrationNumber if roll had alternate formatting
+    const regQuery = query(
+      collection(db, STUDENTS_COLLECTION),
+      where("registrationNumber", "==", cleanReg)
+    );
+    const regSnap = await getDocs(regQuery);
+    regSnap.forEach((d) => {
+      const s = d.data() as Student;
+      const sRoll = (s.rollNumber || "").trim().toLowerCase();
+      const sReg = (s.registrationNumber || "").trim().toLowerCase();
+      if (sRoll === cleanRoll.toLowerCase() && sReg === cleanReg.toLowerCase()) {
+        matched = s;
+      }
+    });
+
+    return matched || null;
+  } catch (error) {
+    console.warn("Live database search failed, falling back to local memory:", error);
+    return null;
   }
 }
 

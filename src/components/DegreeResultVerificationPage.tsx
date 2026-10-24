@@ -27,6 +27,7 @@ import { PASSPORT_AVATARS } from "../data/defaultStudents";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { patchGetComputedStyle } from "../lib/colorUtils";
+import { findStudentInDatabase } from "../lib/firebase";
 
 interface DegreeResultVerificationPageProps {
   students: Student[];
@@ -34,6 +35,7 @@ interface DegreeResultVerificationPageProps {
   onBackToHome: () => void;
   onNavigateToAdmin?: () => void;
   onNavigateToSscHscVerify?: () => void;
+  onStudentFound?: (student: Student) => void;
 }
 
 export type ExamType = "Degree Pass" | "Honours" | "Masters";
@@ -76,7 +78,8 @@ export default function DegreeResultVerificationPage({
   isDbLoading = false,
   onBackToHome,
   onNavigateToAdmin,
-  onNavigateToSscHscVerify
+  onNavigateToSscHscVerify,
+  onStudentFound
 }: DegreeResultVerificationPageProps) {
   // Required search fields according to prompt specification
   const [studentIdInput, setStudentIdInput] = useState("");
@@ -341,7 +344,32 @@ export default function DegreeResultVerificationPage({
         setSearchError("");
         setDisplayedEndpointPeriod(period);
       } else {
-        // Step 4: Cross-Portal Detection: Check if query matches an SSC, HSC or Diploma student
+        // Step 4: Check live Firestore database directly if student was recently added from another device/window
+        let liveStudent: Student | null = null;
+        try {
+          liveStudent = await findStudentInDatabase(cleanId, cleanId);
+          if (liveStudent) {
+            onStudentFound?.(liveStudent);
+            const isHigherEd =
+              liveStudent.category === Category.DEGREE_PASS ||
+              liveStudent.category === Category.HONOURS ||
+              liveStudent.category === Category.MASTERS ||
+              Boolean(liveStudent.academicLevel);
+
+            if (isHigherEd) {
+              setMatchedStudent(liveStudent);
+              setMultiMatchStudents([]);
+              setSearchError("");
+              setDisplayedEndpointPeriod(period);
+              setHasSearched(true);
+              return;
+            }
+          }
+        } catch (dbErr) {
+          console.warn("Live database query fallback failed in DegreeResultVerificationPage:", dbErr);
+        }
+
+        // Step 5: Cross-Portal Detection: Check if query matches an SSC, HSC or Diploma student
         const crossMatches = students.filter(
           (s) =>
             (s.category === Category.SSC ||
@@ -352,6 +380,10 @@ export default function DegreeResultVerificationPage({
              s.id?.toLowerCase() === cleanId ||
              (s.name?.toLowerCase().includes(cleanId) && cleanId.length > 3))
         );
+
+        if (liveStudent && !crossMatches.some(s => s.id === liveStudent!.id)) {
+          crossMatches.push(liveStudent);
+        }
 
         setMatchedStudent(null);
         setMultiMatchStudents([]);

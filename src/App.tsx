@@ -35,6 +35,7 @@ import { Student } from "./types";
 import { DEFAULT_STUDENTS } from "./data/defaultStudents";
 import { 
   seedDatabaseIfEmpty, 
+  fetchAllStudents,
   addStudentToDb, 
   updateStudentInDb, 
   deleteStudentFromDb 
@@ -433,35 +434,96 @@ export default function App() {
     handleNavigate("report");
   };
 
-  // CMS functions with automatic Firebase cloud saving
-  const handleAddStudent = async (newStudent: Student) => {
-    setStudents((prev) => [newStudent, ...prev]);
-    alert(`Successfully registered candidate: ${newStudent.name}`);
+  // CMS functions with authoritative Firestore cloud persistence and immediate database reload
+  const handleStudentFound = (student: Student) => {
+    setStudents((prev) => {
+      const exists = prev.some((s) => s.id === student.id);
+      if (exists) return prev;
+      return [student, ...prev];
+    });
+  };
+
+  const handleAddStudent = async (newStudent: Student): Promise<void> => {
     try {
+      // 1. Authoritative write to Firestore
       await addStudentToDb(newStudent);
+      
+      // 2. Refresh student list directly from persistent database
+      try {
+        const freshStudents = await fetchAllStudents();
+        if (freshStudents && freshStudents.length > 0) {
+          setStudents(freshStudents);
+          try {
+            localStorage.setItem("bnie_students_cloud_cache", JSON.stringify(freshStudents));
+          } catch (e) {
+            console.warn("Local storage cache write failed:", e);
+          }
+        } else {
+          setStudents((prev) => [newStudent, ...prev]);
+        }
+      } catch (fetchErr) {
+        console.warn("Failed to refresh students list after add, updating local state directly:", fetchErr);
+        setStudents((prev) => [newStudent, ...prev]);
+      }
+
+      alert(`Successfully registered candidate: ${newStudent.name} (Roll: ${newStudent.rollNumber}, Reg: ${newStudent.registrationNumber}) permanently to the database.`);
     } catch (error) {
-      console.warn("Background save to cloud database failed. Local record is preserved.", error);
+      console.error("Failed to save student permanently to Firestore:", error);
+      alert(`Database Error: Could not save student to the persistent database. ${error instanceof Error ? error.message : "Please check your network and try again."}`);
+      throw error;
     }
   };
 
-  const handleUpdateStudent = async (updatedStudent: Student) => {
-    setStudents((prev) =>
-      prev.map((s) => (s.id === updatedStudent.id ? updatedStudent : s))
-    );
-    alert(`Successfully updated record for: ${updatedStudent.name}`);
+  const handleUpdateStudent = async (updatedStudent: Student): Promise<void> => {
     try {
+      // 1. Authoritative update in Firestore
       await updateStudentInDb(updatedStudent);
+
+      // 2. Refresh student list directly from persistent database
+      try {
+        const freshStudents = await fetchAllStudents();
+        if (freshStudents && freshStudents.length > 0) {
+          setStudents(freshStudents);
+          try {
+            localStorage.setItem("bnie_students_cloud_cache", JSON.stringify(freshStudents));
+          } catch (e) {
+            console.warn("Local storage cache write failed:", e);
+          }
+        } else {
+          setStudents((prev) => prev.map((s) => (s.id === updatedStudent.id ? updatedStudent : s)));
+        }
+      } catch (fetchErr) {
+        console.warn("Failed to refresh students list after update, updating local state directly:", fetchErr);
+        setStudents((prev) => prev.map((s) => (s.id === updatedStudent.id ? updatedStudent : s)));
+      }
+
+      alert(`Successfully updated record for: ${updatedStudent.name}`);
     } catch (error) {
-      console.warn("Background update to cloud database failed. Local record is preserved.", error);
+      console.error("Failed to update student in Firestore:", error);
+      alert(`Database Error: Could not update student in persistent database. ${error instanceof Error ? error.message : ""}`);
+      throw error;
     }
   };
 
-  const handleDeleteStudent = async (id: string) => {
-    setStudents((prev) => prev.filter((s) => s.id !== id));
+  const handleDeleteStudent = async (id: string): Promise<void> => {
     try {
       await deleteStudentFromDb(id);
+      try {
+        const freshStudents = await fetchAllStudents();
+        setStudents(freshStudents);
+        try {
+          localStorage.setItem("bnie_students_cloud_cache", JSON.stringify(freshStudents));
+        } catch (e) {
+          console.warn("Local storage cache write failed:", e);
+        }
+      } catch (fetchErr) {
+        console.warn("Failed to refresh students list after delete, filtering local state:", fetchErr);
+        setStudents((prev) => prev.filter((s) => s.id !== id));
+      }
     } catch (error) {
-      console.warn("Background delete from cloud database failed.", error);
+      console.error("Failed to delete student from Firestore:", error);
+      alert(`Database Error: Could not delete student from persistent database.`);
+      throw error;
     }
   };
 
@@ -833,6 +895,7 @@ export default function App() {
                   onVerifySuccess={handleVerifySuccess} 
                   isDbLoading={isDbLoading}
                   onNavigateToDegreeVerify={() => handleNavigate("degree-marksheet-result")}
+                  onStudentFound={handleStudentFound}
                 />
               </div>
               <Contact />
@@ -854,6 +917,7 @@ export default function App() {
                 onBackToHome={() => handleNavigate("home")}
                 onNavigateToAdmin={() => handleNavigate("admin-login")}
                 onNavigateToSscHscVerify={() => handleNavigate("verify")}
+                onStudentFound={handleStudentFound}
               />
               <Contact />
             </motion.div>

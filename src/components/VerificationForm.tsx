@@ -2,12 +2,14 @@ import { useState, useEffect, FormEvent } from "react";
 import { Category, Student } from "../types";
 import { RefreshCw, SearchCode, ShieldAlert, CheckCircle2, FileKey2, GraduationCap, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
+import { findStudentInDatabase } from "../lib/firebase";
 
 interface VerificationFormProps {
   students: Student[];
   onVerifySuccess: (student: Student) => void;
   isDbLoading?: boolean;
   onNavigateToDegreeVerify?: () => void;
+  onStudentFound?: (student: Student) => void;
 }
 
 interface Captcha {
@@ -21,7 +23,8 @@ export default function VerificationForm({
   students, 
   onVerifySuccess, 
   isDbLoading = false,
-  onNavigateToDegreeVerify 
+  onNavigateToDegreeVerify,
+  onStudentFound
 }: VerificationFormProps) {
   // Input fields
   const [category, setCategory] = useState<Category>(Category.SSC);
@@ -257,6 +260,20 @@ export default function VerificationForm({
         }
       }
 
+      // If not found in local memory, query the authoritative live persistent database directly
+      if (!matched) {
+        try {
+          const liveMatch = await findStudentInDatabase(cleanRoll, cleanReg, category);
+          if (liveMatch) {
+            matched = liveMatch;
+            setCategory(liveMatch.category);
+            onStudentFound?.(liveMatch);
+          }
+        } catch (dbErr) {
+          console.warn("Live database search error in VerificationForm:", dbErr);
+        }
+      }
+
       if (matched) {
         onVerifySuccess(matched);
       } else {
@@ -276,7 +293,7 @@ export default function VerificationForm({
           setDegreeCrossMatch(higherEdMatch);
         } else {
           setSearchError(
-            `No Record Found. Please verify the Roll Number, Registration Number and make sure you have selected the correct Category.`
+            `No matching record found in the national database. Please verify the Roll Number, Registration Number, and ensure you have selected the correct Category.`
           );
         }
         generateCaptcha(); // Refresh captcha on failure
