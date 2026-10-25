@@ -535,9 +535,44 @@ export function getStoredHandbooks(): HandbookItem[] {
 export function saveStoredHandbooks(items: HandbookItem[]): void {
   try {
     localStorage.setItem(HANDBOOKS_STORAGE_KEY, JSON.stringify(items));
+    // Asynchronously synchronize to Firestore
+    import("../lib/firebase").then(({ db, sanitizeForFirestore }) => {
+      import("firebase/firestore").then(({ doc, setDoc }) => {
+        const docRef = doc(db, "resources", "handbooks");
+        const statusMap = items.map(h => ({ id: h.id, isAvailable: h.isAvailable }));
+        setDoc(docRef, sanitizeForFirestore({ items: statusMap, updatedAt: new Date().toISOString() })).catch(err => {
+          console.warn("Failed to sync handbooks to Firestore:", err);
+        });
+      });
+    });
   } catch (e) {
     console.error("Failed to save handbooks to storage", e);
   }
+}
+
+export async function fetchStoredHandbooksFromDb(): Promise<HandbookItem[]> {
+  try {
+    const { db } = await import("../lib/firebase");
+    const { doc, getDoc } = await import("firebase/firestore");
+    const docRef = doc(db, "resources", "handbooks");
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (Array.isArray(data.items)) {
+        const updated = INITIAL_HANDBOOKS.map((init) => {
+          const found = data.items.find((p: { id: string; isAvailable: boolean }) => p.id === init.id);
+          return found ? { ...init, isAvailable: found.isAvailable } : init;
+        });
+        try {
+          localStorage.setItem(HANDBOOKS_STORAGE_KEY, JSON.stringify(updated));
+        } catch (_) {}
+        return updated;
+      }
+    }
+  } catch (err) {
+    console.warn("Could not fetch remote handbooks status, using local:", err);
+  }
+  return getStoredHandbooks();
 }
 
 export function getStoredEbooks(): EbookItem[] {
@@ -559,7 +594,42 @@ export function getStoredEbooks(): EbookItem[] {
 export function saveStoredEbooks(items: EbookItem[]): void {
   try {
     localStorage.setItem(EBOOKS_STORAGE_KEY, JSON.stringify(items));
+    // Asynchronously synchronize to Firestore
+    import("../lib/firebase").then(({ db, sanitizeForFirestore }) => {
+      import("firebase/firestore").then(({ doc, setDoc }) => {
+        const docRef = doc(db, "resources", "ebooks");
+        const statusMap = items.map(e => ({ id: e.id, isAvailable: e.isAvailable }));
+        setDoc(docRef, sanitizeForFirestore({ items: statusMap, updatedAt: new Date().toISOString() })).catch(err => {
+          console.warn("Failed to sync ebooks to Firestore:", err);
+        });
+      });
+    });
   } catch (e) {
     console.error("Failed to save ebooks to storage", e);
   }
+}
+
+export async function fetchStoredEbooksFromDb(): Promise<EbookItem[]> {
+  try {
+    const { db } = await import("../lib/firebase");
+    const { doc, getDoc } = await import("firebase/firestore");
+    const docRef = doc(db, "resources", "ebooks");
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (Array.isArray(data.items)) {
+        const updated = INITIAL_EBOOKS.map((init) => {
+          const found = data.items.find((p: { id: string; isAvailable: boolean }) => p.id === init.id);
+          return found ? { ...init, isAvailable: found.isAvailable } : init;
+        });
+        try {
+          localStorage.setItem(EBOOKS_STORAGE_KEY, JSON.stringify(updated));
+        } catch (_) {}
+        return updated;
+      }
+    }
+  } catch (err) {
+    console.warn("Could not fetch remote ebooks status, using local:", err);
+  }
+  return getStoredEbooks();
 }

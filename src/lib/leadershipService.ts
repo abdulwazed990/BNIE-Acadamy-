@@ -1,5 +1,5 @@
 import { collection, doc, getDocs, setDoc, deleteDoc, onSnapshot } from "firebase/firestore";
-import { db } from "./firebase";
+import { db, sanitizeForFirestore } from "./firebase";
 import { LeadershipProfile, LeadershipPosition } from "../types";
 
 export const LEADERSHIP_COLLECTION = "leadership_profiles";
@@ -22,6 +22,8 @@ export function positionToSectionId(position: LeadershipPosition): string {
       return "pro-vice-chancellor-admin";
     case "Registrar":
       return "registrar";
+    case "Exam Controller":
+      return "exam-controller";
     case "Former Vice-Chancellors":
       return "former-vice-chancellors";
     default:
@@ -46,6 +48,8 @@ export function sectionIdToPosition(sectionId: string): LeadershipPosition | nul
       return "Pro-Vice-Chancellor (Administration)";
     case "registrar":
       return "Registrar";
+    case "exam-controller":
+      return "Exam Controller";
     case "former-vice-chancellors":
       return "Former Vice-Chancellors";
     default:
@@ -116,7 +120,18 @@ export async function fetchLeadershipProfiles(): Promise<LeadershipProfile[]> {
  * Save / Update a leadership profile in both Firestore and local storage
  */
 export async function saveLeadershipProfile(profile: LeadershipProfile): Promise<void> {
-  // Update local storage immediately for zero-lag response
+  const sanitized = sanitizeForFirestore(profile);
+
+  // Sync to Firestore authoritative persistent storage
+  try {
+    const docRef = doc(db, LEADERSHIP_COLLECTION, profile.id);
+    await setDoc(docRef, sanitized);
+  } catch (err) {
+    console.error("Failed to persist profile to Firestore:", err);
+    throw err;
+  }
+
+  // Update local storage once database confirmed write
   const local = getLocalProfiles();
   const existingIdx = local.findIndex((p) => p.id === profile.id);
   let updated: LeadershipProfile[];
@@ -127,33 +142,23 @@ export async function saveLeadershipProfile(profile: LeadershipProfile): Promise
     updated = [...local, profile];
   }
   saveLocalProfiles(updated);
-
-  // Sync to Firestore
-  try {
-    const docRef = doc(db, LEADERSHIP_COLLECTION, profile.id);
-    await setDoc(docRef, profile);
-  } catch (err) {
-    console.error("Failed to persist profile to Firestore (saved locally):", err);
-    // Don't throw so user experience is not broken when offline
-  }
 }
 
 /**
  * Delete a leadership profile from both Firestore and local storage
  */
 export async function deleteLeadershipProfile(id: string): Promise<void> {
-  // Update local storage immediately
-  const local = getLocalProfiles();
-  const updated = local.filter((p) => p.id !== id);
-  saveLocalProfiles(updated);
-
-  // Sync to Firestore
   try {
     const docRef = doc(db, LEADERSHIP_COLLECTION, id);
     await deleteDoc(docRef);
   } catch (err) {
-    console.error("Failed to delete profile from Firestore (deleted locally):", err);
+    console.error("Failed to delete profile from Firestore:", err);
+    throw err;
   }
+
+  const local = getLocalProfiles();
+  const updated = local.filter((p) => p.id !== id);
+  saveLocalProfiles(updated);
 }
 
 /**

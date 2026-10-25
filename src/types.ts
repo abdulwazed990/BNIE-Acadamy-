@@ -196,6 +196,7 @@ export type LeadershipPosition =
   | "Treasurer"
   | "Pro-Vice-Chancellor (Administration)"
   | "Registrar"
+  | "Exam Controller"
   | "Former Vice-Chancellors";
 
 export const LEADERSHIP_POSITIONS: LeadershipPosition[] = [
@@ -205,6 +206,7 @@ export const LEADERSHIP_POSITIONS: LeadershipPosition[] = [
   "Treasurer",
   "Pro-Vice-Chancellor (Administration)",
   "Registrar",
+  "Exam Controller",
   "Former Vice-Chancellors"
 ];
 
@@ -225,6 +227,34 @@ export interface LeadershipProfile {
   displayOrder: number;
   status: PublicationStatus;
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface HomepageContentSettings {
+  id: string;
+  heroTitleBn: string;
+  heroTitleEn: string;
+  heroSubtitleBn: string;
+  heroSubtitleEn: string;
+  announcementBannerText: string;
+  isAnnouncementBannerActive: boolean;
+  announcementLink?: string;
+  // Section Visibility
+  isAccreditationVisible: boolean;
+  isDegreeProgramsVisible: boolean;
+  isVocationalVisible: boolean;
+  isDiplomaStreamsVisible: boolean;
+  isMissionServicesVisible: boolean;
+  // Quick Access Cards Visibility
+  isVcMessageCardVisible: boolean;
+  isResultsCardVisible: boolean;
+  isComplaintsCardVisible: boolean;
+  isFindProgramCardVisible: boolean;
+  isHandbooksCardVisible: boolean;
+  isAdmissionCardVisible: boolean;
+  isOsapsCardVisible: boolean;
+  isEbookCardVisible: boolean;
+  isWebmailCardVisible: boolean;
   updatedAt: string;
 }
 

@@ -15,12 +15,14 @@ import PassportPhotoCropper from "./PassportPhotoCropper";
 import { 
   Plus, Edit2, Trash2, CheckCircle2, Clock, EyeOff, Search, 
   Building2, Mail, Phone, MapPin, Smartphone, FileText, 
-  Check, X, AlertCircle, ArrowUpDown, Filter, ShieldCheck, UserCheck
+  Check, X, AlertCircle, ArrowUpDown, Filter, ShieldCheck, UserCheck,
+  Loader2
 } from "lucide-react";
 
 export default function LeadershipAdminModule() {
   const [profiles, setProfiles] = useState<LeadershipProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // Filters
@@ -74,11 +76,26 @@ export default function LeadershipAdminModule() {
   }, [feedback]);
 
   const openAddModal = (presetPosition?: LeadershipPosition) => {
+    const targetPos = presetPosition || (selectedPositionFilter !== "ALL" ? selectedPositionFilter : "Vice-Chancellor");
+    
+    // Prevent duplicate Exam Controller: if already exists, load for editing
+    if (targetPos === "Exam Controller") {
+      const existingEc = profiles.find((p) => p.position === "Exam Controller");
+      if (existingEc) {
+        openEditModal(existingEc);
+        setFeedback({
+          type: "success",
+          message: "Existing Exam Controller profile loaded for editing (prevented duplicate)."
+        });
+        return;
+      }
+    }
+
     setEditingProfileId(null);
-    setFormPosition(presetPosition || (selectedPositionFilter !== "ALL" ? selectedPositionFilter : "Vice-Chancellor"));
+    setFormPosition(targetPos);
     setFormFullName("");
-    setFormDesignation("");
-    setFormDepartmentOrOffice("");
+    setFormDesignation(targetPos === "Exam Controller" ? "Exam Controller" : "");
+    setFormDepartmentOrOffice(targetPos === "Exam Controller" ? "Office of the Controller of Examinations" : "");
     setFormEmail("");
     setFormPhone("");
     setFormMobile("");
@@ -107,8 +124,28 @@ export default function LeadershipAdminModule() {
     setIsModalOpen(true);
   };
 
+  const handlePositionSelectChange = (newPos: LeadershipPosition) => {
+    setFormPosition(newPos);
+    if (!editingProfileId) {
+      if (newPos === "Exam Controller") {
+        const existingEc = profiles.find((p) => p.position === "Exam Controller");
+        if (existingEc) {
+          openEditModal(existingEc);
+          setFeedback({
+            type: "success",
+            message: "Existing Exam Controller profile loaded for editing (prevented duplicate)."
+          });
+          return;
+        }
+        if (!formDesignation) setFormDesignation("Exam Controller");
+        if (!formDepartmentOrOffice) setFormDepartmentOrOffice("Office of the Controller of Examinations");
+      }
+    }
+  };
+
   const handleSaveProfile = async (e: FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
 
     if (!formFullName.trim()) {
       setFeedback({ type: "error", message: "Full Name is required." });
@@ -144,9 +181,18 @@ export default function LeadershipAdminModule() {
       }
     }
 
+    // If adding new Exam Controller but one already exists in profiles, update existing record to prevent duplicates
+    let targetId = editingProfileId;
+    if (!targetId && formPosition === "Exam Controller") {
+      const existingEc = profiles.find((p) => p.position === "Exam Controller");
+      if (existingEc) {
+        targetId = existingEc.id;
+      }
+    }
+
     const now = new Date().toISOString();
     const profileToSave: LeadershipProfile = {
-      id: editingProfileId || `lp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      id: targetId || `lp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       position: formPosition,
       fullName: formFullName.trim(),
       designation: formDesignation.trim(),
@@ -156,24 +202,31 @@ export default function LeadershipAdminModule() {
       mobileNumber: formMobile.trim() || undefined,
       biography: formBio.trim() || undefined,
       officeAddress: formOfficeAddress.trim() || undefined,
-      photoUrl: formPhotoUrl,
+      photoUrl: formPhotoUrl || undefined,
       displayOrder: Number(formDisplayOrder) || 1,
       status: formStatus,
-      createdAt: editingProfileId ? (profiles.find(p => p.id === editingProfileId)?.createdAt || now) : now,
+      createdAt: targetId ? (profiles.find(p => p.id === targetId)?.createdAt || now) : now,
       updatedAt: now,
     };
 
     try {
+      setIsSaving(true);
       await saveLeadershipProfile(profileToSave);
       setFeedback({ 
         type: "success", 
-        message: editingProfileId 
-          ? `Profile for ${profileToSave.fullName} updated successfully!` 
-          : `Profile for ${profileToSave.fullName} added successfully!`
+        message: targetId 
+          ? `Profile for ${profileToSave.fullName} (${profileToSave.position}) updated and saved permanently to database!` 
+          : `Profile for ${profileToSave.fullName} (${profileToSave.position}) saved permanently to database!`
       });
       setIsModalOpen(false);
     } catch (err) {
-      setFeedback({ type: "error", message: "Failed to save profile. Please check network connection." });
+      console.error("Failed to save profile:", err);
+      setFeedback({ 
+        type: "error", 
+        message: `Database Error: ${err instanceof Error ? err.message : "Failed to persist profile to database. Please try again."}` 
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -571,7 +624,7 @@ export default function LeadershipAdminModule() {
                 </label>
                 <select
                   value={formPosition}
-                  onChange={(e) => setFormPosition(e.target.value as LeadershipPosition)}
+                  onChange={(e) => handlePositionSelectChange(e.target.value as LeadershipPosition)}
                   className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold focus:outline-hidden focus:border-[#006a4e] text-gray-900"
                 >
                   {LEADERSHIP_POSITIONS.map((pos) => (
@@ -776,10 +829,20 @@ export default function LeadershipAdminModule() {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-[#006a4e] hover:bg-[#00563f] transition-all cursor-pointer shadow-md flex items-center gap-2 border border-[#00563f]"
+                  disabled={isSaving}
+                  className="px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-[#006a4e] hover:bg-[#00563f] disabled:opacity-50 transition-all cursor-pointer shadow-md flex items-center gap-2 border border-[#00563f]"
                 >
-                  <Check className="w-4 h-4" />
-                  <span>{editingProfileId ? "Save Changes" : "Create Official Profile"}</span>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving to Database...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>{editingProfileId ? "Save Changes" : "Create Official Profile"}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

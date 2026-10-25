@@ -7,13 +7,15 @@ interface SideDrawerProps {
   onClose: () => void;
   onNavigate: (page: string, section?: LeadershipSectionId) => void;
   currentPage: string;
+  currentSection?: LeadershipSectionId;
 }
 
 export default function SideDrawer({
   isOpen,
   onClose,
   onNavigate,
-  currentPage
+  currentPage,
+  currentSection
 }: SideDrawerProps) {
   // Collapsible category states
   const [isLeadershipExpanded, setIsLeadershipExpanded] = useState(true);
@@ -161,7 +163,11 @@ export default function SideDrawer({
                     <button
                       type="button"
                       onClick={() => handleLinkClick("leadership-admin", "chancellor")}
-                      className="w-full text-left px-3 py-1.5 rounded text-xs font-semibold text-[#000000] hover:bg-gray-100 hover:text-[#000000] transition-colors cursor-pointer block"
+                      className={`w-full text-left px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer block ${
+                        currentPage === "leadership-admin" && currentSection === "chancellor"
+                          ? "bg-gray-100 text-[#000000] border-l-2 border-black font-bold"
+                          : "text-[#000000] hover:bg-gray-100 hover:text-[#000000]"
+                      }`}
                     >
                       Chancellor
                     </button>
@@ -169,7 +175,11 @@ export default function SideDrawer({
                     <button
                       type="button"
                       onClick={() => handleLinkClick("leadership-admin", "vice-chancellor")}
-                      className="w-full text-left px-3 py-1.5 rounded text-xs font-semibold text-[#000000] hover:bg-gray-100 hover:text-[#000000] transition-colors cursor-pointer block"
+                      className={`w-full text-left px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer block ${
+                        currentPage === "leadership-admin" && currentSection === "vice-chancellor"
+                          ? "bg-gray-100 text-[#000000] border-l-2 border-black font-bold"
+                          : "text-[#000000] hover:bg-gray-100 hover:text-[#000000]"
+                      }`}
                     >
                       Vice-Chancellor
                     </button>
@@ -177,7 +187,11 @@ export default function SideDrawer({
                     <button
                       type="button"
                       onClick={() => handleLinkClick("leadership-admin", "pro-vice-chancellor")}
-                      className="w-full text-left px-3 py-1.5 rounded text-xs font-semibold text-[#000000] hover:bg-gray-100 hover:text-[#000000] transition-colors cursor-pointer block"
+                      className={`w-full text-left px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer block ${
+                        currentPage === "leadership-admin" && currentSection === "pro-vice-chancellor"
+                          ? "bg-gray-100 text-[#000000] border-l-2 border-black font-bold"
+                          : "text-[#000000] hover:bg-gray-100 hover:text-[#000000]"
+                      }`}
                     >
                       Pro-Vice-Chancellor
                     </button>
@@ -185,7 +199,11 @@ export default function SideDrawer({
                     <button
                       type="button"
                       onClick={() => handleLinkClick("leadership-admin", "treasurer")}
-                      className="w-full text-left px-3 py-1.5 rounded text-xs font-semibold text-[#000000] hover:bg-gray-100 hover:text-[#000000] transition-colors cursor-pointer block"
+                      className={`w-full text-left px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer block ${
+                        currentPage === "leadership-admin" && currentSection === "treasurer"
+                          ? "bg-gray-100 text-[#000000] border-l-2 border-black font-bold"
+                          : "text-[#000000] hover:bg-gray-100 hover:text-[#000000]"
+                      }`}
                     >
                       Treasurer
                     </button>
@@ -193,7 +211,11 @@ export default function SideDrawer({
                     <button
                       type="button"
                       onClick={() => handleLinkClick("leadership-admin", "pro-vice-chancellor-admin")}
-                      className="w-full text-left px-3 py-1.5 rounded text-xs font-semibold text-[#000000] hover:bg-gray-100 hover:text-[#000000] transition-colors cursor-pointer block"
+                      className={`w-full text-left px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer block ${
+                        currentPage === "leadership-admin" && currentSection === "pro-vice-chancellor-admin"
+                          ? "bg-gray-100 text-[#000000] border-l-2 border-black font-bold"
+                          : "text-[#000000] hover:bg-gray-100 hover:text-[#000000]"
+                      }`}
                     >
                       Pro-Vice-Chancellor (Administration)
                     </button>
@@ -201,15 +223,35 @@ export default function SideDrawer({
                     <button
                       type="button"
                       onClick={() => handleLinkClick("leadership-admin", "registrar")}
-                      className="w-full text-left px-3 py-1.5 rounded text-xs font-semibold text-[#000000] hover:bg-gray-100 hover:text-[#000000] transition-colors cursor-pointer block"
+                      className={`w-full text-left px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer block ${
+                        currentPage === "leadership-admin" && currentSection === "registrar"
+                          ? "bg-gray-100 text-[#000000] border-l-2 border-black font-bold"
+                          : "text-[#000000] hover:bg-gray-100 hover:text-[#000000]"
+                      }`}
                     >
                       Registrar
                     </button>
 
                     <button
                       type="button"
+                      onClick={() => handleLinkClick("leadership-admin", "exam-controller")}
+                      className={`w-full text-left px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer block ${
+                        currentPage === "leadership-admin" && currentSection === "exam-controller"
+                          ? "bg-gray-100 text-[#000000] border-l-2 border-black font-bold"
+                          : "text-[#000000] hover:bg-gray-100 hover:text-[#000000]"
+                      }`}
+                    >
+                      Exam Controller
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => handleLinkClick("leadership-admin", "former-vice-chancellors")}
-                      className="w-full text-left px-3 py-1.5 rounded text-xs font-semibold text-[#000000] hover:bg-gray-100 hover:text-[#000000] transition-colors cursor-pointer block"
+                      className={`w-full text-left px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer block ${
+                        currentPage === "leadership-admin" && currentSection === "former-vice-chancellors"
+                          ? "bg-gray-100 text-[#000000] border-l-2 border-black font-bold"
+                          : "text-[#000000] hover:bg-gray-100 hover:text-[#000000]"
+                      }`}
                     >
                       Former Vice-Chancellors
                     </button>
@@ -238,7 +280,11 @@ export default function SideDrawer({
                     <button
                       type="button"
                       onClick={() => handleLinkClick("leadership-admin", "about-university")}
-                      className="w-full text-left px-3 py-1.5 rounded text-xs font-semibold text-[#000000] hover:bg-gray-100 hover:text-[#000000] transition-colors cursor-pointer block"
+                      className={`w-full text-left px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer block ${
+                        currentPage === "leadership-admin" && currentSection === "about-university"
+                          ? "bg-gray-100 text-[#000000] border-l-2 border-black font-bold"
+                          : "text-[#000000] hover:bg-gray-100 hover:text-[#000000]"
+                      }`}
                     >
                       About University
                     </button>
@@ -246,7 +292,11 @@ export default function SideDrawer({
                     <button
                       type="button"
                       onClick={() => handleLinkClick("leadership-admin", "official-information")}
-                      className="w-full text-left px-3 py-1.5 rounded text-xs font-semibold text-[#000000] hover:bg-gray-100 hover:text-[#000000] transition-colors cursor-pointer block"
+                      className={`w-full text-left px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer block ${
+                        currentPage === "leadership-admin" && currentSection === "official-information"
+                          ? "bg-gray-100 text-[#000000] border-l-2 border-black font-bold"
+                          : "text-[#000000] hover:bg-gray-100 hover:text-[#000000]"
+                      }`}
                     >
                       Official Information
                     </button>
@@ -254,7 +304,11 @@ export default function SideDrawer({
                     <button
                       type="button"
                       onClick={() => handleLinkClick("leadership-admin", "academic-administration")}
-                      className="w-full text-left px-3 py-1.5 rounded text-xs font-semibold text-[#000000] hover:bg-gray-100 hover:text-[#000000] transition-colors cursor-pointer block"
+                      className={`w-full text-left px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer block ${
+                        currentPage === "leadership-admin" && currentSection === "academic-administration"
+                          ? "bg-gray-100 text-[#000000] border-l-2 border-black font-bold"
+                          : "text-[#000000] hover:bg-gray-100 hover:text-[#000000]"
+                      }`}
                     >
                       Academic Administration
                     </button>
@@ -262,7 +316,11 @@ export default function SideDrawer({
                     <button
                       type="button"
                       onClick={() => handleLinkClick("leadership-admin", "administrative-office")}
-                      className="w-full text-left px-3 py-1.5 rounded text-xs font-semibold text-[#000000] hover:bg-gray-100 hover:text-[#000000] transition-colors cursor-pointer block"
+                      className={`w-full text-left px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer block ${
+                        currentPage === "leadership-admin" && currentSection === "administrative-office"
+                          ? "bg-gray-100 text-[#000000] border-l-2 border-black font-bold"
+                          : "text-[#000000] hover:bg-gray-100 hover:text-[#000000]"
+                      }`}
                     >
                       Administrative Office
                     </button>
@@ -282,7 +340,11 @@ export default function SideDrawer({
                     <button
                       type="button"
                       onClick={() => handleLinkClick("leadership-admin", "departments-offices")}
-                      className="w-full text-left px-3 py-1.5 rounded text-xs font-semibold text-[#000000] hover:bg-gray-100 hover:text-[#000000] transition-colors cursor-pointer block"
+                      className={`w-full text-left px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer block ${
+                        currentPage === "leadership-admin" && currentSection === "departments-offices"
+                          ? "bg-gray-100 text-[#000000] border-l-2 border-black font-bold"
+                          : "text-[#000000] hover:bg-gray-100 hover:text-[#000000]"
+                      }`}
                     >
                       Departments and Offices
                     </button>

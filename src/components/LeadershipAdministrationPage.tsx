@@ -16,6 +16,7 @@ export type LeadershipSectionId =
   | "treasurer"
   | "pro-vice-chancellor-admin"
   | "registrar"
+  | "exam-controller"
   | "former-vice-chancellors"
   | "about-university"
   | "official-information"
@@ -155,6 +156,24 @@ const ROLES_DATA: Record<LeadershipSectionId, RoleData> = {
     ],
     bioNotice: "Permanent registry records and administrative orders are countersigned by the Registrar in accordance with official university statutes."
   },
+  "exam-controller": {
+    id: "exam-controller",
+    title: "Exam Controller",
+    category: "Leadership",
+    status: "Chief Examination & Certification Authority",
+    officeName: "Office of the Controller of Examinations",
+    location: "Examination & Records Tower (Level 3), Dhaka, Bangladesh",
+    email: "exam.controller@bnie.edu.bd",
+    phone: "+880 2 9876510",
+    summary: "The Controller of Examinations is responsible for the overall conduct and integrity of institute examinations, paper setting, moderation, script evaluation, result publication, and authentication of academic transcripts and certificates.",
+    statutoryRole: [
+      "Administration and scheduling of semester finals, diploma, and degree examinations.",
+      "Preparation, secure custody, and publication of official academic examination results.",
+      "Issuance and digital verification oversight of student marksheets and diplomas.",
+      "Coordination with divisional examination centers and external assessment boards."
+    ],
+    bioNotice: "Official examination gazette and appointment portfolio maintained pursuant to statutory examination ordinances."
+  },
   "former-vice-chancellors": {
     id: "former-vice-chancellors",
     title: "Former Vice-Chancellors",
@@ -275,6 +294,7 @@ const SECTIONS_LIST: { id: LeadershipSectionId; label: string; group: "Leadershi
   { id: "treasurer", label: "Treasurer", group: "Leadership" },
   { id: "pro-vice-chancellor-admin", label: "Pro-Vice-Chancellor (Administration)", group: "Leadership" },
   { id: "registrar", label: "Registrar", group: "Leadership" },
+  { id: "exam-controller", label: "Exam Controller", group: "Leadership" },
   { id: "former-vice-chancellors", label: "Former Vice-Chancellors", group: "Leadership" },
   
   // Required Academic & Administrative sections

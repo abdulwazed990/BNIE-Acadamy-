@@ -31,7 +31,7 @@ import RegionalCentersPage from "./components/RegionalCentersPage";
 import SideDrawer from "./components/SideDrawer";
 import LeadershipAdministrationPage, { LeadershipSectionId } from "./components/LeadershipAdministrationPage";
 import DegreeResultVerificationPage from "./components/DegreeResultVerificationPage";
-import { Student } from "./types";
+import { Student, HomepageContentSettings } from "./types";
 import { DEFAULT_STUDENTS } from "./data/defaultStudents";
 import { 
   seedDatabaseIfEmpty, 
@@ -40,6 +40,11 @@ import {
   updateStudentInDb, 
   deleteStudentFromDb 
 } from "./lib/firebase";
+import { 
+  getLocalHomepageSettings, 
+  fetchHomepageSettings, 
+  subscribeHomepageSettings 
+} from "./lib/homepageContentService";
 import { ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -288,6 +293,25 @@ export default function App() {
       }
     }
     syncCloudDatabase();
+  }, []);
+
+  // Homepage CMS Content & Visibility settings from persistent Firestore database
+  const [homepageSettings, setHomepageSettings] = useState<HomepageContentSettings>(getLocalHomepageSettings);
+
+  useEffect(() => {
+    fetchHomepageSettings().then((s) => {
+      setHomepageSettings(s);
+    }).catch((err) => {
+      console.warn("Could not initial load homepage settings:", err);
+    });
+
+    const unsubscribe = subscribeHomepageSettings((updated) => {
+      setHomepageSettings(updated);
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   // Track currently selected/verified student for the Report view
@@ -559,6 +583,7 @@ export default function App() {
               transition={{ duration: 0.2 }}
             >
               <Hero 
+                homepageSettings={homepageSettings}
                 onOpenVcMessage={() => handleNavigate("vc-message")}
                 onOpenResults={() => handleNavigate("verify")}
                 onOpenDegreeResults={() => handleNavigate("degree-marksheet-result")}
@@ -570,18 +595,20 @@ export default function App() {
                 onOpenEbook={() => handleNavigate("ebook")}
                 onOpenWebmail={() => handleNavigate("web-email")}
               />
-              <GovernmentAccreditation />
-              <DegreeProgramsSection 
-                onNavigateToDegreeVerify={() => handleNavigate("degree-marksheet-result")}
-                onNavigateToAdmission={(code) => {
-                  if (code) setSelectedAdmissionProgram(code);
-                  handleNavigate("online-admission");
-                }}
-                onNavigateToFindProgram={() => handleNavigate("find-program")}
-              />
-              <VocationalSpecialization />
-              <DiplomaStreams />
-              <MissionAndServices />
+              {homepageSettings.isAccreditationVisible !== false && <GovernmentAccreditation />}
+              {homepageSettings.isDegreeProgramsVisible !== false && (
+                <DegreeProgramsSection 
+                  onNavigateToDegreeVerify={() => handleNavigate("degree-marksheet-result")}
+                  onNavigateToAdmission={(code) => {
+                    if (code) setSelectedAdmissionProgram(code);
+                    handleNavigate("online-admission");
+                  }}
+                  onNavigateToFindProgram={() => handleNavigate("find-program")}
+                />
+              )}
+              {homepageSettings.isVocationalVisible !== false && <VocationalSpecialization />}
+              {homepageSettings.isDiplomaStreamsVisible !== false && <DiplomaStreams />}
+              {homepageSettings.isMissionServicesVisible !== false && <MissionAndServices />}
               <Contact />
             </motion.div>
           )}
@@ -1040,6 +1067,7 @@ export default function App() {
         onClose={() => setIsSideDrawerOpen(false)}
         onNavigate={handleNavigate}
         currentPage={currentPage}
+        currentSection={leadershipSection}
       />
 
       </div>

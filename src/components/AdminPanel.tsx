@@ -12,7 +12,7 @@ import {
   Plus, Edit2, Trash2, Eye, ShieldCheck, LogOut, Search, User, Key, 
   Calendar, FileText, School, Clock, Upload, ArrowRight, Save, X, Image as ImageIcon,
   BookOpen, Tablet, CheckCircle2, Lock, ToggleLeft, ToggleRight, RefreshCw, Unlock,
-  Loader2, AlertCircle
+  Loader2, AlertCircle, LayoutTemplate
 } from "lucide-react";
 import { motion } from "motion/react";
 import { 
@@ -20,6 +20,7 @@ import {
   getStoredEbooks, saveStoredEbooks, EbookItem
 } from "../data/resourcesData";
 import LeadershipAdminModule from "./LeadershipAdminModule";
+import HomepageAdminModule from "./HomepageAdminModule";
 import DegreeStudentForm from "./DegreeStudentForm";
 import { 
   generateSchoolRollNumber, 
@@ -52,8 +53,8 @@ export default function AdminPanel({
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<Category | "ALL">("ALL");
 
-  // Admin section tab: "students" | "resources" | "leadership"
-  const [adminActiveTab, setAdminActiveTab] = useState<"students" | "resources" | "leadership">("students");
+  // Admin section tab: "students" | "resources" | "leadership" | "homepage"
+  const [adminActiveTab, setAdminActiveTab] = useState<"students" | "resources" | "leadership" | "homepage">("students");
   const [adminHandbooks, setAdminHandbooks] = useState<HandbookItem[]>(() => getStoredHandbooks());
   const [adminEbooks, setAdminEbooks] = useState<EbookItem[]>(() => getStoredEbooks());
 
@@ -855,6 +856,19 @@ export default function AdminPanel({
 
         <button
           type="button"
+          onClick={() => setAdminActiveTab("homepage")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            adminActiveTab === "homepage"
+              ? "bg-[#006a4e] text-white shadow-xs"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+        >
+          <LayoutTemplate className="w-4 h-4" />
+          <span>Homepage &amp; Portal Content (মূল পাতা ও নোটিশ নিয়ন্ত্রণ)</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setAdminActiveTab("resources")}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             adminActiveTab === "resources"
@@ -869,6 +883,8 @@ export default function AdminPanel({
 
       {adminActiveTab === "leadership" ? (
         <LeadershipAdminModule />
+      ) : adminActiveTab === "homepage" ? (
+        <HomepageAdminModule />
       ) : adminActiveTab === "resources" ? (
         <div className="space-y-8 mb-10">
           {/* Resources Header */}

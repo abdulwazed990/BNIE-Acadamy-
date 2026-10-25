@@ -13,5 +13,13 @@ service cloud.firestore {
       allow read: if true;
       allow write: if true;
     }
+    match /homepage_content/{contentId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /resources/{resourceId} {
+      allow read: if true;
+      allow write: if true;
+    }
   }
 }
