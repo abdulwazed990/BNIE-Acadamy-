@@ -1,5 +1,6 @@
 import { Category, Group, Religion, Student } from "../types";
 import { generateEmptySubjectGrades } from "./subjectLoader";
+import { getHistorical3YearHonoursHistoryPreset, getDegreePassPreset } from "./baHistoryCatalogue";
 
 // SVG avatar data representing realistic passport photos for government credentials
 export const PASSPORT_AVATARS = {
@@ -526,6 +527,147 @@ export const DEFAULT_STUDENTS: Student[] = [
       ? generateDefaultSemesterResults(DEGREE_PROGRAMS_CATALOG.find((p) => p.code === "BA-HIS")!, 3).flatMap(s => s.subjects)
       : [],
     secureToken: "bnie_sec_ba_771001"
+  },
+
+  // ==================== HISTORICAL 1994 B.A. HONOURS IN HISTORY ====================
+  {
+    id: "BNIE-BA-1994-01",
+    category: Category.HONOURS,
+    academicLevel: "Honours",
+    programCode: "BA-HIS-1994",
+    programName: "Bachelor of Arts (B.A.) Honours",
+    examinationTitle: "BACHELOR OF ARTS (B.A.) HONOURS EXAMINATION",
+    department: "Department of History",
+    majorSubject: "History",
+    group: Group.HUMANITIES,
+    religion: Religion.ISLAM,
+    name: "Mohammad Rafiqul Islam",
+    fatherName: "Nurul Islam Chowdhury",
+    motherName: "Razia Begum",
+    dob: "1972-04-18",
+    rollNumber: "194012",
+    registrationNumber: "90148201",
+    instituteName: "University of Dhaka / Bangladesh National Institute of Education (BNIE)",
+    affiliatedCollege: "Dhaka College",
+    session: "1990-1991",
+    courseDuration: "3 Years",
+    admissionYear: "1990",
+    examinationYear: "1994",
+    passingYear: "1994",
+    resultPublicationDate: "1994-11-28",
+    certificateSerialNumber: "BNIE-BA-1994-19401",
+    certificateNumber: "BNIE-BA-CERT-1994-0018",
+    certificateStatus: "Issued",
+    issueDate: "1995-02-15",
+    certificateIssueDate: "1995-03-20",
+    photoUrl: PASSPORT_AVATARS.male1,
+    gradingSystem: "Class",
+    division: "First Class",
+    resultStatus: "First Class with Honours",
+    finalGpa: 0, // GPA is conditionally hidden for historical records!
+    totalFullMarks: 1600,
+    totalMarks: 1036,
+    percentage: 64.8,
+    isHistoricalRecord: true,
+    isVerifiedAcademicRecord: true,
+    verificationRemarks: "SAMPLE DATA — NOT AN OFFICIAL ACADEMIC RECORD. Verified against 1990-1994 historical regulation.",
+    subjects: getHistorical3YearHonoursHistoryPreset(),
+    secureToken: "bnie_sec_ba_194012_1994"
+  },
+
+  // ==================== HISTORICAL 2000 B.A. HONOURS IN HISTORY ====================
+  {
+    id: "BNIE-BA-2000-01",
+    category: Category.HONOURS,
+    academicLevel: "Honours",
+    programCode: "BA-HIS-2000",
+    programName: "Bachelor of Arts (B.A.) Honours",
+    examinationTitle: "BACHELOR OF ARTS (B.A.) HONOURS EXAMINATION",
+    department: "Department of History",
+    majorSubject: "History",
+    group: Group.HUMANITIES,
+    religion: Religion.ISLAM,
+    name: "Shamsur Rahman Talukder",
+    fatherName: "Kazi Mozammel Haque",
+    motherName: "Shamsun Nahar",
+    dob: "1978-08-12",
+    rollNumber: "200451",
+    registrationNumber: "96120491",
+    instituteName: "University of Dhaka / Bangladesh National Institute of Education (BNIE)",
+    affiliatedCollege: "Dhaka Central College",
+    session: "1996-1997",
+    courseDuration: "3 Years",
+    admissionYear: "1996",
+    examinationYear: "2000",
+    passingYear: "2000",
+    resultPublicationDate: "2000-12-14",
+    certificateSerialNumber: "BNIE-BA-2000-20045",
+    certificateNumber: "BNIE-BA-CERT-2000-0082",
+    certificateStatus: "Issued",
+    issueDate: "2001-03-10",
+    certificateIssueDate: "2001-04-18",
+    photoUrl: PASSPORT_AVATARS.male2,
+    gradingSystem: "Class",
+    division: "Second Class",
+    resultStatus: "Second Class with Honours",
+    finalGpa: 0,
+    totalFullMarks: 1600,
+    totalMarks: 924,
+    percentage: 57.8,
+    isHistoricalRecord: true,
+    isVerifiedAcademicRecord: true,
+    verificationRemarks: "SAMPLE DATA — NOT AN OFFICIAL ACADEMIC RECORD.",
+    subjects: getHistorical3YearHonoursHistoryPreset().map(s => ({
+      ...s,
+      marks: Math.max(45, (s.marks || 60) - 7)
+    })),
+    secureToken: "bnie_sec_ba_200451_2000"
+  },
+
+  // ==================== HISTORICAL 1998 B.A. DEGREE PASS ====================
+  {
+    id: "BNIE-DEG-PASS-1998",
+    category: Category.DEGREE_PASS,
+    academicLevel: "Degree Pass",
+    programCode: "BA-PASS-1998",
+    programName: "Bachelor of Arts (B.A.) Degree Pass",
+    examinationTitle: "BACHELOR OF ARTS (B.A.) DEGREE PASS EXAMINATION",
+    department: "Faculty of Arts & Humanities",
+    majorSubject: "Arts & Humanities (Principal & Subsidiary Structure)",
+    group: Group.HUMANITIES,
+    religion: Religion.ISLAM,
+    name: "Begum Rokeya Akhter",
+    fatherName: "Abdur Rashid Mia",
+    motherName: "Sufia Khatun",
+    dob: "1976-11-05",
+    rollNumber: "198305",
+    registrationNumber: "95180412",
+    instituteName: "National University / Bangladesh National Institute of Education (BNIE)",
+    affiliatedCollege: "Government College of Arts & Commerce",
+    session: "1995-1998",
+    courseDuration: "3 Years",
+    admissionYear: "1995",
+    examinationYear: "1998",
+    passingYear: "1998",
+    resultPublicationDate: "1998-10-22",
+    certificateSerialNumber: "BNIE-PASS-1998-19830",
+    certificateNumber: "BNIE-PASS-CERT-1998-0044",
+    certificateStatus: "Issued",
+    issueDate: "1999-01-20",
+    certificateIssueDate: "1999-02-15",
+    photoUrl: PASSPORT_AVATARS.female1,
+    gradingSystem: "Division",
+    division: "First Division",
+    resultStatus: "First Division",
+    finalGpa: 0,
+    totalFullMarks: 900,
+    totalMarks: 568,
+    percentage: 63.1,
+    isHistoricalRecord: true,
+    isVerifiedAcademicRecord: true,
+    verificationRemarks: "SAMPLE DATA — NOT AN OFFICIAL ACADEMIC RECORD. B.A. Degree Pass verified record.",
+    subjects: getDegreePassPreset(),
+    secureToken: "bnie_sec_pass_198305_1998"
   }
 ];
 
@@ -566,4 +708,14 @@ for (const student of DEFAULT_STUDENTS) {
     studentTotalMarks += sub.marks;
   }
   student.totalMarks = studentTotalMarks;
+  if (!student.totalFullMarks) {
+    let tfm = 0;
+    for (const sub of student.subjects) {
+      tfm += sub.fullMarks || 100;
+    }
+    student.totalFullMarks = tfm;
+  }
+  if (!student.percentage && student.totalFullMarks && student.totalFullMarks > 0) {
+    student.percentage = Math.round((studentTotalMarks / student.totalFullMarks) * 1000) / 10;
+  }
 }

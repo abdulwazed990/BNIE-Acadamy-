@@ -12,7 +12,7 @@ import {
   Plus, Edit2, Trash2, Eye, ShieldCheck, LogOut, Search, User, Key, 
   Calendar, FileText, School, Clock, Upload, ArrowRight, Save, X, Image as ImageIcon,
   BookOpen, Tablet, CheckCircle2, Lock, ToggleLeft, ToggleRight, RefreshCw, Unlock,
-  Loader2, AlertCircle, LayoutTemplate
+  Loader2, AlertCircle, LayoutTemplate, GraduationCap
 } from "lucide-react";
 import { motion } from "motion/react";
 import { 
@@ -21,6 +21,7 @@ import {
 } from "../data/resourcesData";
 import LeadershipAdminModule from "./LeadershipAdminModule";
 import HomepageAdminModule from "./HomepageAdminModule";
+import AcademicProgramAdminModule from "./AcademicProgramAdminModule";
 import DegreeStudentForm from "./DegreeStudentForm";
 import { 
   generateSchoolRollNumber, 
@@ -53,8 +54,8 @@ export default function AdminPanel({
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<Category | "ALL">("ALL");
 
-  // Admin section tab: "students" | "resources" | "leadership" | "homepage"
-  const [adminActiveTab, setAdminActiveTab] = useState<"students" | "resources" | "leadership" | "homepage">("students");
+  // Admin section tab: "students" | "academic" | "resources" | "leadership" | "homepage"
+  const [adminActiveTab, setAdminActiveTab] = useState<"students" | "academic" | "resources" | "leadership" | "homepage">("students");
   const [adminHandbooks, setAdminHandbooks] = useState<HandbookItem[]>(() => getStoredHandbooks());
   const [adminEbooks, setAdminEbooks] = useState<EbookItem[]>(() => getStoredEbooks());
 
@@ -869,6 +870,19 @@ export default function AdminPanel({
 
         <button
           type="button"
+          onClick={() => setAdminActiveTab("academic")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            adminActiveTab === "academic"
+              ? "bg-[#006a4e] text-white shadow-xs"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+        >
+          <GraduationCap className="w-4 h-4" />
+          <span>Academic Programmes &amp; Historical Syllabuses (বি.এ. অনার্স ও ডিগ্রি পাস পাঠ্যক্রম)</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setAdminActiveTab("resources")}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             adminActiveTab === "resources"
@@ -881,7 +895,9 @@ export default function AdminPanel({
         </button>
       </div>
 
-      {adminActiveTab === "leadership" ? (
+      {adminActiveTab === "academic" ? (
+        <AcademicProgramAdminModule />
+      ) : adminActiveTab === "leadership" ? (
         <LeadershipAdminModule />
       ) : adminActiveTab === "homepage" ? (
         <HomepageAdminModule />

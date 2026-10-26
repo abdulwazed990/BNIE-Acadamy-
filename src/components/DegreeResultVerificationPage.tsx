@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from "react";
-import { Student, Category } from "../types";
+import { Student, Category, SemesterResult } from "../types";
 import { 
   GraduationCap, 
   Search, 
@@ -54,8 +54,11 @@ export const EXAM_TYPE_PERIODS: Record<ExamType, PeriodOption[]> = {
     { value: "Year 1", label: "Year 1 (First Year)", index: 1 }
   ],
   "Honours": [
-    { value: "ALL", label: "Complete 4-Year Academic Transcript (All Semesters)", index: 99 },
-    { value: "Semester 8", label: "Semester 8 (Final)", index: 8 },
+    { value: "ALL", label: "Complete Academic Transcript (All Years & Semesters)", index: 99 },
+    { value: "Year 3", label: "3rd Year (Historical 3-Year Honours Final)", index: 93 },
+    { value: "Year 2", label: "2nd Year (Historical 3-Year Honours)", index: 92 },
+    { value: "Year 1", label: "1st Year (Historical 3-Year Honours)", index: 91 },
+    { value: "Semester 8", label: "Semester 8 (Modern 4-Year Final)", index: 8 },
     { value: "Semester 7", label: "Semester 7", index: 7 },
     { value: "Semester 6", label: "Semester 6", index: 6 },
     { value: "Semester 5", label: "Semester 5", index: 5 },
@@ -282,16 +285,18 @@ export default function DegreeResultVerificationPage({
       );
 
       const isMatchIdent = (s: Student) => {
-        const matchId = s.id && s.id.toLowerCase() === cleanId;
-        const matchRoll = s.rollNumber && s.rollNumber.toLowerCase() === cleanId;
-        const matchReg = s.registrationNumber && s.registrationNumber.toLowerCase() === cleanId;
+        const matchId = s.id && s.id.toLowerCase().includes(cleanId);
+        const matchRoll = s.rollNumber && s.rollNumber.toLowerCase().includes(cleanId);
+        const matchReg = s.registrationNumber && s.registrationNumber.toLowerCase().includes(cleanId);
         const matchToken = s.secureToken && s.secureToken.toLowerCase() === cleanId;
-        const matchCert = s.certificateSerialNumber && s.certificateSerialNumber.toLowerCase() === cleanId;
-        const matchCert2 = s.certificateNumber && s.certificateNumber.toLowerCase() === cleanId;
+        const matchCert = s.certificateSerialNumber && s.certificateSerialNumber.toLowerCase().includes(cleanId);
+        const matchCert2 = s.certificateNumber && s.certificateNumber.toLowerCase().includes(cleanId);
         const matchRollSuffix = s.rollNumber && s.rollNumber.toLowerCase().endsWith(`-${cleanId}`);
         const matchRegSuffix = s.registrationNumber && s.registrationNumber.toLowerCase().endsWith(`-${cleanId}`);
-        const matchName = s.name && s.name.toLowerCase().includes(cleanId) && cleanId.length > 2;
-        return Boolean(matchId || matchRoll || matchReg || matchToken || matchCert || matchCert2 || matchRollSuffix || matchRegSuffix || matchName);
+        const matchName = s.name && s.name.toLowerCase().includes(cleanId);
+        const matchMajor = s.majorSubject && s.majorSubject.toLowerCase().includes(cleanId);
+        const matchSession = s.session && s.session.toLowerCase().includes(cleanId);
+        return Boolean(matchId || matchRoll || matchReg || matchToken || matchCert || matchCert2 || matchRollSuffix || matchRegSuffix || matchName || matchMajor || matchSession);
       };
 
       const isMatchCat = (s: Student, t: ExamType) => {
@@ -432,37 +437,95 @@ export default function DegreeResultVerificationPage({
     setAutoSwitchNotice(null);
   };
 
-  // Filter semesterResults according to selected academic period
-  const getFilteredSemesterResults = (student: Student, periodValue: string) => {
-    if (!student.semesterResults || student.semesterResults.length === 0) {
-      return [];
-    }
-
-    if (periodValue === "ALL") {
-      return student.semesterResults;
-    }
-
-    let targetIndex = student.semesterResults.length;
-    if (examType === "Degree Pass") {
-      if (periodValue === "Year 1") targetIndex = 1;
-      else if (periodValue === "Year 2") targetIndex = 2;
-      else targetIndex = 3;
-    } else if (examType === "Masters") {
-      if (periodValue === "Semester 1") targetIndex = 1;
-      else if (periodValue === "Semester 2") targetIndex = 2;
-      else if (periodValue === "Semester 3") targetIndex = 3;
-      else targetIndex = 4;
-    } else {
-      // Honours (Semester 1 to 8)
+  // Filter semesterResults according to selected academic period or synthesize from subjects
+  const getEffectivePeriods = (student: Student, periodValue: string): SemesterResult[] => {
+    // 1. If explicit semesterResults exist (common in modern modular/semester records)
+    if (student.semesterResults && student.semesterResults.length > 0) {
+      if (periodValue === "ALL") {
+        return student.semesterResults;
+      }
+      if (periodValue.startsWith("Year") || periodValue.includes("Year")) {
+        const numMatch = periodValue.match(/\d+/);
+        const yNum = numMatch ? parseInt(numMatch[0], 10) : 1;
+        const matched = student.semesterResults.filter(
+          (s) =>
+            s.semesterName.toLowerCase().includes(`year ${yNum}`) ||
+            s.semesterName.toLowerCase().includes(`${yNum}st year`) ||
+            s.semesterName.toLowerCase().includes(`${yNum}nd year`) ||
+            s.semesterName.toLowerCase().includes(`${yNum}rd year`)
+        );
+        if (matched.length > 0) return matched;
+        return student.semesterResults.slice(0, Math.min(yNum, student.semesterResults.length));
+      }
       const numMatch = periodValue.match(/\d+/);
-      targetIndex = numMatch ? parseInt(numMatch[0], 10) : 8;
+      const targetIndex = numMatch ? parseInt(numMatch[0], 10) : student.semesterResults.length;
+      return student.semesterResults.slice(0, Math.min(targetIndex, student.semesterResults.length));
     }
 
-    return student.semesterResults.slice(0, targetIndex);
+    // 2. Synthesize periods from subjects array (for historical 3-Year B.A. Honours & Degree Pass records)
+    if (student.subjects && student.subjects.length > 0) {
+      const distinctYears = Array.from(new Set(student.subjects.map((s) => s.year).filter(Boolean)));
+      if (distinctYears.length > 1) {
+        const periods: SemesterResult[] = distinctYears.map((yr) => {
+          const yearSubs = student.subjects!.filter((s) => s.year === yr);
+          const fullSum = yearSubs.reduce((sum, s) => sum + (s.fullMarks || 100), 0);
+          const marksSum = yearSubs.reduce((sum, s) => sum + (s.marks || 0), 0);
+          return {
+            semesterName: yr as string,
+            semesterGpa: fullSum > 0 ? (marksSum / fullSum) * 4.0 : 0,
+            totalCredits: yearSubs.reduce((sum, s) => sum + (s.credit || s.credits || 3), 0),
+            publicationDate: student.resultPublicationDate || student.passingYear,
+            subjects: yearSubs
+          };
+        });
+
+        if (periodValue === "ALL") return periods;
+        const filtered = periods.filter((p) => p.semesterName.toLowerCase().includes(periodValue.toLowerCase()));
+        return filtered.length > 0 ? filtered : periods;
+      }
+
+      // Single block
+      return [
+        {
+          semesterName: student.examinationTitle || (student.academicLevel ? `${student.academicLevel} Examination` : "Annual Examination"),
+          semesterGpa: student.finalGpa || 0,
+          totalCredits: student.subjects.reduce((sum, s) => sum + (s.credit || s.credits || 3), 0),
+          publicationDate: student.resultPublicationDate || student.passingYear,
+          subjects: student.subjects
+        }
+      ];
+    }
+
+    return [];
+  };
+
+  // Determine whether candidate is a historical record (1990-2000, 1994, 2000) using Division/Class instead of GPA
+  const isHistorical = Boolean(
+    matchedStudent?.isHistoricalRecord ||
+    matchedStudent?.gradingSystem === "Class" ||
+    matchedStudent?.gradingSystem === "Division" ||
+    (matchedStudent?.passingYear && parseInt(matchedStudent.passingYear, 10) <= 2000)
+  );
+
+  // Exact marksheet title without ever combining "Honours / Degree Pass"
+  const getMarksheetTitle = () => {
+    if (matchedStudent?.examinationTitle) {
+      return matchedStudent.examinationTitle.toUpperCase();
+    }
+    const isDegreePass = examType === "Degree Pass" || matchedStudent?.category === Category.DEGREE_PASS || matchedStudent?.academicLevel === "Degree Pass";
+    if (isDegreePass) {
+      return "BACHELOR OF ARTS (B.A.) DEGREE PASS EXAMINATION";
+    }
+    const isHonours = examType === "Honours" || matchedStudent?.category === Category.HONOURS || matchedStudent?.academicLevel === "Honours";
+    if (isHonours) {
+      const major = matchedStudent?.majorSubject || "History";
+      return `BACHELOR OF ARTS (B.A.) HONOURS EXAMINATION${major ? ` IN ${major.toUpperCase()}` : ""}`;
+    }
+    return "MASTER OF ARTS (M.A.) EXAMINATION";
   };
 
   // Calculate Cumulative Grade Point Average (CGPA) and Total Credits up to the selected period
-  const calculateCgpaUpToPeriod = (filtered: typeof matchedStudent.semesterResults) => {
+  const calculateCgpaUpToPeriod = (filtered: SemesterResult[]) => {
     if (!filtered || filtered.length === 0) {
       return { cgpa: matchedStudent?.finalGpa || 3.75, totalCredits: 0 };
     }
@@ -485,25 +548,40 @@ export default function DegreeResultVerificationPage({
     return { cgpa, totalCredits };
   };
 
-  const filteredSemesters = matchedStudent ? getFilteredSemesterResults(matchedStudent, displayedEndpointPeriod) : [];
+  const filteredSemesters = matchedStudent ? getEffectivePeriods(matchedStudent, displayedEndpointPeriod) : [];
   const { cgpa: computedCgpa, totalCredits: computedTotalCredits } = matchedStudent 
     ? calculateCgpaUpToPeriod(filteredSemesters) 
     : { cgpa: 0, totalCredits: 0 };
+
+  // Total full marks and total obtained marks calculations
+  const totalFullMarks = matchedStudent?.totalFullMarks || (
+    matchedStudent?.subjects?.reduce((sum, s) => sum + (s.fullMarks || 100), 0)
+  ) || (filteredSemesters.reduce((sum, sem) => sum + sem.subjects.reduce((sSum, sub) => sSum + (sub.fullMarks || 100), 0), 0)) || 1600;
+
+  const totalObtainedMarks = matchedStudent?.totalMarks || (
+    matchedStudent?.subjects?.reduce((sum, s) => sum + (s.marks || 0), 0)
+  ) || (filteredSemesters.reduce((sum, sem) => sum + sem.subjects.reduce((sSum, sub) => sSum + (sub.marks || 0), 0), 0)) || 0;
+
+  const percentageValue = matchedStudent?.percentage || (totalFullMarks > 0 ? Math.round((totalObtainedMarks / totalFullMarks) * 1000) / 10 : 0);
 
   const currentPeriods = EXAM_TYPE_PERIODS[examType];
 
   // =========================================================================
   // TWO-PAGE A4 DIVISION LOGIC
   // =========================================================================
-  const isTwoPage = filteredSemesters.length > 1;
+  // Total subjects count across all evaluated academic periods
+  const totalSubjectsCount = filteredSemesters.reduce((sum, sem) => sum + sem.subjects.length, 0);
+
+  // For historical records (1990-2000, 1994, 2000) or programmes with <= 20 subjects,
+  // keep the entire transcript on ONE single, authentic, print-ready A4 sheet.
+  // Two-page layout is only applied for large modular programmes with > 20 courses (e.g. 8-semester BBA/MBA).
+  const isTwoPage = !isHistorical && (filteredSemesters.length > 3 || totalSubjectsCount > 20);
   const splitIndex = filteredSemesters.length <= 1 
     ? 1 
-    : filteredSemesters.length === 3 
-    ? 2 
     : Math.ceil(filteredSemesters.length / 2);
 
-  const page1Semesters = filteredSemesters.slice(0, splitIndex);
-  const page2Semesters = filteredSemesters.slice(splitIndex);
+  const page1Semesters = isTwoPage ? filteredSemesters.slice(0, splitIndex) : filteredSemesters;
+  const page2Semesters = isTwoPage ? filteredSemesters.slice(splitIndex) : [];
 
   // Trigger browser direct print dialog
   const handlePrint = () => {
@@ -812,8 +890,8 @@ export default function DegreeResultVerificationPage({
                   onChange={(e) => handleExamTypeChange(e.target.value as ExamType)}
                   className="w-full bg-gray-50/70 border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-gray-900 focus:bg-white focus:border-[#006a4e] focus:outline-hidden cursor-pointer disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 >
-                  <option value="Honours">Honours (4-Year)</option>
-                  <option value="Degree Pass">Degree Pass (3-Year)</option>
+                  <option value="Honours">Bachelor of Arts (B.A.) Honours</option>
+                  <option value="Degree Pass">Bachelor of Arts (B.A.) Degree Pass</option>
                   <option value="Masters">Masters (Postgraduate)</option>
                 </select>
                 <span className="text-[10px] text-gray-500">Select qualification level</span>
@@ -1150,319 +1228,449 @@ export default function DegreeResultVerificationPage({
             </div>
 
             {/* ========================================================================= */}
-            {/* MARKSHEET PAGE 1 OF 2                                                     */}
+            {/* MARKSHEET PAGE 1                                                          */}
             {/* ========================================================================= */}
             <div 
               id="marksheet-page-1"
-              className="marksheet-page-1 bg-white rounded-3xl border-2 border-gray-300 shadow-md p-6 sm:p-8 space-y-5"
+              className="marksheet-page-1 bg-white rounded-lg border-2 border-slate-800 shadow-md p-2 sm:p-2.5 relative overflow-hidden print:border-2 print:shadow-none print:p-1"
             >
-              {/* Institution Header & Letterhead */}
-              <div className="border-b-2 border-gray-900 pb-4 text-center space-y-1.5">
-                <div className="flex items-center justify-center gap-3 sm:gap-4">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0">
-                    <Logo size={60} />
-                  </div>
-                  <div className="text-left">
-                    <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-[#006a4e] block">
-                      গণপ্রজাতন্ত্রী বাংলাদেশ সরকার অনুমোদিত স্বায়ত্তশাসিত উচ্চশিক্ষা পরিষদ
-                    </span>
-                    <h2 className="text-lg sm:text-2xl font-black text-gray-950 font-sans tracking-tight">
-                      Bangladesh National Institute of Education (BNIE)
-                    </h2>
-                    <p className="text-[11px] sm:text-xs font-semibold text-gray-700">
-                      Central Academic Examination &amp; Transcripts Division • Dhaka, Bangladesh
-                    </p>
-                  </div>
-                </div>
-
-                {/* Marksheet Title according to Exam Type */}
-                <div className="inline-block px-4 py-1 bg-gray-950 text-white rounded-full text-xs font-black uppercase tracking-widest shadow-xs">
-                  {examType === "Degree Pass" 
-                    ? `OFFICIAL ACADEMIC TRANSCRIPT & FULL MARKSHEET — DEGREE PASS (3-YEAR)` 
-                    : examType === "Masters" 
-                    ? `OFFICIAL ACADEMIC TRANSCRIPT & FULL MARKSHEET — MASTERS DEGREE PROGRAM` 
-                    : `OFFICIAL ACADEMIC TRANSCRIPT & FULL MARKSHEET — HONOURS (4-YEAR)`}
-                </div>
-                <div className="text-[10px] font-mono text-gray-500">
-                  Record Evaluation Endpoint: {displayedEndpointPeriod} • Page 1 of {isTwoPage ? "2" : "1"}
-                </div>
-              </div>
-
-              {/* Student Personal Profile Details & Passport Photo & QR Grid */}
-              <div className="grid grid-cols-12 gap-3.5 bg-gray-50/90 p-4 rounded-xl border border-gray-200">
+              {/* Inner Official Academic Certificate Border */}
+              <div className="border border-slate-700 rounded-sm p-4 sm:p-6 space-y-3.5 print:p-3 print:space-y-2.5 bg-white">
                 
-                {/* Passport Photo */}
-                <div className="col-span-12 sm:col-span-3 flex flex-col items-center justify-center space-y-1">
-                  <div className="relative w-24 h-32 rounded-lg border-2 border-[#006a4e] overflow-hidden bg-white shadow-2xs flex items-center justify-center">
-                    <img
-                      src={matchedStudent.photoUrl || PASSPORT_AVATARS.male1}
-                      alt={matchedStudent.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-1 right-1 bg-[#006a4e] text-white p-0.5 rounded-full shadow-2xs">
-                      <CheckCircle2 className="w-3 h-3" />
-                    </div>
-                  </div>
-                  <span className="text-[8px] font-mono font-bold text-gray-500 uppercase tracking-wider">
-                    Official Photo
-                  </span>
-                </div>
-
-                {/* Candidate Information */}
-                <div className="col-span-12 sm:col-span-6 space-y-2 text-xs">
-                  <div>
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400 block">Candidate Full Name</span>
-                    <h3 className="text-base sm:text-lg font-black text-gray-950 font-sans leading-tight">{matchedStudent.name}</h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
-                    <div>
-                      <span className="text-gray-500">Father:</span>{" "}
-                      <span className="font-bold text-gray-900">{matchedStudent.fatherName}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Mother:</span>{" "}
-                      <span className="font-bold text-gray-900">{matchedStudent.motherName}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Program:</span>{" "}
-                      <span className="font-bold text-gray-900">{matchedStudent.programName || matchedStudent.category}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Department:</span>{" "}
-                      <span className="font-bold text-gray-900">{matchedStudent.department || "Faculty of Higher Education"}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Major Subject:</span>{" "}
-                      <span className="font-bold text-[#006a4e]">{matchedStudent.majorSubject || "General Core"}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Session:</span>{" "}
-                      <span className="font-bold text-gray-900">{matchedStudent.session}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* QR Code and Quick Verification Badge */}
-                <div className="col-span-12 sm:col-span-3 flex flex-col items-center justify-center p-2.5 bg-white rounded-xl border border-gray-200 space-y-1.5">
-                  <div className="p-1 border border-gray-200 rounded-lg bg-white">
-                    <QRCodeCanvas
-                      value={typeof window !== "undefined" ? window.location.href : `https://bnie.edu.bd/degree-marksheet-result?id=${matchedStudent.id}`}
-                      size={76}
-                      style={{ width: "70px", height: "70px" }}
-                      bgColor="#ffffff"
-                      fgColor="#006a4e"
-                      level="H"
-                    />
-                  </div>
-                  <span className="text-[8px] font-mono text-gray-400 uppercase tracking-widest text-center font-bold">
-                    Scan for Central Verification
-                  </span>
-                  <div className="w-full text-center pt-0.5 border-t border-gray-150">
-                    <span className="text-[8px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded block">
-                      Status: {matchedStudent.resultStatus || "Passed"}
+                {/* Sample Data Disclaimer Watermark */}
+                {(!matchedStudent.isVerifiedAcademicRecord || matchedStudent.id.startsWith("BNIE-BA-") || matchedStudent.id.startsWith("BNIE-DEG-PASS-")) && (
+                  <div className="border border-dashed border-amber-600/70 bg-amber-50/70 py-1 px-2.5 rounded-sm text-center">
+                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-900">
+                      SAMPLE DATA — NOT AN OFFICIAL ACADEMIC RECORD.
                     </span>
                   </div>
-                </div>
+                )}
 
-              </div>
-
-              {/* Institutional Registration & Identifiers Row */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-gray-50 p-3 rounded-xl border border-gray-200 text-[11px]">
-                <div>
-                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Student ID</span>
-                  <span className="font-mono font-bold text-gray-950">{matchedStudent.id}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Roll Number</span>
-                  <span className="font-mono font-bold text-gray-950">{matchedStudent.rollNumber}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Registration No</span>
-                  <span className="font-mono font-bold text-gray-950">{matchedStudent.registrationNumber}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Academic Session</span>
-                  <span className="font-semibold text-gray-950">{matchedStudent.session}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Admission Year</span>
-                  <span className="font-semibold text-gray-950">{matchedStudent.admissionYear || matchedStudent.session?.split("-")[0] || "2020"}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Course Duration</span>
-                  <span className="font-semibold text-gray-950">{matchedStudent.courseDuration || (examType === "Degree Pass" ? "3 Years" : examType === "Masters" ? "2 Years" : "4 Years")}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Expected Completion</span>
-                  <span className="font-semibold text-gray-950">{matchedStudent.expectedCompletionYear || matchedStudent.passingYear}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Passing / Exam Year</span>
-                  <span className="font-semibold text-gray-950">{matchedStudent.passingYear || matchedStudent.examinationYear}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Result Publication Date</span>
-                  <span className="font-semibold text-[#006a4e]">{matchedStudent.resultPublicationDate || (matchedStudent.semesterResults?.[matchedStudent.semesterResults.length - 1]?.publicationDate) || "2024-05-20"}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Certificate Status</span>
-                  <span className="font-bold text-emerald-800">
-                    {matchedStudent.certificateStatus || (matchedStudent.certificateSerialNumber ? "Issued" : "Pending")}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Certificate Number</span>
-                  <span className="font-mono font-bold text-gray-950">
-                    {(matchedStudent.certificateStatus === "Pending" || matchedStudent.certificateStatus === "Eligible for Issue") && !matchedStudent.certificateNumber && !matchedStudent.certificateSerialNumber
-                      ? <span className="text-amber-700 italic font-sans font-medium text-[10px]">Pending Senate Issuance</span>
-                      : matchedStudent.certificateNumber || matchedStudent.certificateSerialNumber || "Pending"
-                    }
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[9px] text-gray-500 font-bold uppercase block">Certificate Issue Date</span>
-                  <span className="font-semibold text-gray-950">
-                    {matchedStudent.certificateStatus === "Pending" && !matchedStudent.certificateIssueDate && !matchedStudent.issueDate
-                      ? <span className="text-gray-400 italic font-normal text-[10px]">Not yet issued</span>
-                      : matchedStudent.certificateIssueDate || matchedStudent.issueDate || "Under Review"
-                    }
-                  </span>
-                </div>
-              </div>
-
-              {/* FIRST PORTION OF ACADEMIC RESULTS (PAGE 1) */}
-              <div className="space-y-4">
-                <div className="border-b border-gray-900 pb-1.5 flex items-center justify-between">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-black flex items-center gap-1.5">
-                    <BookOpen className="w-3.5 h-3.5 text-[#006a4e]" />
-                    <span>Academic History Record (Part I • {page1Semesters.length} Period{page1Semesters.length > 1 ? "s" : ""})</span>
-                  </h4>
-                  <span className="text-[10px] font-mono font-bold text-gray-600">
-                    Grading Scale: 4.00 Max
-                  </span>
-                </div>
-
-                {page1Semesters.map((sem, sIdx) => (
-                  <div
-                    key={sIdx}
-                    className="semester-block bg-white rounded-xl border border-gray-300 overflow-hidden shadow-2xs"
-                  >
-                    {/* Semester Header with GPA */}
-                    <div className="bg-gray-100 p-2.5 px-3.5 flex flex-wrap items-center justify-between gap-2 border-b border-gray-300 text-xs">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-[#006a4e]" />
-                        <h5 className="font-extrabold text-[11px] uppercase tracking-wide text-black">
-                          {sem.semesterName}
-                        </h5>
-                        {sem.publicationDate && (
-                          <span className="text-[10px] text-gray-500 font-mono">
-                            • Published: {sem.publicationDate}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] text-gray-600 font-medium">
-                          Period GPA:
-                        </span>
-                        <span className="text-xs font-black font-mono text-[#006a4e] bg-white border border-gray-300 px-2 py-0.5 rounded-md">
-                          {sem.semesterGpa.toFixed(2)}
-                        </span>
-                      </div>
+                {/* Institution Header & Letterhead */}
+                <div className="border-b-2 border-slate-900 pb-3 text-center space-y-1.5">
+                  <div className="flex items-center justify-center gap-3 sm:gap-4">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 shrink-0">
+                      <Logo size={56} />
                     </div>
-
-                    {/* Compact Subject Table */}
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs border-collapse print-compact-table">
-                        <thead>
-                          <tr className="border-b border-gray-200 text-[10px] font-bold uppercase text-gray-600 bg-gray-50">
-                            <th className="py-1.5 px-2 text-center w-8">SL</th>
-                            <th className="py-1.5 px-3">Subject Code</th>
-                            <th className="py-1.5 px-3">Course Title / Subject Name</th>
-                            <th className="py-1.5 px-2 text-center">Credit</th>
-                            <th className="py-1.5 px-2 text-center">Marks</th>
-                            <th className="py-1.5 px-2 text-center">Grade Point</th>
-                            <th className="py-1.5 px-2 text-center">Letter Grade</th>
-                            <th className="py-1.5 px-3 text-center">Result</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 text-[11px]">
-                          {sem.subjects.map((sub, subIdx) => (
-                            <tr key={subIdx} className="hover:bg-gray-50/50">
-                              <td className="py-1.5 px-2 text-center font-mono font-bold text-gray-700">
-                                {sub.serialNo || (sub.displayOrder ? String(sub.displayOrder).padStart(2, "0") : String(subIdx + 1).padStart(2, "0"))}
-                              </td>
-                              <td className="py-1.5 px-3 font-mono font-bold text-gray-950">
-                                {sub.subjectCode || "N/A"}
-                              </td>
-                              <td className="py-1.5 px-3 font-medium text-gray-950">
-                                {sub.subjectName}
-                              </td>
-                              <td className="py-1.5 px-2 text-center font-mono text-gray-700">
-                                {sub.credit || sub.credits || 3}
-                              </td>
-                              <td className="py-1.5 px-2 text-center font-mono font-semibold text-gray-900">
-                                {sub.marks ?? "—"}
-                              </td>
-                              <td className="py-1.5 px-2 text-center font-mono font-extrabold text-[#006a4e]">
-                                {sub.gradePoint !== undefined ? sub.gradePoint.toFixed(2) : "0.00"}
-                              </td>
-                              <td className="py-1.5 px-2 text-center font-bold">
-                                <span className="px-1.5 py-0.2 bg-emerald-50 rounded border border-emerald-200 text-[10px] text-emerald-900 print:border-none print:p-0 print:bg-transparent">
-                                  {sub.letterGrade || (sub.gradePoint >= 4.0 ? "A+" : sub.gradePoint >= 3.75 ? "A" : sub.gradePoint >= 3.5 ? "A-" : sub.gradePoint >= 3.0 ? "B" : sub.gradePoint >= 2.0 ? "C" : "F")}
-                                </span>
-                              </td>
-                              <td className="py-1.5 px-3 text-center font-bold text-[10px]">
-                                <span className={sub.gradePoint >= 2.0 ? "text-emerald-800" : "text-red-700"}>
-                                  {sub.gradePoint >= 2.0 ? "Passed" : "Failed"}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Page 1 Bottom Footer Indicator */}
-              <div className="pt-3 border-t border-gray-200 flex items-center justify-between text-[10px] text-gray-500 font-mono">
-                <span>Security Ledger: BNIE-{matchedStudent.rollNumber}-{matchedStudent.passingYear}</span>
-                <span className="font-bold text-[#006a4e]">
-                  {isTwoPage ? "Page 1 of 2 • Transcript continues on Page 2 ➔" : "Page 1 of 1 • End of Official Transcript"}
-                </span>
-              </div>
-
-            </div>
-
-            {/* ========================================================================= */}
-            {/* MARKSHEET PAGE 2 OF 2 (Continuous Continuation on Next Page)             */}
-            {/* ========================================================================= */}
-            {isTwoPage && (
-              <div 
-                id="marksheet-page-2"
-                className="marksheet-page-2 bg-white rounded-3xl border-2 border-gray-300 shadow-md p-6 sm:p-8 space-y-5"
-              >
-                
-                {/* Page 2 Minimalist Continuation Header (Saves space without repeating full photo/details) */}
-                <div className="border-b-2 border-gray-900 pb-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 shrink-0">
-                      <Logo size={36} />
-                    </div>
-                    <div>
-                      <h3 className="font-black text-gray-950 font-sans text-sm">
-                        Bangladesh National Institute of Education (BNIE)
-                      </h3>
-                      <p className="text-[10px] text-gray-600 font-semibold">
-                        Official Academic Transcript Continuation • <span className="text-[#006a4e] font-bold">Page 2 of 2</span>
+                    <div className="text-left">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600 block">
+                        Autonomous Higher Education Council • Government of the People's Republic of Bangladesh
+                      </span>
+                      <h2 className="text-lg sm:text-2xl font-black text-slate-950 font-serif tracking-tight uppercase">
+                        {matchedStudent.instituteName || "Bangladesh National Institute of Education (BNIE)"}
+                      </h2>
+                      <p className="text-[10px] sm:text-xs font-semibold text-slate-700">
+                        Central Academic Examination &amp; Transcripts Division • Dhaka, Bangladesh
                       </p>
                     </div>
                   </div>
 
-                  <div className="text-right text-[10px] font-mono text-gray-700 bg-gray-50 p-1.5 px-2.5 rounded-lg border border-gray-200">
+                  {/* Academic Marks Statement & Exact Examination Title Banner */}
+                  <div className="border-y-2 border-slate-800 py-1.5 my-1 text-center space-y-0.5 bg-slate-50/60">
+                    <h3 className="text-sm sm:text-lg font-serif font-black tracking-wider text-slate-950 uppercase">
+                      {getMarksheetTitle()}
+                    </h3>
+                    <p className="text-[10px] sm:text-[11px] font-serif font-bold text-slate-700 uppercase tracking-widest">
+                      Academic Transcript &amp; Marks Certificate
+                    </p>
+                  </div>
+
+                  {/* Header Metadata Sub-bar */}
+                  <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] font-semibold text-slate-700">
+                    <div>Examination Year: <strong className="text-slate-950 font-mono">{matchedStudent.passingYear || matchedStudent.examinationYear}</strong></div>
+                    <div>•</div>
+                    <div>Academic Session: <strong className="text-slate-950 font-mono">{matchedStudent.session}</strong></div>
+                    {matchedStudent.affiliatedCollege && (
+                      <>
+                        <div>•</div>
+                        <div>College: <strong className="text-slate-950">{matchedStudent.affiliatedCollege}</strong></div>
+                      </>
+                    )}
+                    <div>•</div>
+                    <div className="font-mono text-slate-500">Scope: {displayedEndpointPeriod} {isTwoPage ? "(Page 1 of 2)" : "(Page 1 of 1)"}</div>
+                    {!matchedStudent.isVerifiedAcademicRecord && (
+                      <span className="px-1.5 py-0.2 bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[9px] rounded uppercase">
+                        Pending Verification
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Unified Candidate Particulars Table (Clean, Authentic Academic Ledger Format) */}
+                <div className="border border-slate-700 rounded-sm overflow-hidden text-[11px] sm:text-xs">
+                  <table className="w-full border-collapse">
+                    <tbody>
+                      <tr className="border-b border-slate-300">
+                        <td className="w-32 sm:w-36 py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-r border-slate-300">Name of Candidate</td>
+                        <td className="py-1 px-3 font-serif font-black text-slate-950 text-sm uppercase">{matchedStudent.name}</td>
+                        <td className="w-32 sm:w-36 py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-x border-slate-300">Roll Number</td>
+                        <td className="w-36 sm:w-44 py-1 px-3 font-mono font-black text-slate-950 text-sm">{matchedStudent.rollNumber}</td>
+                      </tr>
+                      <tr className="border-b border-slate-300">
+                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-r border-slate-300">Father's Name</td>
+                        <td className="py-1 px-3 font-semibold text-slate-900">{matchedStudent.fatherName || "—"}</td>
+                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-x border-slate-300">Registration No</td>
+                        <td className="py-1 px-3 font-mono font-bold text-slate-950">{matchedStudent.registrationNumber}</td>
+                      </tr>
+                      <tr className="border-b border-slate-300">
+                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-r border-slate-300">Mother's Name</td>
+                        <td className="py-1 px-3 font-semibold text-slate-900">{matchedStudent.motherName || "—"}</td>
+                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-x border-slate-300">Academic Session</td>
+                        <td className="py-1 px-3 font-mono font-semibold text-slate-950">{matchedStudent.session}</td>
+                      </tr>
+                      <tr className="border-b border-slate-300">
+                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-r border-slate-300">Degree &amp; Major</td>
+                        <td className="py-1 px-3 font-bold text-slate-950">
+                          {matchedStudent.degreeType || (examType === "Degree Pass" ? "Bachelor of Arts (B.A.) Degree Pass" : "Bachelor of Arts (B.A.) Honours")}
+                          {matchedStudent.majorSubject && examType !== "Degree Pass" ? ` (${matchedStudent.majorSubject})` : ""}
+                        </td>
+                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-x border-slate-300">Examination Year</td>
+                        <td className="py-1 px-3 font-mono font-semibold text-slate-950">{matchedStudent.passingYear || matchedStudent.examinationYear}</td>
+                      </tr>
+                      <tr className="border-b border-slate-300">
+                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-r border-slate-300">Affiliated College</td>
+                        <td className="py-1 px-3 font-semibold text-slate-900">{matchedStudent.affiliatedCollege || "Main Academic Campus"}</td>
+                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-x border-slate-300">Course Duration</td>
+                        <td className="py-1 px-3 font-semibold text-slate-950">{matchedStudent.courseDuration || (isHistorical ? "3 Years" : "4 Years")}</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-r border-slate-300">Evaluation Standard</td>
+                        <td className="py-1 px-3 font-semibold text-slate-900">
+                          {isHistorical ? "Marks, Percentage & Division/Class Regulations" : "Semester Modular Scale (4.00 CGPA)"}
+                        </td>
+                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-x border-slate-300">Result Standing</td>
+                        <td className="py-1 px-3 font-bold text-slate-950">
+                          <span className="font-serif uppercase tracking-wide">{matchedStudent.resultStatus || "Passed"}</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+              {/* FIRST PORTION OF ACADEMIC RESULTS (PAGE 1) */}
+              <div className="space-y-4">
+                <div className="border-b border-slate-900 pb-1.5 flex items-center justify-between">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-950 flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5 text-amber-700" />
+                    <span>Academic Paper Record ({isTwoPage ? `Part I • ${page1Semesters.length} Period${page1Semesters.length > 1 ? "s" : ""}` : `Complete Record • ${page1Semesters.length} Period${page1Semesters.length > 1 ? "s" : ""}`})</span>
+                  </h4>
+                  <span className="text-[10px] font-mono font-bold text-slate-600">
+                    {isHistorical ? "Standard: Marks & Percentage System" : "Grading Scale: 4.00 Max"}
+                  </span>
+                </div>
+
+                {page1Semesters.map((sem, sIdx) => {
+                  const isTwoColumn = sem.subjects.length > 15;
+                  const leftSubjects = isTwoColumn ? sem.subjects.slice(0, 15) : sem.subjects;
+                  const rightSubjects = isTwoColumn ? sem.subjects.slice(15, 30) : [];
+                    const semFullMarks = sem.subjects.reduce((sum, s) => sum + (s.fullMarks || 100), 0);
+                    const semObtainedMarks = sem.subjects.reduce((sum, s) => sum + (s.marks || 0), 0);
+                    const semPercent = semFullMarks > 0 ? Math.round((semObtainedMarks / semFullMarks) * 1000) / 10 : 0;
+
+                    const renderTable = (subList: typeof sem.subjects, startOffset = 0) => (
+                      <table className="w-full text-left text-xs border-collapse border border-slate-400 print-compact-table">
+                        <thead>
+                          <tr className="border-b border-slate-400 text-[10px] font-bold uppercase text-slate-900 bg-slate-100">
+                            <th className="py-1 px-2 text-center w-8 border-r border-slate-300">SL</th>
+                            <th className="py-1 px-2.5 w-24 border-r border-slate-300">Paper Code</th>
+                            <th className="py-1 px-3 border-r border-slate-300">Subject / Paper Title</th>
+                            {isHistorical ? (
+                              <>
+                                <th className="py-1 px-2 text-center w-20 border-r border-slate-300">Full Marks</th>
+                                <th className="py-1 px-2 text-center w-24 border-r border-slate-300">Marks Obtained</th>
+                                <th className="py-1 px-2.5 text-center w-20">Result</th>
+                              </>
+                            ) : (
+                              <>
+                                <th className="py-1 px-2 text-center w-16 border-r border-slate-300">Credit</th>
+                                <th className="py-1 px-2 text-center w-16 border-r border-slate-300">Marks</th>
+                                <th className="py-1 px-2 text-center w-20 border-r border-slate-300">Grade Point</th>
+                                <th className="py-1 px-2 text-center w-20 border-r border-slate-300">Letter Grade</th>
+                                <th className="py-1 px-2.5 text-center w-20">Result</th>
+                              </>
+                            )}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 text-[11px]">
+                          {subList.map((sub, subIdx) => {
+                            const displayIndex = startOffset + subIdx + 1;
+                            const full = sub.fullMarks || 100;
+                            const obtained = sub.marks ?? 0;
+                            const isPass = sub.marks !== undefined ? obtained >= (sub.passMarks || (full >= 100 ? 36 : 18)) : true;
+
+                            return (
+                              <tr key={subIdx} className="hover:bg-slate-50/70">
+                                <td className="py-1 px-2 text-center font-mono font-bold text-slate-700 border-r border-slate-200">
+                                  {sub.serialNo || String(displayIndex).padStart(2, "0")}
+                                </td>
+                                <td className="py-1 px-2.5 font-mono font-bold text-slate-950 border-r border-slate-200">
+                                  {sub.subjectCode || "—"}
+                                </td>
+                                <td className="py-1 px-3 font-medium text-slate-950 border-r border-slate-200">
+                                  {sub.subjectName}
+                                </td>
+                                {isHistorical ? (
+                                  <>
+                                    <td className="py-1 px-2 text-center font-mono text-slate-700 border-r border-slate-200">
+                                      {full}
+                                    </td>
+                                    <td className="py-1 px-2 text-center font-mono font-black text-slate-950 border-r border-slate-200">
+                                      {sub.marks ?? "—"}
+                                    </td>
+                                    <td className="py-1 px-2.5 text-center font-bold text-[10px]">
+                                      <span className={isPass ? "text-emerald-800" : "text-red-700"}>
+                                        {isPass ? "Passed" : "Failed"}
+                                      </span>
+                                    </td>
+                                  </>
+                                ) : (
+                                  <>
+                                    <td className="py-1 px-2 text-center font-mono text-slate-700 border-r border-slate-200">
+                                      {sub.credit || sub.credits || 3}
+                                    </td>
+                                    <td className="py-1 px-2 text-center font-mono font-semibold text-slate-900 border-r border-slate-200">
+                                      {sub.marks ?? "—"}
+                                    </td>
+                                    <td className="py-1 px-2 text-center font-mono font-extrabold text-[#006a4e] border-r border-slate-200">
+                                      {sub.gradePoint !== undefined ? sub.gradePoint.toFixed(2) : "0.00"}
+                                    </td>
+                                    <td className="py-1 px-2 text-center font-bold border-r border-slate-200">
+                                      <span className="px-1.5 py-0.2 bg-emerald-50 rounded border border-emerald-200 text-[10px] text-emerald-900 print:border-none print:p-0 print:bg-transparent">
+                                        {sub.letterGrade || (sub.gradePoint >= 4.0 ? "A+" : sub.gradePoint >= 3.75 ? "A" : sub.gradePoint >= 3.5 ? "A-" : sub.gradePoint >= 3.0 ? "B" : sub.gradePoint >= 2.0 ? "C" : "F")}
+                                      </span>
+                                    </td>
+                                    <td className="py-1 px-2.5 text-center font-bold text-[10px]">
+                                      <span className={sub.gradePoint >= 2.0 ? "text-emerald-800" : "text-red-700"}>
+                                        {sub.gradePoint >= 2.0 ? "Passed" : "Failed"}
+                                      </span>
+                                    </td>
+                                  </>
+                                )}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        {isHistorical && (
+                          <tfoot className="border-t-2 border-slate-400 bg-slate-50 font-bold text-[11px]">
+                            <tr>
+                              <td colSpan={3} className="py-1 px-3 text-right font-serif text-slate-800 uppercase text-[10px] border-r border-slate-300">
+                                {sem.semesterName} Aggregate:
+                              </td>
+                              <td className="py-1 px-2 text-center font-mono text-slate-900 border-r border-slate-300">
+                                {semFullMarks}
+                              </td>
+                              <td className="py-1 px-2 text-center font-mono font-black text-slate-950 border-r border-slate-300">
+                                {semObtainedMarks}
+                              </td>
+                              <td className="py-1 px-2.5 text-center font-mono font-bold text-amber-800 text-[10px]">
+                                {semPercent}%
+                              </td>
+                            </tr>
+                          </tfoot>
+                        )}
+                      </table>
+                    );
+
+                  return (
+                    <div
+                      key={sIdx}
+                      className="semester-block bg-white border border-slate-600 rounded-sm overflow-hidden mb-2.5"
+                    >
+                      {/* Period Header */}
+                      <div className="bg-slate-100 p-1.5 px-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-400 text-xs">
+                        <div className="flex items-center gap-2">
+                          <h5 className="font-bold text-[11px] uppercase tracking-wide text-slate-950 font-serif">
+                            {sem.semesterName} {isHistorical ? "Examination" : "Courses"}
+                          </h5>
+                          {sem.publicationDate && (
+                            <span className="text-[10px] text-slate-500 font-mono">
+                              • Published: {sem.publicationDate}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {isHistorical ? (
+                            <span className="text-[11px] font-semibold text-slate-700">
+                              Papers: <strong className="text-slate-950 font-mono">{sem.subjects.length}</strong> • Full Marks: <strong className="text-slate-950 font-mono">{semFullMarks}</strong>
+                            </span>
+                          ) : (
+                            <>
+                              <span className="text-[11px] text-slate-600 font-medium">Period GPA:</span>
+                              <span className="text-xs font-black font-mono text-[#006a4e] bg-white border border-slate-300 px-2 py-0.5 rounded-md">
+                                {sem.semesterGpa.toFixed(2)}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Subject Table (Single column or Two-column layout for 30-subject catalogue) */}
+                      <div className="overflow-x-auto p-1.5">
+                        {isTwoColumn ? (
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                            <div>
+                              <div className="text-[10px] font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded mb-1 border border-slate-300">
+                                Section A: Papers 01 — 15
+                              </div>
+                              {renderTable(leftSubjects, 0)}
+                            </div>
+                            <div>
+                              <div className="text-[10px] font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded mb-1 border border-slate-300">
+                                Section B: Papers 16 — {sem.subjects.length}
+                              </div>
+                              {renderTable(rightSubjects, 15)}
+                            </div>
+                          </div>
+                        ) : (
+                          renderTable(sem.subjects, 0)
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* IF SINGLE PAGE: RENDER RESULT SUMMARY AND SIGNATURES RIGHT HERE ON PAGE 1 */}
+              {!isTwoPage && (
+                <div className="space-y-3 pt-1">
+                  {/* CUMULATIVE SUMMARY BREAKDOWN BOX */}
+                  <div className="bg-white border-2 border-slate-800 rounded-sm overflow-hidden text-xs">
+                    <div className="bg-slate-100 py-1 px-3 border-b border-slate-400 font-serif font-black text-slate-950 uppercase tracking-wider text-center text-xs">
+                      Final Academic Result &amp; Classification
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-300 text-center bg-white">
+                      <div className="p-2 sm:p-2.5">
+                        <span className="text-[10px] font-bold uppercase text-slate-500 block">Total Full Marks</span>
+                        <span className="text-base font-black text-slate-950 font-mono">{totalFullMarks}</span>
+                      </div>
+
+                      <div className="p-2 sm:p-2.5">
+                        <span className="text-[10px] font-bold uppercase text-slate-500 block">Total Marks Obtained</span>
+                        <span className="text-base font-black text-slate-950 font-mono">{totalObtainedMarks}</span>
+                      </div>
+
+                      <div className="p-2 sm:p-2.5">
+                        <span className="text-[10px] font-bold uppercase text-slate-500 block">Percentage of Marks</span>
+                        <span className="text-base font-black text-amber-700 font-mono">{percentageValue}%</span>
+                      </div>
+
+                      <div className="p-2 sm:p-2.5 bg-amber-50/40">
+                        <span className="text-[10px] font-bold uppercase text-slate-700 block">
+                          {isHistorical ? "Result / Class Awarded" : "Cumulative CGPA"}
+                        </span>
+                        <span className="text-xs sm:text-sm font-black text-slate-950 font-serif block mt-0.5 uppercase tracking-wide">
+                          {isHistorical 
+                            ? (matchedStudent.resultStatus || (percentageValue >= 60 ? (examType === "Degree Pass" ? "First Division" : "First Class with Honours") : percentageValue >= 45 ? (examType === "Degree Pass" ? "Second Division" : "Second Class with Honours") : "Pass / Third Division"))
+                            : computedCgpa.toFixed(2)
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* GRADING SCALE / HISTORICAL RULES REFERENCE BAR */}
+                  <div className="p-2 bg-slate-50 border border-slate-400 rounded-sm text-[10px] text-slate-700 leading-relaxed">
+                    {isHistorical ? (
+                      <div>
+                        <strong className="text-slate-950 font-serif uppercase tracking-wider mr-1.5">Historical Regulations (1990–2000):</strong>
+                        {examType === "Degree Pass" ? (
+                          <span>First Division (60.0% and above) • Second Division (45.0% to 59.9%) • Third Division (33.0% to 44.9%). Minimum 33 marks required per paper.</span>
+                        ) : (
+                          <span>First Class with Honours (60.0% and above) • Second Class with Honours (45.0% to 59.9%) • Third Class (36.0% to 44.9% or Pass Degree). Minimum qualifying mark per paper: 36%; Viva-Voce: 40%. Total Full Marks: 1600.</span>
+                        )}
+                        {!matchedStudent.isVerifiedAcademicRecord && (
+                          <span className="block mt-0.5 font-semibold text-amber-900">
+                            * Official syllabus &amp; paper codes subject to original university historical archive verification (Status: Pending Verification).
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        <strong className="text-slate-950 mr-1.5 font-serif uppercase tracking-wider">Institutional Grading Scale (4.00):</strong>
+                        <span>A+ (4.00, 80%+), A (3.75, 75-79%), A- (3.50, 70-74%), B+ (3.25, 65-69%), B (3.00, 60-64%), B- (2.75, 55-59%), C+ (2.50, 50-54%), D (2.00, 40-49%), F (0.00, Fail).</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* INSTITUTION SEAL AND AUTHORIZED SIGNATURES */}
+                  <div className="pt-3 border-t-2 border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left text-xs">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center justify-center sm:justify-start gap-1.5 font-bold text-slate-900 font-serif text-xs">
+                        <Landmark className="w-3.5 h-3.5 text-slate-700" />
+                        <span>Bangladesh National Institute of Education</span>
+                      </div>
+                      <p className="text-[9px] text-slate-500">
+                        This official transcript was electronically generated and authenticated from the secure institutional ledger.
+                      </p>
+                      <p className="text-[9px] font-mono text-slate-500">
+                        Document Ref: BNIE-{matchedStudent.passingYear || "1994"}-{matchedStudent.rollNumber}-{matchedStudent.registrationNumber}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                      <div className="text-center space-y-0.5">
+                        <div className="w-32 border-b border-slate-600 pb-0.5 font-serif italic text-xs text-slate-900">
+                          Controller of Exam
+                        </div>
+                        <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider block">
+                          Controller of Examinations
+                        </span>
+                      </div>
+
+                      <div className="text-center space-y-0.5">
+                        <div className="w-32 border-b border-slate-600 pb-0.5 font-serif italic text-xs text-slate-900">
+                          Registrar &amp; Secretary
+                        </div>
+                        <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider block">
+                          Registrar &amp; Secretary
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Page 1 Bottom Footer Indicator */}
+              <div className="pt-2 border-t border-slate-300 flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                <span>Central Academic Archive: BNIE-{matchedStudent.rollNumber}-{matchedStudent.passingYear}</span>
+                <span className="font-bold text-slate-800">
+                  {isTwoPage ? "Page 1 of 2 • Transcript continues on Page 2 ➔" : "Page 1 of 1 • End of Official Academic Transcript"}
+                </span>
+              </div>
+
+              </div>
+            </div>
+
+            {/* ========================================================================= */}
+            {/* MARKSHEET PAGE 2 (Continuation for Multi-period Records)                  */}
+            {/* ========================================================================= */}
+            {isTwoPage && (
+              <div 
+                id="marksheet-page-2"
+                className="marksheet-page-2 bg-white rounded-lg border-2 border-slate-800 shadow-md p-2 sm:p-2.5 relative overflow-hidden print:border-2 print:shadow-none print:p-1"
+              >
+                {/* Inner Official Academic Certificate Border */}
+                <div className="border border-slate-700 rounded-sm p-4 sm:p-6 space-y-3.5 print:p-3 print:space-y-2.5 bg-white">
+
+                {/* Page 2 Minimalist Continuation Header */}
+                <div className="border-b-2 border-slate-900 pb-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 shrink-0">
+                      <Logo size={32} />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-slate-950 font-serif text-sm">
+                        Bangladesh National Institute of Education (BNIE)
+                      </h3>
+                      <p className="text-[10px] text-slate-600 font-semibold">
+                        Official Academic Transcript Continuation • <span className="text-slate-900 font-bold">Page 2 of 2</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-right text-[10px] font-mono text-slate-700 bg-slate-50 p-1 px-2.5 rounded border border-slate-300">
                     <div><strong>Candidate:</strong> {matchedStudent.name}</div>
                     <div><strong>ID:</strong> {matchedStudent.id} • <strong>Roll:</strong> {matchedStudent.rollNumber}</div>
                   </div>
@@ -1470,171 +1678,264 @@ export default function DegreeResultVerificationPage({
 
                 {/* SECOND PORTION OF ACADEMIC RESULTS (PAGE 2) */}
                 <div className="space-y-4">
-                  <div className="border-b border-gray-900 pb-1.5 flex items-center justify-between">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-black flex items-center gap-1.5">
-                      <BookOpen className="w-3.5 h-3.5 text-[#006a4e]" />
-                      <span>Academic History Record (Part II • Continuation • {page2Semesters.length} Period{page2Semesters.length > 1 ? "s" : ""})</span>
+                  <div className="border-b border-slate-900 pb-1.5 flex items-center justify-between">
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-950 flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5 text-amber-700" />
+                      <span>Academic Paper Record (Part II • Continuation • {page2Semesters.length} Period{page2Semesters.length > 1 ? "s" : ""})</span>
                     </h4>
-                    <span className="text-[10px] font-mono font-bold text-gray-600">
-                      Evaluation Endpoint: {displayedEndpointPeriod}
+                    <span className="text-[10px] font-mono font-bold text-slate-600">
+                      Evaluation Scope: {displayedEndpointPeriod}
                     </span>
                   </div>
 
-                  {page2Semesters.map((sem, sIdx) => (
-                    <div
-                      key={sIdx}
-                      className="semester-block bg-white rounded-xl border border-gray-300 overflow-hidden shadow-2xs"
-                    >
-                      {/* Semester Header with GPA */}
-                      <div className="bg-gray-100 p-2.5 px-3.5 flex flex-wrap items-center justify-between gap-2 border-b border-gray-300 text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-[#006a4e]" />
-                          <h5 className="font-extrabold text-[11px] uppercase tracking-wide text-black">
-                            {sem.semesterName}
-                          </h5>
-                          {sem.publicationDate && (
-                            <span className="text-[10px] text-gray-500 font-mono">
-                              • Published: {sem.publicationDate}
-                            </span>
-                          )}
-                        </div>
+                  {page2Semesters.map((sem, sIdx) => {
+                    const isTwoColumn = sem.subjects.length > 15;
+                    const leftSubjects = isTwoColumn ? sem.subjects.slice(0, 15) : sem.subjects;
+                    const rightSubjects = isTwoColumn ? sem.subjects.slice(15, 30) : [];
 
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] text-gray-600 font-medium">
-                            Period GPA:
-                          </span>
-                          <span className="text-xs font-black font-mono text-[#006a4e] bg-white border border-gray-300 px-2 py-0.5 rounded-md">
-                            {sem.semesterGpa.toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
+                    const renderTable = (subList: typeof sem.subjects, startOffset = 0) => (
+                      <table className="w-full text-left text-xs border-collapse print-compact-table">
+                        <thead>
+                          <tr className="border-b border-slate-200 text-[10px] font-bold uppercase text-slate-700 bg-slate-100">
+                            <th className="py-1.5 px-2 text-center w-8">SL</th>
+                            <th className="py-1.5 px-2.5">Paper Code</th>
+                            <th className="py-1.5 px-3">Subject / Paper Title</th>
+                            {isHistorical ? (
+                              <>
+                                <th className="py-1.5 px-2 text-center">Full Marks</th>
+                                <th className="py-1.5 px-2 text-center">Marks Obtained</th>
+                                <th className="py-1.5 px-2.5 text-center">Result</th>
+                              </>
+                            ) : (
+                              <>
+                                <th className="py-1.5 px-2 text-center">Credit</th>
+                                <th className="py-1.5 px-2 text-center">Marks</th>
+                                <th className="py-1.5 px-2 text-center">Grade Point</th>
+                                <th className="py-1.5 px-2 text-center">Letter Grade</th>
+                                <th className="py-1.5 px-2.5 text-center">Result</th>
+                              </>
+                            )}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-[11px]">
+                          {subList.map((sub, subIdx) => {
+                            const displayIndex = startOffset + subIdx + 1;
+                            const full = sub.fullMarks || 100;
+                            const obtained = sub.marks ?? 0;
+                            const isPass = sub.marks !== undefined ? obtained >= (sub.passMarks || (full >= 100 ? 36 : 18)) : true;
 
-                      {/* Compact Subject Table */}
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs border-collapse print-compact-table">
-                          <thead>
-                            <tr className="border-b border-gray-200 text-[10px] font-bold uppercase text-gray-600 bg-gray-50">
-                              <th className="py-1.5 px-2 text-center w-8">SL</th>
-                              <th className="py-1.5 px-3">Subject Code</th>
-                              <th className="py-1.5 px-3">Course Title / Subject Name</th>
-                              <th className="py-1.5 px-2 text-center">Credit</th>
-                              <th className="py-1.5 px-2 text-center">Marks</th>
-                              <th className="py-1.5 px-2 text-center">Grade Point</th>
-                              <th className="py-1.5 px-2 text-center">Letter Grade</th>
-                              <th className="py-1.5 px-3 text-center">Result</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-100 text-[11px]">
-                            {sem.subjects.map((sub, subIdx) => (
-                              <tr key={subIdx} className="hover:bg-gray-50/50">
-                                <td className="py-1.5 px-2 text-center font-mono font-bold text-gray-700">
-                                  {sub.serialNo || (sub.displayOrder ? String(sub.displayOrder).padStart(2, "0") : String(subIdx + 1).padStart(2, "0"))}
+                            return (
+                              <tr key={subIdx} className="hover:bg-slate-50/60">
+                                <td className="py-1.5 px-2 text-center font-mono font-bold text-slate-700">
+                                  {sub.serialNo || String(displayIndex).padStart(2, "0")}
                                 </td>
-                                <td className="py-1.5 px-3 font-mono font-bold text-gray-950">
-                                  {sub.subjectCode || "N/A"}
+                                <td className="py-1.5 px-2.5 font-mono font-bold text-slate-950">
+                                  {sub.subjectCode || "—"}
                                 </td>
-                                <td className="py-1.5 px-3 font-medium text-gray-950">
+                                <td className="py-1.5 px-3 font-medium text-slate-950">
                                   {sub.subjectName}
                                 </td>
-                                <td className="py-1.5 px-2 text-center font-mono text-gray-700">
-                                  {sub.credit || sub.credits || 3}
-                                </td>
-                                <td className="py-1.5 px-2 text-center font-mono font-semibold text-gray-900">
-                                  {sub.marks ?? "—"}
-                                </td>
-                                <td className="py-1.5 px-2 text-center font-mono font-extrabold text-[#006a4e]">
-                                  {sub.gradePoint !== undefined ? sub.gradePoint.toFixed(2) : "0.00"}
-                                </td>
-                                <td className="py-1.5 px-2 text-center font-bold">
-                                  <span className="px-1.5 py-0.2 bg-emerald-50 rounded border border-emerald-200 text-[10px] text-emerald-900 print:border-none print:p-0 print:bg-transparent">
-                                    {sub.letterGrade || (sub.gradePoint >= 4.0 ? "A+" : sub.gradePoint >= 3.75 ? "A" : sub.gradePoint >= 3.5 ? "A-" : sub.gradePoint >= 3.0 ? "B" : sub.gradePoint >= 2.0 ? "C" : "F")}
-                                  </span>
-                                </td>
-                                <td className="py-1.5 px-3 text-center font-bold text-[10px]">
-                                  <span className={sub.gradePoint >= 2.0 ? "text-emerald-800" : "text-red-700"}>
-                                    {sub.gradePoint >= 2.0 ? "Passed" : "Failed"}
-                                  </span>
-                                </td>
+                                {isHistorical ? (
+                                  <>
+                                    <td className="py-1.5 px-2 text-center font-mono text-slate-700">
+                                      {full}
+                                    </td>
+                                    <td className="py-1.5 px-2 text-center font-mono font-black text-slate-950">
+                                      {sub.marks ?? "—"}
+                                    </td>
+                                    <td className="py-1.5 px-2.5 text-center font-bold text-[10px]">
+                                      <span className={isPass ? "text-emerald-800" : "text-red-700"}>
+                                        {isPass ? "Passed" : "Failed"}
+                                      </span>
+                                    </td>
+                                  </>
+                                ) : (
+                                  <>
+                                    <td className="py-1.5 px-2 text-center font-mono text-slate-700">
+                                      {sub.credit || sub.credits || 3}
+                                    </td>
+                                    <td className="py-1.5 px-2 text-center font-mono font-semibold text-slate-900">
+                                      {sub.marks ?? "—"}
+                                    </td>
+                                    <td className="py-1.5 px-2 text-center font-mono font-extrabold text-[#006a4e]">
+                                      {sub.gradePoint !== undefined ? sub.gradePoint.toFixed(2) : "0.00"}
+                                    </td>
+                                    <td className="py-1.5 px-2 text-center font-bold">
+                                      <span className="px-1.5 py-0.2 bg-emerald-50 rounded border border-emerald-200 text-[10px] text-emerald-900 print:border-none print:p-0 print:bg-transparent">
+                                        {sub.letterGrade || (sub.gradePoint >= 4.0 ? "A+" : sub.gradePoint >= 3.75 ? "A" : sub.gradePoint >= 3.5 ? "A-" : sub.gradePoint >= 3.0 ? "B" : sub.gradePoint >= 2.0 ? "C" : "F")}
+                                      </span>
+                                    </td>
+                                    <td className="py-1.5 px-2.5 text-center font-bold text-[10px]">
+                                      <span className={sub.gradePoint >= 2.0 ? "text-emerald-800" : "text-red-700"}>
+                                        {sub.gradePoint >= 2.0 ? "Passed" : "Failed"}
+                                      </span>
+                                    </td>
+                                  </>
+                                )}
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    );
+
+                    return (
+                      <div
+                        key={sIdx}
+                        className="semester-block bg-white rounded-xl border border-slate-300 overflow-hidden shadow-2xs"
+                      >
+                        {/* Period Header */}
+                        <div className="bg-slate-100 p-2.5 px-3.5 flex flex-wrap items-center justify-between gap-2 border-b border-slate-300 text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-amber-600" />
+                            <h5 className="font-extrabold text-[11px] uppercase tracking-wide text-slate-950 font-serif">
+                              {sem.semesterName}
+                            </h5>
+                            {sem.publicationDate && (
+                              <span className="text-[10px] text-slate-500 font-mono">
+                                • Published: {sem.publicationDate}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {isHistorical ? (
+                              <span className="text-xs font-bold text-slate-800">
+                                Papers: <strong>{sem.subjects.length}</strong>
+                              </span>
+                            ) : (
+                              <>
+                                <span className="text-[11px] text-slate-600 font-medium">Period GPA:</span>
+                                <span className="text-xs font-black font-mono text-[#006a4e] bg-white border border-slate-300 px-2 py-0.5 rounded-md">
+                                  {sem.semesterGpa.toFixed(2)}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Subject Table */}
+                        <div className="overflow-x-auto p-2">
+                          {isTwoColumn ? (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                              <div>
+                                <div className="text-[10px] font-bold text-amber-900 bg-amber-50 px-2 py-1 rounded mb-1.5 border border-amber-200">
+                                  Section A: Papers 01 — 15
+                                </div>
+                                {renderTable(leftSubjects, 0)}
+                              </div>
+                              <div>
+                                <div className="text-[10px] font-bold text-amber-900 bg-amber-50 px-2 py-1 rounded mb-1.5 border border-amber-200">
+                                  Section B: Papers 16 — {sem.subjects.length}
+                                </div>
+                                {renderTable(rightSubjects, 15)}
+                              </div>
+                            </div>
+                          ) : (
+                            renderTable(sem.subjects, 0)
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* CUMULATIVE SUMMARY BREAKDOWN BOX */}
-                <div className="bg-emerald-50/70 border-2 border-[#006a4e]/30 rounded-xl p-4 space-y-3">
-                  <div className="border-b border-emerald-200 pb-1.5 flex items-center justify-between">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-[#006a4e] flex items-center gap-1.5">
-                      <FileCheck2 className="w-3.5 h-3.5" />
-                      <span>Cumulative Academic Achievement &amp; Final Result Evaluation</span>
+                <div className="bg-slate-50 border-2 border-slate-900/40 rounded-xl p-4 space-y-3">
+                  <div className="border-b border-slate-300 pb-1.5 flex items-center justify-between">
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-950 font-serif flex items-center gap-1.5">
+                      <FileCheck2 className="w-3.5 h-3.5 text-amber-700" />
+                      <span>Cumulative Result Summary &amp; Degree Classification</span>
                     </h4>
-                    <span className="text-[10px] font-mono text-gray-600">Scale: 4.00 Max</span>
+                    <span className="text-[10px] font-mono text-slate-600">
+                      {isHistorical ? "Marks & Percentage Scale" : "Scale: 4.00 Max"}
+                    </span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                    <div className="p-2.5 bg-white rounded-lg border border-emerald-200">
-                      <span className="text-[9px] font-bold uppercase text-gray-500 block">Periods Evaluated</span>
-                      <span className="text-base font-black text-gray-950 font-mono">{filteredSemesters.length} Completed</span>
+                    <div className="p-2.5 bg-white rounded-lg border border-slate-200">
+                      <span className="text-[9px] font-bold uppercase text-slate-500 block">Total Full Marks</span>
+                      <span className="text-base font-black text-slate-950 font-mono">{totalFullMarks}</span>
                     </div>
 
-                    <div className="p-2.5 bg-white rounded-lg border border-emerald-200">
-                      <span className="text-[9px] font-bold uppercase text-gray-500 block">Total Credits Completed</span>
-                      <span className="text-base font-black text-gray-950 font-mono">{computedTotalCredits || (filteredSemesters.length * 16)} Credits</span>
+                    <div className="p-2.5 bg-white rounded-lg border border-slate-200">
+                      <span className="text-[9px] font-bold uppercase text-slate-500 block">Total Marks Obtained</span>
+                      <span className="text-base font-black text-slate-950 font-mono">{totalObtainedMarks}</span>
                     </div>
 
-                    <div className="p-2.5 bg-white rounded-lg border-2 border-[#006a4e] shadow-2xs">
-                      <span className="text-[9px] font-bold uppercase text-[#006a4e] block">Cumulative CGPA (Max: 4.00)</span>
-                      <span className="text-xl font-black text-[#006a4e] font-mono">{computedCgpa.toFixed(2)}</span>
+                    <div className="p-2.5 bg-white rounded-lg border border-slate-200">
+                      <span className="text-[9px] font-bold uppercase text-slate-500 block">Calculated Percentage</span>
+                      <span className="text-base font-black text-amber-700 font-mono">{percentageValue}%</span>
                     </div>
 
-                    <div className="p-2.5 bg-white rounded-lg border border-emerald-200">
-                      <span className="text-[9px] font-bold uppercase text-gray-500 block">Official Result Status</span>
-                      <span className="text-xs font-black text-emerald-800 uppercase block mt-1">
-                        {matchedStudent.resultStatus || "Passed"}
+                    <div className="p-2.5 bg-white rounded-lg border-2 border-slate-900 shadow-2xs">
+                      <span className="text-[9px] font-bold uppercase text-slate-700 block">
+                        {isHistorical ? "Class / Division Awarded" : "Cumulative CGPA"}
+                      </span>
+                      <span className="text-sm sm:text-base font-black text-slate-950 font-serif block mt-0.5">
+                        {isHistorical 
+                          ? (matchedStudent.resultStatus || (percentageValue >= 60 ? (examType === "Degree Pass" ? "First Division" : "First Class with Honours") : percentageValue >= 45 ? (examType === "Degree Pass" ? "Second Division" : "Second Class with Honours") : "Pass / Third Division"))
+                          : computedCgpa.toFixed(2)
+                        }
                       </span>
                     </div>
                   </div>
                 </div>
 
                 {/* GRADING SCALE REFERENCE BAR */}
-                <div className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-[9px] text-gray-600">
-                  <span className="font-bold text-gray-900 mr-2">Institutional Grading Scale (4.00):</span>
-                  <span>A+ (4.00, 80%+), A (3.75, 75-79%), A- (3.50, 70-74%), B+ (3.25, 65-69%), B (3.00, 60-64%), B- (2.75, 55-59%), C+ (2.50, 50-54%), D (2.00, 40-49%), F (0.00, Fail).</span>
+                <div className="p-2.5 bg-slate-100 border border-slate-300 rounded-lg text-[9px] text-slate-700">
+                  {isHistorical ? (
+                    <div>
+                      <strong className="text-slate-950 mr-1.5">Historical Regulations (1990–2000):</strong>
+                      {examType === "Degree Pass" ? (
+                        <span>First Division (60.0% and above) • Second Division (45.0% to 59.9%) • Third Division (33.0% to 44.9%). Minimum 33 marks required per paper.</span>
+                      ) : (
+                        <span>First Class (60.0% and above) • Second Class (45.0% to 59.9%) • Third Class (36.0% to 44.9% or Pass Degree). Star Marks awarded for 75.0% and above.</span>
+                      )}
+                      {!matchedStudent.isVerifiedAcademicRecord && (
+                        <span className="block mt-1 font-semibold text-amber-900">
+                          * Official syllabus &amp; paper codes subject to original university historical archive verification (Status: Pending Verification).
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <strong className="text-slate-950 mr-1.5">Institutional Grading Scale (4.00):</strong>
+                      <span>A+ (4.00, 80%+), A (3.75, 75-79%), A- (3.50, 70-74%), B+ (3.25, 65-69%), B (3.00, 60-64%), B- (2.75, 55-59%), C+ (2.50, 50-54%), D (2.00, 40-49%), F (0.00, Fail).</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* INSTITUTION SEAL AND AUTHORIZED SIGNATURES */}
-                <div className="pt-5 border-t-2 border-gray-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left text-xs">
+                <div className="pt-4 border-t-2 border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left text-xs">
                   <div className="space-y-1">
-                    <div className="flex items-center justify-center sm:justify-start gap-1.5 font-bold text-gray-800">
-                      <Landmark className="w-3.5 h-3.5 text-[#006a4e]" />
+                    <div className="flex items-center justify-center sm:justify-start gap-1.5 font-bold text-slate-900 font-serif">
+                      <Landmark className="w-3.5 h-3.5 text-amber-700" />
                       <span>Bangladesh National Institute of Education</span>
                     </div>
-                    <p className="text-[9px] text-gray-500">
+                    <p className="text-[9px] text-slate-500">
                       This official transcript was electronically generated and authenticated from the secure institutional ledger.
                     </p>
-                    <p className="text-[9px] font-mono text-gray-400">
-                      Security Fingerprint: BNIE-{matchedStudent.rollNumber}-{matchedStudent.passingYear}-{matchedStudent.secureToken?.slice(0, 8) || "SEC400"}
+                    <p className="text-[9px] font-mono text-slate-400">
+                      Document Ref: BNIE-{matchedStudent.passingYear || "1994"}-{matchedStudent.rollNumber}-{matchedStudent.registrationNumber}
                     </p>
                   </div>
 
                   <div className="flex items-center gap-6">
                     <div className="text-center space-y-1">
-                      <div className="w-28 border-b border-gray-500 pb-0.5 font-serif italic text-xs text-gray-800">
+                      <div className="w-32 border-b border-slate-600 pb-0.5 font-serif italic text-xs text-slate-900">
                         Controller of Exam
                       </div>
-                      <span className="text-[9px] font-bold text-gray-600 uppercase tracking-wider block">
+                      <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider block">
                         Controller of Examinations
                       </span>
                     </div>
 
                     <div className="text-center space-y-1">
-                      <div className="w-28 border-b border-gray-500 pb-0.5 font-serif italic text-xs text-gray-800">
+                      <div className="w-32 border-b border-slate-600 pb-0.5 font-serif italic text-xs text-slate-900">
                         Registrar &amp; Secretary
                       </div>
-                      <span className="text-[9px] font-bold text-gray-600 uppercase tracking-wider block">
+                      <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider block">
                         Registrar &amp; Secretary
                       </span>
                     </div>
@@ -1642,13 +1943,14 @@ export default function DegreeResultVerificationPage({
                 </div>
 
                 {/* Page 2 Bottom Footer Indicator */}
-                <div className="pt-3 border-t border-gray-200 flex items-center justify-between text-[10px] text-gray-500 font-mono">
+                <div className="pt-2 border-t border-slate-300 flex items-center justify-between text-[10px] text-slate-500 font-mono">
                   <span>Record Verified at bnie.edu.bd/degree-marksheet-result</span>
-                  <span className="font-bold text-[#006a4e]">
+                  <span className="font-bold text-slate-800">
                     Page 2 of 2 • End of Official Transcript
                   </span>
                 </div>
 
+                </div>
               </div>
             )}
 

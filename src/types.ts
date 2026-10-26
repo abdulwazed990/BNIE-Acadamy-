@@ -34,18 +34,53 @@ export interface SubjectGrade {
   gradePoint: number; // 0.00 to 5.00 or 0.00 to 4.00
   subjectCode?: string;
   marks?: number; // optional mark 0 to 100
+  fullMarks?: number; // default 100, configurable per paper
+  passMarks?: number; // default 36 or 33, configurable per paper
   credit?: number; // credit for Diploma and Degree calculation
   credits?: number; // optional alias for credit
   letterGrade?: string; // Letter grade e.g. "A+", "A", "B"
   year?: string; // academic year e.g. "FIRST YEAR", "SECOND YEAR", "THIRD YEAR", "FOURTH YEAR"
+  paperType?: "Major / Honours" | "Allied / Subsidiary" | "Compulsory" | "Elective" | "Oral Examination / Viva";
+  isCompulsory?: boolean;
 }
 
 export interface SemesterResult {
   semesterName: string; // e.g. "1st Semester" or "1st Year"
   semesterGpa: number; // GPA out of 4.00 for this semester/year
   totalCredits?: number;
+  totalMarks?: number;
+  totalFullMarks?: number;
   publicationDate?: string;
   subjects: SubjectGrade[];
+}
+
+export interface AcademicProgramConfig {
+  id: string;
+  institutionName: string; // e.g. "University of Dhaka", "Rajshahi University", "National University", "Bangladesh National Institute of Education (BNIE)"
+  affiliatedCollege?: string;
+  degreeType: "Bachelor of Arts (B.A.) Honours" | "Bachelor of Arts (B.A.) Degree Pass" | "Other";
+  examinationTitle: string; // "BACHELOR OF ARTS (B.A.) HONOURS EXAMINATION" or "BACHELOR OF ARTS (B.A.) DEGREE PASS EXAMINATION"
+  majorSubject: string; // e.g. "History"
+  academicSession: string; // e.g. "1990-1991", "1991-1992", "1996-1997", "2024-2025"
+  examinationYear: string; // e.g. "1994", "2000", "2024"
+  durationYears: number; // 3 for 1990-2000 historical, 4 for modern honours, 2 or 3 for pass
+  examinationStructure: "Annual (3-Year)" | "Annual (2-Year)" | "Semester-based (4-Year / 8 Semesters)" | "Part-based";
+  syllabusVersion: string; // e.g. "1992-1994 Regulation (Pending Verification)", "2000 Historical Syllabus", "Modern 4-Year OBE"
+  isSyllabusVerified: boolean; // Flag "Pending Verification" if official university records are unavailable
+  gradingMethod: "Division/Class" | "GPA/CGPA" | "Marks Only";
+  divisionThresholds: {
+    firstClassOrDivisionMinPercent: number; // default 60
+    secondClassOrDivisionMinPercent: number; // default 45
+    thirdDivisionMinPercent?: number; // default 33 or 36
+    minimumPassMarksPerPaper?: number; // default 36 for honours, 33 for pass
+    vivaMinPassMarks?: number; // default 40
+    starMarksMinPercent?: number; // default 75
+  };
+  subjects: SubjectGrade[];
+  resultPublicationDate?: string;
+  status: "Published" | "Draft" | "Pending Verification";
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Student {
@@ -69,9 +104,16 @@ export interface Student {
   secureToken?: string; // Secure high-entropy verification token
   subjects: SubjectGrade[];
   finalGpa: number; // calculated automatically (CGPA on 4.00 scale for Degree/Honours/Masters/Diploma, 5.00 for SSC/HSC)
-  totalMarks?: number; // optional total marks
-  gradingSystem?: "GPA" | "Division"; // "Division" for 1995-2000 (pre-2001) SSC/HSC, "GPA" for 2001+
-  division?: string; // "First Division", "Second Division", "Third Division", "First Division (Star Marks)", "Failed"
+  totalMarks?: number; // total obtained marks
+  totalFullMarks?: number; // total full marks e.g. 1600 or 1200
+  percentage?: number; // percentage of obtained marks
+  gradingSystem?: "GPA" | "Division" | "Class"; // "Division" or "Class" for historical records, "GPA" for modern
+  division?: string; // "First Class", "Second Class", "First Division", "Second Division", "Third Division", "Failed", etc.
+  isHistoricalRecord?: boolean;
+  isVerifiedAcademicRecord?: boolean;
+  verificationRemarks?: string;
+  affiliatedCollege?: string;
+  examinationTitle?: string;
 
   // Degree Pass, Honours & Masters Specific Fields
   academicLevel?: "Degree Pass" | "Honours" | "Masters";
@@ -80,7 +122,7 @@ export interface Student {
   department?: string;
   majorSubject?: string;
   currentSemesterOrYear?: string;
-  resultStatus?: string; // e.g. "Passed", "First Class", "Promoted", "Graduated"
+  resultStatus?: string; // e.g. "Passed", "First Class with Honours", "First Division", "Pending Verification"
   maxGpa?: number; // 4.00
   semesterResults?: SemesterResult[];
 
