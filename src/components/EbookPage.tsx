@@ -240,9 +240,9 @@ export default function EbookPage({ onBackToHome, onNavigateToCourses }: EbookPa
 
                 {/* Specs */}
                 <div className="pt-2 flex items-center gap-3 text-[11px] text-gray-500 font-mono">
-                  <span>📄 {book.pages}</span>
+                  <span>{book.pages}</span>
                   <span>•</span>
-                  <span>💾 {book.size}</span>
+                  <span>{book.size}</span>
                 </div>
               </div>
 

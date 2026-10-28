@@ -403,7 +403,7 @@ export default function DiplomaCourses({ onBackToHome, onNavigateToVerify }: Dip
                       onChange={(e) => setSelectedCategory(e.target.value)}
                       className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-3 text-xs font-bold text-gray-700 focus:outline-hidden focus:border-[#006a4e] cursor-pointer appearance-none"
                     >
-                      <option value="All">💼 All Sectors & Streams</option>
+                      <option value="All">All Sectors & Streams</option>
                       <option value="Technology">Technology / IT</option>
                       <option value="Business">Business & Management</option>
                       <option value="Professional">Professional Skills</option>
@@ -840,7 +840,7 @@ export default function DiplomaCourses({ onBackToHome, onNavigateToVerify }: Dip
                         {selectedCourse.semesterBreakdown.map((sem, index) => (
                           <div key={index} className="p-4 bg-gray-50/50 border border-gray-200 rounded-xl space-y-2">
                             <span className="text-[11px] font-bold text-[#006a4e] uppercase tracking-wider block">
-                              📚 {sem.semester}
+                              {sem.semester}
                             </span>
                             <ul className="space-y-1.5">
                               {sem.subjects.map((sub, j) => (

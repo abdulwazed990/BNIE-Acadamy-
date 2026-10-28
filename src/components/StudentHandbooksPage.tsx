@@ -228,11 +228,11 @@ export default function StudentHandbooksPage({
 
                 {/* Specs */}
                 <div className="pt-2 flex items-center gap-3 text-[11px] text-gray-500 font-mono">
-                  <span>📄 {hb.pages}</span>
+                  <span>{hb.pages}</span>
                   <span>•</span>
-                  <span>💾 {hb.size}</span>
+                  <span>{hb.size}</span>
                   <span>•</span>
-                  <span>🏷️ {hb.version}</span>
+                  <span>{hb.version}</span>
                 </div>
               </div>
 

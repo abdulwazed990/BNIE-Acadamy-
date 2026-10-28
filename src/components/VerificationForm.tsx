@@ -400,7 +400,7 @@ export default function VerificationForm({
               </div>
               <div className="flex-1 space-y-1">
                 <span className="text-[11px] font-bold text-[#006a4e] uppercase tracking-wider block">
-                  🔓 Secure Verification Token Loaded Successfully
+                  Secure Verification Token Loaded Successfully
                 </span>
                 <p className="text-xs text-gray-700 leading-relaxed">
                   The official record for candidate <strong className="text-gray-950 font-extrabold">{tokenStudentName}</strong> has been dynamically preloaded. 
@@ -691,7 +691,7 @@ export default function VerificationForm({
                 }}
                 className="inline-flex items-center gap-1 bg-white hover:bg-emerald-50 border border-emerald-300 text-[#006a4e] px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer shadow-3xs"
               >
-                <span>★ 1998 SSC (Division System — No GPA)</span>
+                <span>1998 SSC (Division System — No GPA)</span>
               </button>
 
               <button
@@ -705,7 +705,7 @@ export default function VerificationForm({
                 }}
                 className="inline-flex items-center gap-1 bg-white hover:bg-emerald-50 border border-emerald-300 text-[#006a4e] px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer shadow-3xs"
               >
-                <span>★ 2000 HSC (Division System — No GPA)</span>
+                <span>2000 HSC (Division System — No GPA)</span>
               </button>
 
               <button

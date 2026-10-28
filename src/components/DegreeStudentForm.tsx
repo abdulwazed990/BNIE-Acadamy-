@@ -193,6 +193,33 @@ export default function DegreeStudentForm({
   const [gradingSystem, setGradingSystem] = useState<"Class" | "Division" | "GPA">(
     existingStudent?.gradingSystem || (isInitiallyHistorical ? (academicLevel === "Degree Pass" ? "Division" : "Class") : "GPA")
   );
+
+  // Honours Division System state (Single Toggle for Honours)
+  const isInitiallyHonoursDivision = existingStudent 
+    ? (academicLevel === "Honours" && (
+        existingStudent.gradingSystem === "Class" || 
+        existingStudent.gradingSystem === "Division" || 
+        existingStudent.isHistoricalRecord ||
+        (existingStudent.passingYear && parseInt(existingStudent.passingYear, 10) <= 2000 && existingStudent.gradingSystem !== "GPA")
+      ))
+    : false;
+
+  const [isHonoursDivisionSystem, setIsHonoursDivisionSystem] = useState<boolean>(Boolean(isInitiallyHonoursDivision));
+
+  // Memory caches to preserve entered data when switching between CGPA (8-sem) and Division (3-year)
+  const [cgpaSemestersCache, setCgpaSemestersCache] = useState<SemesterResult[] | null>(() => {
+    if (existingStudent && !isInitiallyHonoursDivision && existingStudent.semesterResults && existingStudent.semesterResults.length > 0) {
+      return existingStudent.semesterResults;
+    }
+    return null;
+  });
+
+  const [divisionSemestersCache, setDivisionSemestersCache] = useState<SemesterResult[] | null>(() => {
+    if (existingStudent && isInitiallyHonoursDivision && existingStudent.semesterResults && existingStudent.semesterResults.length > 0) {
+      return existingStudent.semesterResults;
+    }
+    return null;
+  });
   const [examinationTitle, setExaminationTitle] = useState<string>(
     existingStudent?.examinationTitle || (
       academicLevel === "Degree Pass" 
@@ -230,6 +257,50 @@ export default function DegreeStudentForm({
     });
   };
 
+  // Single Toggle Switch Handler for Honours Result System
+  const handleToggleHonoursDivisionSystem = (enableDivision: boolean) => {
+    if (enableDivision) {
+      // Switching from CGPA to Division System:
+      // Cache current CGPA semesters
+      setCgpaSemestersCache(semesters);
+      setIsHonoursDivisionSystem(true);
+      setIsHistoricalRecord(true);
+      setGradingSystem("Class");
+      setCourseDuration("3 Years");
+      setCurrentPeriod("3rd Year (Final)");
+      setExaminationTitle(`Bachelor of Arts (B.A.) Honours Examination in ${majorSubject || "History"}`);
+
+      if (divisionSemestersCache && divisionSemestersCache.length > 0) {
+        setSemesters(divisionSemestersCache);
+      } else {
+        const yr = passingYear ? parseInt(passingYear, 10) || 1994 : 1994;
+        const preset = getHistorical3YearHonoursHistoryPreset(yr);
+        setSemesters(wrapHistoricalSubjectsIntoSemesters(preset, resultPublicationDate || `${yr}-08-20`));
+      }
+    } else {
+      // Switching from Division to CGPA System:
+      // Cache current Division annual semesters
+      setDivisionSemestersCache(semesters);
+      setIsHonoursDivisionSystem(false);
+      setIsHistoricalRecord(false);
+      setGradingSystem("GPA");
+      setCourseDuration("4 Years (8 Semesters)");
+      setCurrentPeriod("8th Semester (Final)");
+      setExaminationTitle(`Bachelor of Arts (B.A.) Honours Examination in ${majorSubject || "History"}`);
+
+      if (cgpaSemestersCache && cgpaSemestersCache.length > 0) {
+        setSemesters(cgpaSemestersCache);
+      } else {
+        if (selectedProgramCode === "BA-HIS" || majorSubject === "History") {
+          const his = getBaHistoryCurriculum();
+          setSemesters(generateDefaultSemesterResults(his));
+        } else if (currentProgram) {
+          setSemesters(generateDefaultSemesterResults(currentProgram));
+        }
+      }
+    }
+  };
+
   // Quick Preset Handlers for Historical 1990-2000 Records
   const handleLoadHistorical1994Honours = () => {
     setAcademicLevel("Honours");
@@ -237,6 +308,7 @@ export default function DegreeStudentForm({
     setDepartment("Department of History");
     setMajorSubject("History");
     setExaminationTitle("Bachelor of Arts (B.A.) Honours Examination in History");
+    setIsHonoursDivisionSystem(true);
     setIsHistoricalRecord(true);
     setGradingSystem("Class");
     setCourseDuration("3 Years");
@@ -257,6 +329,7 @@ export default function DegreeStudentForm({
     setDepartment("Department of History");
     setMajorSubject("History");
     setExaminationTitle("Bachelor of Arts (B.A.) Honours Examination in History");
+    setIsHonoursDivisionSystem(true);
     setIsHistoricalRecord(true);
     setGradingSystem("Class");
     setCourseDuration("3 Years");
@@ -818,12 +891,35 @@ export default function DegreeStudentForm({
       const totalMarksSum = flattenedSubjects.reduce((sum, s) => sum + (s.marks || 0), 0);
       const percentageValue = totalFullMarksSum > 0 ? Math.round((totalMarksSum / totalFullMarksSum) * 1000) / 10 : 0;
 
-      // Automatically determine Division / Class if using historical system
+      // Determine active evaluation mode based on Honours toggle or Degree Pass level
+      const isDivisionMode = academicLevel === "Degree Pass" || (academicLevel === "Honours" && isHonoursDivisionSystem);
+
+      let effectiveGradingSystem: "Class" | "Division" | "GPA" = gradingSystem;
       let finalResultStanding = resultStatus;
-      if (gradingSystem === "Class" || (isHistoricalRecord && academicLevel === "Honours")) {
-        finalResultStanding = percentageValue >= 60 ? "First Class with Honours" : percentageValue >= 45 ? "Second Class with Honours" : "Third Class with Honours";
-      } else if (gradingSystem === "Division" || (isHistoricalRecord && academicLevel === "Degree Pass")) {
-        finalResultStanding = percentageValue >= 60 ? "First Division" : percentageValue >= 45 ? "Second Division" : "Third Division";
+
+      if (academicLevel === "Honours") {
+        if (isHonoursDivisionSystem) {
+          effectiveGradingSystem = "Class";
+          finalResultStanding = percentageValue >= 60 
+            ? "First Class with Honours" 
+            : percentageValue >= 45 
+            ? "Second Class with Honours" 
+            : "Third Class / Pass Degree";
+        } else {
+          effectiveGradingSystem = "GPA";
+          finalResultStanding = calculatedCgpa >= 3.0 
+            ? "First Class / High Standing" 
+            : calculatedCgpa >= 2.25 
+            ? "Second Class / Good Standing" 
+            : "Passed";
+        }
+      } else if (academicLevel === "Degree Pass") {
+        effectiveGradingSystem = "Division";
+        finalResultStanding = percentageValue >= 60 
+          ? "First Division" 
+          : percentageValue >= 45 
+          ? "Second Division" 
+          : "Third Division";
       }
 
       const studentRecord: Student = {
@@ -845,12 +941,13 @@ export default function DegreeStudentForm({
         photoUrl: photoUrl,
         secureToken: existingStudent?.secureToken || generateSecureToken(),
         subjects: flattenedSubjects,
-        finalGpa: finalGpaValue,
+        finalGpa: isDivisionMode ? 0 : finalGpaValue,
         totalMarks: totalMarksSum,
         totalFullMarks: totalFullMarksSum,
         percentage: percentageValue,
-        gradingSystem: gradingSystem,
-        isHistoricalRecord: isHistoricalRecord,
+        gradingSystem: effectiveGradingSystem,
+        division: isDivisionMode ? finalResultStanding : undefined,
+        isHistoricalRecord: isDivisionMode,
         isVerifiedAcademicRecord: isVerifiedAcademicRecord,
         verificationRemarks: verificationRemarks.trim(),
         affiliatedCollege: affiliatedCollege.trim(),
@@ -862,14 +959,16 @@ export default function DegreeStudentForm({
         programCode: currentProgram?.code || "DEG-01",
         department: department.trim(),
         majorSubject: majorSubject.trim(),
-        currentSemesterOrYear: currentPeriod.trim(),
+        currentSemesterOrYear: isDivisionMode 
+          ? (currentPeriod.includes("Year") ? currentPeriod : "3rd Year (Final)") 
+          : currentPeriod.trim(),
         resultStatus: finalResultStanding,
         maxGpa: 4.00,
         semesterResults: semesters,
 
         // Automatic Academic Numbering, Timeline & Certification Fields
         admissionYear: admissionYear.trim(),
-        courseDuration: courseDuration.trim(),
+        courseDuration: isDivisionMode ? "3 Years" : courseDuration.trim(),
         expectedCompletionYear: expectedCompletionYear.trim(),
         examinationYear: examinationYear.trim(),
         resultPublicationDate: resultPublicationDate.trim(),
@@ -1169,181 +1268,227 @@ export default function DegreeStudentForm({
           )}
         </div>
 
-        {/* SECTION 1B: HISTORICAL EXAMINATION REGULATIONS (1990–2000) & ARCHITECTURE */}
-        <div className="bg-amber-50/60 p-5 rounded-2xl border-2 border-amber-300 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-amber-200">
-            <div className="flex items-center gap-2">
-              <History className="w-4 h-4 text-amber-800" />
-              <h3 className="text-xs font-black uppercase tracking-wider text-amber-950 font-serif">
-                1B. Historical Examination Rules (1990–2000, 1994, 2000) &amp; Programme Syllabuses
-              </h3>
-            </div>
-            <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">
-              Bangladesh Academic Standards
-            </span>
-          </div>
-
-          {/* Quick Presets Bar */}
-          <div className="space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-900 block">
-              Quick Verified Architecture Presets:
-            </span>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={handleLoadHistorical1994Honours}
-                className="px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-200" />
-                <span>Load 1994 B.A. Honours in History (3-Year, 1600 Marks)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleLoadHistorical2000Honours}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>Load 2000 B.A. Honours in History (3-Year, 1600 Marks)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleLoadHistoricalDegreePass}
-                className="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-emerald-200" />
-                <span>Load 1998 B.A. Degree Pass (3-Year, 900 Marks)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setPickerTargetSemIdx(0);
-                  setShowCataloguePicker(true);
-                }}
-                className="px-3 py-1.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-400 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
-              >
-                <BookOpen className="w-3.5 h-3.5 text-amber-700" />
-                <span>Browse 30-Subject Catalogue</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-            {/* Historical Mode Toggle */}
-            <div className="p-3 bg-white rounded-xl border border-amber-200 space-y-1">
-              <label className="text-[11px] font-bold text-slate-950 uppercase tracking-wider block">
-                Historical Record Mode (1990–2000)
-              </label>
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="chk-hist"
-                  checked={isHistoricalRecord}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    setIsHistoricalRecord(checked);
-                    if (checked) {
-                      setGradingSystem(academicLevel === "Degree Pass" ? "Division" : "Class");
-                    } else {
-                      setGradingSystem("GPA");
-                    }
-                  }}
-                  className="w-4 h-4 text-amber-700 rounded border-gray-300 focus:ring-amber-500 cursor-pointer"
-                />
-                <label htmlFor="chk-hist" className="text-xs font-bold text-slate-800 cursor-pointer">
-                  Use Marks &amp; Division/Class (Hide GPA/CGPA)
-                </label>
+        {/* SECTION 1B: HONOURS RESULT SYSTEM (SINGLE DIVISION TOGGLE) OR DEGREE REGULATIONS */}
+        {academicLevel === "Honours" ? (
+          <div className="bg-white p-5 rounded-2xl border-2 border-slate-300 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-150">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Award className="w-5 h-5 text-[#006a4e]" />
+                  <h3 className="text-sm font-black uppercase tracking-wider text-slate-950 font-serif">
+                    Honours Result System
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  Choose the academic result format for this Honours student record.
+                </p>
               </div>
-              <span className="text-[10px] text-slate-500 block">
-                Applies Division/Class grading instead of modern GPA/CGPA.
-              </span>
+
+              {/* SINGLE DIVISION TOGGLE */}
+              <div className="flex items-center gap-3 bg-slate-50 p-2 px-3.5 rounded-2xl border border-slate-200">
+                <span className={`text-xs font-bold ${!isHonoursDivisionSystem ? "text-[#006a4e]" : "text-slate-400"}`}>
+                  Modern CGPA
+                </span>
+                
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isHonoursDivisionSystem}
+                  onClick={() => handleToggleHonoursDivisionSystem(!isHonoursDivisionSystem)}
+                  className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                    isHonoursDivisionSystem ? "bg-[#006a4e]" : "bg-slate-300"
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                      isHonoursDivisionSystem ? "translate-x-6" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+
+                <div className="flex items-center gap-1.5">
+                  <span className={`text-xs font-bold ${isHonoursDivisionSystem ? "text-[#006a4e]" : "text-slate-400"}`}>
+                    Division System
+                  </span>
+                  <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded-full border ${
+                    isHonoursDivisionSystem 
+                      ? "bg-amber-100 text-amber-900 border-amber-300" 
+                      : "bg-gray-100 text-gray-500 border-gray-200"
+                  }`}>
+                    {isHonoursDivisionSystem ? "ON" : "OFF"}
+                  </span>
+                </div>
+              </div>
             </div>
 
-            {/* Grading System */}
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-950 uppercase tracking-wider block">
-                Grading Method <span className="text-amber-700">*</span>
-              </label>
-              <select
-                value={gradingSystem}
-                onChange={(e) => setGradingSystem(e.target.value as "Class" | "Division" | "GPA")}
-                className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-amber-600 focus:outline-hidden"
-              >
-                <option value="Class">Class System (First Class &gt;=60%, Second Class &gt;=45%)</option>
-                <option value="Division">Division System (First &gt;=60%, Second &gt;=45%, Third &gt;=33%)</option>
-                <option value="GPA">Modern 4.00 CGPA Scale</option>
-              </select>
-              <span className="text-[10px] text-slate-500 block">
-                {gradingSystem === "Class" ? "Honours Degree Classification" : gradingSystem === "Division" ? "Degree Pass Classification" : "Semester CGPA"}
-              </span>
+            {/* Active Result Format Status Feedback */}
+            <div className={`p-3.5 rounded-xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+              isHonoursDivisionSystem 
+                ? "bg-amber-50/80 border-amber-300 text-amber-950" 
+                : "bg-emerald-50/80 border-emerald-300 text-emerald-950"
+            }`}>
+              <div className="flex items-start sm:items-center gap-2.5">
+                <CheckCircle2 className={`w-5 h-5 shrink-0 mt-0.5 sm:mt-0 ${isHonoursDivisionSystem ? "text-amber-700" : "text-emerald-700"}`} />
+                <div>
+                  <p className="font-extrabold text-sm">
+                    {isHonoursDivisionSystem 
+                      ? "Traditional Division System Active (3-Year Annual Format)" 
+                      : "Modern CGPA System Active (8-Semester Modular Scale)"}
+                  </p>
+                  <p className="text-[11px] opacity-90 mt-0.5">
+                    {isHonoursDivisionSystem 
+                      ? "Evaluates students using Year 1, Year 2, and Year 3 annual marks, total obtained marks, percentage, and First Class with Honours / Second Class / Pass Degree." 
+                      : "Evaluates students across 8 semesters with course credit weights, individual grade points (GP 4.00), semester SGPA, and cumulative CGPA."}
+                  </p>
+                </div>
+              </div>
+
+              {/* Quick Actions (Presets & Catalogue) */}
+              <div className="flex items-center gap-2 shrink-0">
+                {isHonoursDivisionSystem ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPickerTargetSemIdx(0);
+                        setShowCataloguePicker(true);
+                      }}
+                      className="px-2.5 py-1.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                    >
+                      <BookOpen className="w-3.5 h-3.5 text-amber-700" />
+                      <span>30-Subject Catalogue</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLoadHistorical1994Honours}
+                      className="px-2.5 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                      <span>Load 1994 Preset</span>
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleLoadBaHistoryCurriculum}
+                    className="px-2.5 py-1.5 bg-[#006a4e] hover:bg-[#005a42] text-white rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-200" />
+                    <span>Load 8-Semester Curriculum</span>
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* Affiliated College */}
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-950 uppercase tracking-wider block">
-                Affiliated College / Campus
-              </label>
-              <input
-                type="text"
-                value={affiliatedCollege}
-                onChange={(e) => setAffiliatedCollege(e.target.value)}
-                placeholder="e.g. Dhaka College / Chittagong College"
-                className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-amber-600 focus:outline-hidden"
-              />
-              <span className="text-[10px] text-slate-500 block">
-                Name of affiliated college or campus
-              </span>
-            </div>
-          </div>
+            {/* Core Academic Metadata Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+              {/* Exact Examination Title */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-950 uppercase tracking-wider block">
+                  Exact Examination Title <span className="text-[#006a4e]">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={examinationTitle}
+                  onChange={(e) => setExaminationTitle(e.target.value)}
+                  placeholder="e.g. Bachelor of Arts (B.A.) Honours Examination in History"
+                  className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
+                />
+                <span className="text-[10px] text-gray-500 block">
+                  Displayed at top of marksheet. Strictly separate from Degree Pass.
+                </span>
+              </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Examination Title (Distinct Honours vs Degree Pass) */}
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-950 uppercase tracking-wider block">
-                Exact Examination Title <span className="text-amber-700">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={examinationTitle}
-                onChange={(e) => setExaminationTitle(e.target.value)}
-                placeholder="e.g. Bachelor of Arts (B.A.) Honours Examination in History"
-                className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-amber-600 focus:outline-hidden"
-              />
-              <span className="text-[10px] text-amber-900 block font-medium">
-                Never combine "Honours / Degree Pass" together on an individual record.
-              </span>
+              {/* Affiliated College */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-950 uppercase tracking-wider block">
+                  Affiliated College / Campus
+                </label>
+                <input
+                  type="text"
+                  value={affiliatedCollege}
+                  onChange={(e) => setAffiliatedCollege(e.target.value)}
+                  placeholder="e.g. Dhaka College / Eden Mohila College"
+                  className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
+                />
+                <span className="text-[10px] text-gray-500 block">
+                  Constituent / affiliated college where examination was administered.
+                </span>
+              </div>
             </div>
 
-            {/* Verification Status & Remarks */}
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-950 uppercase tracking-wider block">
-                Regulations Verification Status
-              </label>
-              <div className="flex items-center gap-2 pt-1">
+            {/* Regulations Verification Status */}
+            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  id="chk-ver"
+                  id="chk-ver-hon"
                   checked={isVerifiedAcademicRecord}
                   onChange={(e) => setIsVerifiedAcademicRecord(e.target.checked)}
                   className="w-4 h-4 text-emerald-700 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer"
                 />
-                <label htmlFor="chk-ver" className="text-xs font-bold text-slate-800 cursor-pointer">
-                  {isVerifiedAcademicRecord ? "Verified from Official University Regulations" : "Pending Verification (Historical Proposed Syllabus)"}
+                <label htmlFor="chk-ver-hon" className="text-xs font-bold text-slate-800 cursor-pointer">
+                  {isVerifiedAcademicRecord ? "Academic Regulations Officially Certified" : "Pending Verification (Historical Proposed Syllabus)"}
                 </label>
               </div>
               <input
                 type="text"
                 value={verificationRemarks}
                 onChange={(e) => setVerificationRemarks(e.target.value)}
-                placeholder="Remarks (e.g. 1994 Historical syllabus regulations pending physical ledger verification)"
-                className="w-full bg-white border border-gray-300 rounded-xl px-3 py-1.5 text-xs text-gray-800 mt-1 focus:border-amber-600 focus:outline-hidden"
+                placeholder="Optional verification remarks / archive folio"
+                className="w-full sm:w-80 bg-white border border-gray-300 rounded-lg px-2.5 py-1 text-xs text-gray-800 focus:border-[#006a4e] focus:outline-hidden"
               />
             </div>
           </div>
-        </div>
+        ) : academicLevel === "Degree Pass" ? (
+          /* DEGREE PASS SPECIFIC PANEL */
+          <div className="bg-emerald-50/60 p-5 rounded-2xl border-2 border-emerald-300 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-emerald-200">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-emerald-800" />
+                <h3 className="text-xs font-black uppercase tracking-wider text-emerald-950 font-serif">
+                  Bachelor of Arts (B.A.) Degree Pass Regulations (3-Year Annual Format)
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={handleLoadHistoricalDegreePass}
+                className="px-3 py-1 bg-emerald-800 hover:bg-emerald-900 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-emerald-200" />
+                <span>Load 9-Paper Degree Pass Preset</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-950 uppercase tracking-wider block">
+                  Examination Title <span className="text-[#006a4e]">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={examinationTitle}
+                  onChange={(e) => setExaminationTitle(e.target.value)}
+                  className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-950 uppercase tracking-wider block">
+                  Affiliated College
+                </label>
+                <input
+                  type="text"
+                  value={affiliatedCollege}
+                  onChange={(e) => setAffiliatedCollege(e.target.value)}
+                  className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:border-[#006a4e] focus:outline-hidden"
+                />
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {/* SECTION 2: STUDENT BIOGRAPHICAL & REGISTRATION IDENTIFIERS */}
         <div className="bg-gray-50/70 p-5 rounded-2xl border border-gray-200 space-y-4">
@@ -1964,304 +2109,8 @@ export default function DegreeStudentForm({
         </div>
 
         {/* SECTION 3: SEMESTER-WISE & YEAR-WISE RESULTS BUILDER */}
-        <div className="bg-gray-50/70 p-5 rounded-2xl border border-gray-200 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gray-200 gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <Award className="w-4 h-4 text-[#006a4e]" />
-                <h3 className="text-xs font-black uppercase tracking-wider text-black">
-                  3. Semester-Wise / Year-Wise Results &amp; Transcript Records
-                </h3>
-              </div>
-              <p className="text-[11px] text-gray-500 mt-0.5">
-                Each semester or academic year calculates its GPA automatically on the 4.00 scale based on earned marks and course credits.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="bg-white px-3 py-1.5 rounded-xl border border-gray-200 text-right">
-                <span className="text-[10px] text-gray-500 uppercase font-bold block">Final Cumulative CGPA</span>
-                <span className="text-base font-black font-mono text-[#006a4e]">
-                  {calculatedCgpa.toFixed(2)} / 4.00
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleAddSemester}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#006a4e] text-white rounded-xl text-xs font-bold hover:bg-[#005a42] transition-colors cursor-pointer shadow-xs"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add {academicLevel === "Degree Pass" ? "Year" : "Semester"}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* List of Semesters / Academic Years */}
-          <div className="space-y-4">
-            {semesters.map((sem, semIdx) => {
-              const isExpanded = expandedSemesters[semIdx] ?? true;
-              return (
-                <div
-                  key={semIdx}
-                  className="bg-white rounded-xl border border-gray-200 shadow-2xs overflow-hidden"
-                >
-                  {/* Semester Card Top Bar */}
-                  <div className="p-3.5 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => toggleSemester(semIdx)}
-                        className="text-gray-500 hover:text-black cursor-pointer p-0.5"
-                      >
-                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                      </button>
-
-                      <input
-                        type="text"
-                        value={sem.semesterName}
-                        onChange={(e) => {
-                          const updated = [...semesters];
-                          updated[semIdx].semesterName = e.target.value;
-                          setSemesters(updated);
-                        }}
-                        className="font-extrabold text-xs text-black bg-white border border-gray-300 rounded-lg px-2.5 py-1 focus:border-[#006a4e] focus:outline-hidden w-40"
-                      />
-
-                      <span className="text-[11px] font-mono text-gray-500">
-                        ({sem.subjects.length} course{sem.subjects.length > 1 ? "s" : ""})
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1 text-xs">
-                        <span className="text-gray-500 font-medium">Semester GPA:</span>
-                        <span className="font-mono font-black text-[#006a4e] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                          {sem.semesterGpa.toFixed(2)}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1 text-xs">
-                        <span className="text-gray-500 font-medium">Date:</span>
-                        <input
-                          type="date"
-                          value={sem.publicationDate || "2024-05-15"}
-                          onChange={(e) => {
-                            const updated = [...semesters];
-                            updated[semIdx].publicationDate = e.target.value;
-                            setSemesters(updated);
-                          }}
-                          className="bg-white border border-gray-300 rounded px-1.5 py-0.5 text-[11px] font-mono text-gray-700"
-                        />
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteSemester(semIdx)}
-                        title="Delete this semester"
-                        className="p-1 text-red-600 hover:bg-red-50 rounded cursor-pointer transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Course Subjects Table */}
-                  {isExpanded && (
-                    <div className="p-4 space-y-3">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs border-collapse">
-                          <thead>
-                            <tr className="border-b border-gray-200 text-[10px] font-bold uppercase text-gray-600 bg-gray-50/50">
-                              <th className="py-2 px-2 text-center w-10">SL</th>
-                              <th className="py-2 px-2.5 w-24">Code</th>
-                              <th className="py-2 px-2.5">Course / Paper Title</th>
-                              {isHistoricalRecord || gradingSystem === "Class" || gradingSystem === "Division" ? (
-                                <>
-                                  <th className="py-2 px-2.5 w-20 text-center">Full Marks</th>
-                                  <th className="py-2 px-2.5 w-20 text-center">Obtained</th>
-                                  <th className="py-2 px-2.5 w-20 text-center">Pass Marks</th>
-                                  <th className="py-2 px-2.5 w-20 text-center">Status</th>
-                                </>
-                              ) : (
-                                <>
-                                  <th className="py-2 px-2.5 w-20 text-center">Credit</th>
-                                  <th className="py-2 px-2.5 w-20 text-center">Marks (100)</th>
-                                  <th className="py-2 px-2.5 w-20 text-center">GP (4.00)</th>
-                                  <th className="py-2 px-2.5 w-16 text-center">Grade</th>
-                                </>
-                              )}
-                              <th className="py-2 px-1 text-right"></th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-100">
-                            {sem.subjects.map((sub, subIdx) => {
-                              const full = sub.fullMarks || 100;
-                              const obtained = sub.marks ?? 0;
-                              const pass = sub.passMarks || (academicLevel === "Honours" ? 36 : 33);
-                              const isPass = obtained >= pass;
-
-                              return (
-                                <tr key={subIdx} className="hover:bg-gray-50/60">
-                                  <td className="py-2 px-2 text-center font-mono font-bold text-gray-500 text-[11px]">
-                                    {sub.serialNo || (sub.displayOrder ? String(sub.displayOrder).padStart(2, "0") : String(subIdx + 1).padStart(2, "0"))}
-                                  </td>
-                                  <td className="py-2 px-2.5">
-                                    <input
-                                      type="text"
-                                      autoComplete="off"
-                                      value={sub.subjectCode || ""}
-                                      onChange={(e) => handleUpdateSubject(semIdx, subIdx, "subjectCode", e.target.value)}
-                                      placeholder="HIS-101"
-                                      className="w-24 bg-white border border-gray-300 rounded px-2 py-1 text-xs font-mono font-bold text-gray-900"
-                                    />
-                                  </td>
-                                  <td className="py-2 px-2.5">
-                                    <input
-                                      type="text"
-                                      autoComplete="off"
-                                      value={sub.subjectName}
-                                      onChange={(e) => handleUpdateSubject(semIdx, subIdx, "subjectName", e.target.value)}
-                                      placeholder="Paper Title"
-                                      className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-xs font-medium text-gray-900"
-                                    />
-                                  </td>
-                                  {isHistoricalRecord || gradingSystem === "Class" || gradingSystem === "Division" ? (
-                                    <>
-                                      <td className="py-2 px-2.5 text-center">
-                                        <input
-                                          type="number"
-                                          min="10"
-                                          max="200"
-                                          value={sub.fullMarks || 100}
-                                          onChange={(e) => handleUpdateSubject(semIdx, subIdx, "fullMarks", e.target.value)}
-                                          className="w-16 bg-white border border-gray-300 rounded px-1.5 py-1 text-xs text-center font-mono font-bold text-gray-900"
-                                        />
-                                      </td>
-                                      <td className="py-2 px-2.5 text-center">
-                                        <input
-                                          type="number"
-                                          min="0"
-                                          max={full}
-                                          value={sub.marks ?? 0}
-                                          onChange={(e) => handleUpdateSubject(semIdx, subIdx, "marks", e.target.value)}
-                                          className="w-16 bg-white border border-amber-300 rounded px-1.5 py-1 text-xs text-center font-mono font-black text-slate-950"
-                                        />
-                                      </td>
-                                      <td className="py-2 px-2.5 text-center">
-                                        <input
-                                          type="number"
-                                          min="0"
-                                          max={full}
-                                          value={sub.passMarks || (academicLevel === "Honours" ? 36 : 33)}
-                                          onChange={(e) => handleUpdateSubject(semIdx, subIdx, "passMarks", e.target.value)}
-                                          className="w-14 bg-white border border-gray-300 rounded px-1 py-1 text-xs text-center font-mono text-gray-700"
-                                        />
-                                      </td>
-                                      <td className="py-2 px-2.5 text-center font-bold">
-                                        <span className={`px-2 py-0.5 rounded text-[10px] ${isPass ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
-                                          {isPass ? "Pass" : "Fail"}
-                                        </span>
-                                      </td>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <td className="py-2 px-2.5 text-center">
-                                        <input
-                                          type="number"
-                                          step="0.5"
-                                          min="0.5"
-                                          max="12"
-                                          value={sub.credit || 3}
-                                          onChange={(e) => handleUpdateSubject(semIdx, subIdx, "credit", e.target.value)}
-                                          className="w-14 bg-white border border-gray-300 rounded px-1.5 py-1 text-xs text-center font-mono font-bold text-gray-900"
-                                        />
-                                      </td>
-                                      <td className="py-2 px-2.5 text-center">
-                                        <input
-                                          type="number"
-                                          min="0"
-                                          max="100"
-                                          value={sub.marks ?? 80}
-                                          onChange={(e) => handleUpdateSubject(semIdx, subIdx, "marks", e.target.value)}
-                                          className="w-16 bg-white border border-gray-300 rounded px-1.5 py-1 text-xs text-center font-mono font-bold text-gray-900"
-                                        />
-                                      </td>
-                                      <td className="py-2 px-2.5 text-center">
-                                        <span className="font-mono font-extrabold text-[#006a4e]">
-                                          {sub.gradePoint.toFixed(2)}
-                                        </span>
-                                      </td>
-                                      <td className="py-2 px-2.5 text-center">
-                                        <span className="inline-block px-1.5 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                                          {sub.letterGrade || getDiplomaLetterGrade(sub.gradePoint)}
-                                        </span>
-                                      </td>
-                                    </>
-                                  )}
-                                  <td className="py-2 px-1 text-right">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteSubject(semIdx, subIdx)}
-                                      className="text-gray-400 hover:text-red-600 p-1 cursor-pointer"
-                                      title="Remove Course"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div className="pt-2 flex flex-wrap justify-between items-center gap-2">
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleAddSubjectToSemester(semIdx)}
-                            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#006a4e] hover:text-[#005a42] cursor-pointer"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            <span>Add Subject</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPickerTargetSemIdx(semIdx);
-                              setShowCataloguePicker(true);
-                            }}
-                            className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 hover:text-amber-900 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-300 cursor-pointer"
-                          >
-                            <BookOpen className="w-3.5 h-3.5" />
-                            <span>Pick from 30-Subject Catalogue</span>
-                          </button>
-                        </div>
-
-                        <div className="text-[11px] text-gray-600 font-mono">
-                          {isHistoricalRecord || gradingSystem === "Class" || gradingSystem === "Division" ? (
-                            <span>
-                              Total: <strong>{sem.subjects.reduce((sum, s) => sum + (s.marks || 0), 0)}</strong> / {sem.subjects.reduce((sum, s) => sum + (s.fullMarks || 100), 0)} Marks
-                            </span>
-                          ) : (
-                            <span>
-                              Credits: {sem.subjects.reduce((sum, s) => sum + (s.credit || 3), 0)} Total
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* REAL-TIME CALCULATION & VALIDATION SUMMARY CARD */}
         {(() => {
+          const isDivisionModeActive = academicLevel === "Degree Pass" || (academicLevel === "Honours" && isHonoursDivisionSystem);
           const allSubs: SubjectGrade[] = [];
           for (const sem of semesters) {
             for (const s of sem.subjects) {
@@ -2273,61 +2122,387 @@ export default function DegreeStudentForm({
           const validationIssues = validateAcademicSubjects(allSubs);
 
           return (
-            <div className="space-y-3">
-              {/* Validation Warnings / Errors Banner */}
-              {validationIssues.length > 0 && (
-                <div className="bg-amber-50 border-2 border-amber-400 rounded-xl p-3.5 space-y-1.5">
-                  <div className="flex items-center gap-2 font-bold text-xs text-amber-950">
-                    <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
-                    <span>Academic Ledger Verification Notice ({validationIssues.length} item{validationIssues.length > 1 ? "s" : ""})</span>
+            <div className="space-y-4">
+              <div className="bg-gray-50/70 p-5 rounded-2xl border border-gray-200 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gray-200 gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Award className={`w-4 h-4 ${isDivisionModeActive ? "text-amber-700" : "text-[#006a4e]"}`} />
+                      <h3 className="text-xs font-black uppercase tracking-wider text-black">
+                        {isDivisionModeActive 
+                          ? "3. Annual Academic Results (Year 1, Year 2, Year 3) — Traditional Division & Marks" 
+                          : "3. Semester-Wise Results & Transcript Records — Modern CGPA System"}
+                      </h3>
+                    </div>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      {isDivisionModeActive
+                        ? "Enter annual papers, full marks, obtained marks, and pass marks for Year 1, Year 2, and Year 3. GPA, SGPA, and credits are disabled."
+                        : "Each semester calculates its SGPA automatically on the 4.00 scale based on earned marks and course credits."}
+                    </p>
                   </div>
-                  <ul className="text-[11px] text-amber-900 space-y-0.5 list-disc list-inside">
-                    {validationIssues.map((iss, iIdx) => (
-                      <li key={iIdx}>
-                        <strong>{iss.code}:</strong> {iss.message}
-                      </li>
-                    ))}
-                  </ul>
+
+                  <div className="flex items-center gap-3">
+                    <div className="bg-white px-3 py-1.5 rounded-xl border border-gray-200 text-right">
+                      <span className="text-[10px] text-gray-500 uppercase font-bold block">
+                        {isDivisionModeActive ? "Division Standing" : "Final Cumulative CGPA"}
+                      </span>
+                      <span className={`text-base font-black ${isDivisionModeActive ? "font-serif text-amber-800 text-xs sm:text-sm" : "font-mono text-[#006a4e]"}`}>
+                        {isDivisionModeActive ? calc.divisionOrClass : `${calculatedCgpa.toFixed(2)} / 4.00`}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleAddSemester}
+                      className={`inline-flex items-center gap-1.5 px-3 py-2 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs ${
+                        isDivisionModeActive ? "bg-amber-700 hover:bg-amber-800" : "bg-[#006a4e] hover:bg-[#005a42]"
+                      }`}
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add {isDivisionModeActive ? "Academic Year" : "Semester"}</span>
+                    </button>
+                  </div>
                 </div>
-              )}
 
-              {/* Real-time Calculation Summary Box */}
-              <div className="bg-slate-900 text-white rounded-2xl p-5 border-2 border-amber-600 shadow-md">
-                <div className="flex items-center justify-between border-b border-slate-700 pb-2 mb-3">
-                  <div className="flex items-center gap-2">
-                    <Award className="w-4 h-4 text-amber-400" />
-                    <h4 className="text-xs font-black uppercase tracking-wider text-amber-300 font-serif">
-                      Automatic Academic Result Calculation Engine
-                    </h4>
-                  </div>
-                  <span className="text-[10px] font-mono text-slate-400">
-                    {isHistoricalRecord ? "Historical Regulations (1990–2000)" : "4.00 CGPA System"}
-                  </span>
+                {/* List of Semesters / Academic Years */}
+                <div className="space-y-4">
+                  {semesters.map((sem, semIdx) => {
+                    const isExpanded = expandedSemesters[semIdx] ?? true;
+                    const semFullMarks = sem.subjects.reduce((sum, s) => sum + (s.fullMarks || 100), 0);
+                    const semObtainedMarks = sem.subjects.reduce((sum, s) => sum + (s.marks || 0), 0);
+                    const semPercent = semFullMarks > 0 ? ((semObtainedMarks / semFullMarks) * 100).toFixed(1) : "0.0";
+
+                    return (
+                      <div
+                        key={semIdx}
+                        className="bg-white rounded-xl border border-gray-200 shadow-2xs overflow-hidden"
+                      >
+                        {/* Card Top Bar */}
+                        <div className="p-3.5 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => toggleSemester(semIdx)}
+                              className="text-gray-500 hover:text-black cursor-pointer p-0.5"
+                            >
+                              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                            </button>
+
+                            <input
+                              type="text"
+                              value={sem.semesterName}
+                              onChange={(e) => {
+                                const updated = [...semesters];
+                                updated[semIdx].semesterName = e.target.value;
+                                setSemesters(updated);
+                              }}
+                              className="font-extrabold text-xs text-black bg-white border border-gray-300 rounded-lg px-2.5 py-1 focus:border-[#006a4e] focus:outline-hidden w-44"
+                            />
+
+                            <span className="text-[11px] font-mono text-gray-500">
+                              ({sem.subjects.length} {isDivisionModeActive ? "paper" : "course"}{sem.subjects.length > 1 ? "s" : ""})
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            {isDivisionModeActive ? (
+                              <div className="flex items-center gap-1 text-xs">
+                                <span className="text-gray-500 font-medium">Annual Marks:</span>
+                                <span className="font-mono font-black text-slate-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                                  {semObtainedMarks} / {semFullMarks} ({semPercent}%)
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1 text-xs">
+                                <span className="text-gray-500 font-medium">Semester GPA:</span>
+                                <span className="font-mono font-black text-[#006a4e] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                  {sem.semesterGpa.toFixed(2)}
+                                </span>
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-1 text-xs">
+                              <span className="text-gray-500 font-medium">Date:</span>
+                              <input
+                                type="date"
+                                value={sem.publicationDate || "2024-05-15"}
+                                onChange={(e) => {
+                                  const updated = [...semesters];
+                                  updated[semIdx].publicationDate = e.target.value;
+                                  setSemesters(updated);
+                                }}
+                                className="bg-white border border-gray-300 rounded px-1.5 py-0.5 text-[11px] font-mono text-gray-700"
+                              />
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteSemester(semIdx)}
+                              title={`Delete this ${isDivisionModeActive ? "academic year" : "semester"}`}
+                              className="p-1 text-red-600 hover:bg-red-50 rounded cursor-pointer transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Subjects Table */}
+                        {isExpanded && (
+                          <div className="p-4 space-y-3">
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left text-xs border-collapse">
+                                <thead>
+                                  <tr className="border-b border-gray-200 text-[10px] font-bold uppercase text-gray-600 bg-gray-50/50">
+                                    <th className="py-2 px-2 text-center w-10">SL</th>
+                                    <th className="py-2 px-2.5 w-24">{isDivisionModeActive ? "Paper Code" : "Code"}</th>
+                                    <th className="py-2 px-2.5">{isDivisionModeActive ? "Subject / Paper Title" : "Course / Paper Title"}</th>
+                                    {isDivisionModeActive ? (
+                                      <>
+                                        <th className="py-2 px-2.5 w-20 text-center">Full Marks</th>
+                                        <th className="py-2 px-2.5 w-20 text-center">Obtained</th>
+                                        <th className="py-2 px-2.5 w-20 text-center">Pass Marks</th>
+                                        <th className="py-2 px-2.5 w-20 text-center">Result</th>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <th className="py-2 px-2.5 w-20 text-center">Credit</th>
+                                        <th className="py-2 px-2.5 w-20 text-center">Marks (100)</th>
+                                        <th className="py-2 px-2.5 w-20 text-center">GP (4.00)</th>
+                                        <th className="py-2 px-2.5 w-16 text-center">Grade</th>
+                                      </>
+                                    )}
+                                    <th className="py-2 px-1 text-right"></th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                  {sem.subjects.map((sub, subIdx) => {
+                                    const full = sub.fullMarks || 100;
+                                    const obtained = sub.marks ?? 0;
+                                    const pass = sub.passMarks || (academicLevel === "Honours" ? 36 : 33);
+                                    const isPass = obtained >= pass;
+
+                                    return (
+                                      <tr key={subIdx} className="hover:bg-gray-50/60">
+                                        <td className="py-2 px-2 text-center font-mono font-bold text-gray-500 text-[11px]">
+                                          {sub.serialNo || (sub.displayOrder ? String(sub.displayOrder).padStart(2, "0") : String(subIdx + 1).padStart(2, "0"))}
+                                        </td>
+                                        <td className="py-2 px-2.5">
+                                          <input
+                                            type="text"
+                                            autoComplete="off"
+                                            value={sub.subjectCode || ""}
+                                            onChange={(e) => handleUpdateSubject(semIdx, subIdx, "subjectCode", e.target.value)}
+                                            placeholder="HIS-101"
+                                            className="w-24 bg-white border border-gray-300 rounded px-2 py-1 text-xs font-mono font-bold text-gray-900"
+                                          />
+                                        </td>
+                                        <td className="py-2 px-2.5">
+                                          <input
+                                            type="text"
+                                            autoComplete="off"
+                                            value={sub.subjectName}
+                                            onChange={(e) => handleUpdateSubject(semIdx, subIdx, "subjectName", e.target.value)}
+                                            placeholder="Paper Title"
+                                            className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-xs font-medium text-gray-900"
+                                          />
+                                        </td>
+                                        {isDivisionModeActive ? (
+                                          <>
+                                            <td className="py-2 px-2.5 text-center">
+                                              <input
+                                                type="number"
+                                                min="10"
+                                                max="200"
+                                                value={sub.fullMarks || 100}
+                                                onChange={(e) => handleUpdateSubject(semIdx, subIdx, "fullMarks", e.target.value)}
+                                                className="w-16 bg-white border border-gray-300 rounded px-1.5 py-1 text-xs text-center font-mono font-bold text-gray-900"
+                                              />
+                                            </td>
+                                            <td className="py-2 px-2.5 text-center">
+                                              <input
+                                                type="number"
+                                                min="0"
+                                                max={full}
+                                                value={sub.marks ?? 0}
+                                                onChange={(e) => handleUpdateSubject(semIdx, subIdx, "marks", e.target.value)}
+                                                className="w-16 bg-white border border-amber-300 rounded px-1.5 py-1 text-xs text-center font-mono font-black text-slate-950"
+                                              />
+                                            </td>
+                                            <td className="py-2 px-2.5 text-center">
+                                              <input
+                                                type="number"
+                                                min="0"
+                                                max={full}
+                                                value={sub.passMarks || (academicLevel === "Honours" ? 36 : 33)}
+                                                onChange={(e) => handleUpdateSubject(semIdx, subIdx, "passMarks", e.target.value)}
+                                                className="w-14 bg-white border border-gray-300 rounded px-1 py-1 text-xs text-center font-mono text-gray-700"
+                                              />
+                                            </td>
+                                            <td className="py-2 px-2.5 text-center font-bold">
+                                              <span className={`px-2 py-0.5 rounded text-[10px] ${isPass ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                                                {isPass ? "Pass" : "Fail"}
+                                              </span>
+                                            </td>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <td className="py-2 px-2.5 text-center">
+                                              <input
+                                                type="number"
+                                                step="0.5"
+                                                min="0.5"
+                                                max="12"
+                                                value={sub.credit || 3}
+                                                onChange={(e) => handleUpdateSubject(semIdx, subIdx, "credit", e.target.value)}
+                                                className="w-14 bg-white border border-gray-300 rounded px-1.5 py-1 text-xs text-center font-mono font-bold text-gray-900"
+                                              />
+                                            </td>
+                                            <td className="py-2 px-2.5 text-center">
+                                              <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                value={sub.marks ?? 80}
+                                                onChange={(e) => handleUpdateSubject(semIdx, subIdx, "marks", e.target.value)}
+                                                className="w-16 bg-white border border-gray-300 rounded px-1.5 py-1 text-xs text-center font-mono font-bold text-gray-900"
+                                              />
+                                            </td>
+                                            <td className="py-2 px-2.5 text-center">
+                                              <span className="font-mono font-extrabold text-[#006a4e]">
+                                                {sub.gradePoint.toFixed(2)}
+                                              </span>
+                                            </td>
+                                            <td className="py-2 px-2.5 text-center">
+                                              <span className="inline-block px-1.5 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                                {sub.letterGrade || getDiplomaLetterGrade(sub.gradePoint)}
+                                              </span>
+                                            </td>
+                                          </>
+                                        )}
+                                        <td className="py-2 px-1 text-right">
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteSubject(semIdx, subIdx)}
+                                            className="text-gray-400 hover:text-red-600 p-1 cursor-pointer"
+                                            title="Remove Paper"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+
+                            <div className="pt-2 flex flex-wrap justify-between items-center gap-2">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleAddSubjectToSemester(semIdx)}
+                                  className={`inline-flex items-center gap-1.5 text-xs font-bold cursor-pointer ${
+                                    isDivisionModeActive ? "text-amber-800 hover:text-amber-900" : "text-[#006a4e] hover:text-[#005a42]"
+                                  }`}
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                  <span>Add {isDivisionModeActive ? "Paper" : "Course"}</span>
+                                </button>
+
+                                {academicLevel === "Honours" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPickerTargetSemIdx(semIdx);
+                                      setShowCataloguePicker(true);
+                                    }}
+                                    className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 hover:text-amber-900 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-300 cursor-pointer"
+                                  >
+                                    <BookOpen className="w-3.5 h-3.5 text-amber-700" />
+                                    <span>Pick from 30-Subject Catalogue</span>
+                                  </button>
+                                )}
+                              </div>
+
+                              <div className="text-[11px] text-gray-600 font-mono">
+                                {isDivisionModeActive ? (
+                                  <span>
+                                    Total: <strong>{semObtainedMarks}</strong> / {semFullMarks} Marks ({semPercent}%)
+                                  </span>
+                                ) : (
+                                  <span>
+                                    Credits: {sem.subjects.reduce((sum, s) => sum + (s.credit || 3), 0)} Total
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
+              </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                  <div className="p-2.5 bg-slate-800 rounded-xl border border-slate-700">
-                    <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-bold">Total Full Marks</span>
-                    <span className="text-lg font-black font-mono text-white">{calc.totalFullMarks}</span>
+              {/* REAL-TIME CALCULATION & VALIDATION SUMMARY CARD */}
+              <div className="space-y-3">
+                {/* Validation Warnings / Errors Banner */}
+                {validationIssues.length > 0 && (
+                  <div className="bg-amber-50 border-2 border-amber-400 rounded-xl p-3.5 space-y-1.5">
+                    <div className="flex items-center gap-2 font-bold text-xs text-amber-950">
+                      <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
+                      <span>Academic Ledger Verification Notice ({validationIssues.length} item{validationIssues.length > 1 ? "s" : ""})</span>
+                    </div>
+                    <ul className="text-[11px] text-amber-900 space-y-0.5 list-disc list-inside">
+                      {validationIssues.map((iss, iIdx) => (
+                        <li key={iIdx}>
+                          <strong>{iss.code}:</strong> {iss.message}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
+                )}
 
-                  <div className="p-2.5 bg-slate-800 rounded-xl border border-slate-700">
-                    <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-bold">Obtained Marks</span>
-                    <span className="text-lg font-black font-mono text-white">{calc.totalObtainedMarks}</span>
-                  </div>
-
-                  <div className="p-2.5 bg-slate-800 rounded-xl border border-slate-700">
-                    <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-bold">Percentage</span>
-                    <span className="text-lg font-black font-mono text-amber-400">{calc.percentage}%</span>
-                  </div>
-
-                  <div className="p-2.5 bg-amber-600 text-white rounded-xl shadow-xs">
-                    <span className="text-[9px] uppercase tracking-wider text-amber-100 block font-bold">
-                      {isHistoricalRecord ? "Division / Class Awarded" : "Final CGPA"}
+                {/* Real-time Calculation Summary Box */}
+                <div className="bg-slate-900 text-white rounded-2xl p-5 border-2 border-amber-600 shadow-md">
+                  <div className="flex items-center justify-between border-b border-slate-700 pb-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      <Award className="w-4 h-4 text-amber-400" />
+                      <h4 className="text-xs font-black uppercase tracking-wider text-amber-300 font-serif">
+                        {isDivisionModeActive 
+                          ? "Annual Academic Result Calculation Engine (Division / Class)" 
+                          : "Automatic Academic Result Calculation Engine (4.00 CGPA Scale)"}
+                      </h4>
+                    </div>
+                    <span className="text-[10px] font-mono text-slate-400">
+                      {isDivisionModeActive ? "Traditional Regulations (Division/Class)" : "Modern 4.00 CGPA System"}
                     </span>
-                    <span className="text-sm font-black font-serif block mt-0.5">
-                      {isHistoricalRecord ? calc.divisionOrClass : `${calculatedCgpa.toFixed(2)} / 4.00`}
-                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                    <div className="p-2.5 bg-slate-800 rounded-xl border border-slate-700">
+                      <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-bold">Total Full Marks</span>
+                      <span className="text-lg font-black font-mono text-white">{calc.totalFullMarks}</span>
+                    </div>
+
+                    <div className="p-2.5 bg-slate-800 rounded-xl border border-slate-700">
+                      <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-bold">Obtained Marks</span>
+                      <span className="text-lg font-black font-mono text-white">{calc.totalObtainedMarks}</span>
+                    </div>
+
+                    <div className="p-2.5 bg-slate-800 rounded-xl border border-slate-700">
+                      <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-bold">Percentage</span>
+                      <span className="text-lg font-black font-mono text-amber-400">{calc.percentage}%</span>
+                    </div>
+
+                    <div className="p-2.5 bg-amber-600 text-white rounded-xl shadow-xs">
+                      <span className="text-[9px] uppercase tracking-wider text-amber-100 block font-bold">
+                        {isDivisionModeActive ? "Division / Class Awarded" : "Final CGPA"}
+                      </span>
+                      <span className="text-sm font-black font-serif block mt-0.5">
+                        {isDivisionModeActive ? calc.divisionOrClass : `${calculatedCgpa.toFixed(2)} / 4.00`}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

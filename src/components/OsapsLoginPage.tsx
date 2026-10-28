@@ -190,7 +190,7 @@ export default function OsapsLoginPage({
                     onClick={handleQuickDemo}
                     className="text-xs text-[#006a4e] hover:underline font-bold cursor-pointer"
                   >
-                    ⚡ One-Click Demo Access (Mechanical Engineering Student)
+                    One-Click Demo Access (Mechanical Engineering Student)
                   </button>
                 </div>
 

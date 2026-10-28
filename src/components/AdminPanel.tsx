@@ -1621,7 +1621,7 @@ export default function AdminPanel({
                   </div>
                   {isPre2001Division && (
                     <span className="text-[10px] text-amber-700 font-bold block">
-                      ★ Pre-2001 Division System (1995–2000)
+                      Pre-2001 Division System (1995–2000)
                     </span>
                   )}
                 </div>
@@ -1843,7 +1843,7 @@ export default function AdminPanel({
                     <div className="space-y-3">
                       <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
                         <span className="text-[11px] font-bold text-amber-900 block">
-                          ★ Pre-2001 Traditional Division System Activated
+                          Pre-2001 Traditional Division System Activated
                         </span>
                         <p className="text-[10px] text-amber-700 leading-tight mt-0.5">
                           In accordance with Bangladesh Secondary &amp; Higher Secondary Education Board historical rules (1995–2000), results are awarded strictly in Subject Marks &amp; Divisions. GPA 5.00 is automatically disabled.

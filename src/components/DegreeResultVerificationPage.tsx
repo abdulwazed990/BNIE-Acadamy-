@@ -8,13 +8,10 @@ import {
   AlertCircle, 
   Printer, 
   ArrowLeft, 
-  BookOpen, 
   Calendar, 
   RotateCcw, 
   Download,
-  Landmark,
   Layers,
-  FileCheck2,
   FileText,
   Eye,
   Check,
@@ -499,13 +496,15 @@ export default function DegreeResultVerificationPage({
     return [];
   };
 
-  // Determine whether candidate is a historical record (1990-2000, 1994, 2000) using Division/Class instead of GPA
-  const isHistorical = Boolean(
-    matchedStudent?.isHistoricalRecord ||
-    matchedStudent?.gradingSystem === "Class" ||
-    matchedStudent?.gradingSystem === "Division" ||
-    (matchedStudent?.passingYear && parseInt(matchedStudent.passingYear, 10) <= 2000)
-  );
+  // Determine whether candidate is a historical record using Division/Class instead of GPA
+  const isHistorical = matchedStudent?.gradingSystem === "GPA"
+    ? false
+    : Boolean(
+        matchedStudent?.isHistoricalRecord ||
+        matchedStudent?.gradingSystem === "Class" ||
+        matchedStudent?.gradingSystem === "Division" ||
+        (matchedStudent?.passingYear && parseInt(matchedStudent.passingYear, 10) <= 2000)
+      );
 
   // Exact marksheet title without ever combining "Honours / Degree Pass"
   const getMarksheetTitle = () => {
@@ -1277,15 +1276,11 @@ export default function DegreeResultVerificationPage({
 
                   {/* Header Metadata Sub-bar */}
                   <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] font-semibold text-slate-700">
+                    <div>Student ID: <strong className="text-slate-950 font-mono">{matchedStudent.id}</strong></div>
+                    <div>•</div>
                     <div>Examination Year: <strong className="text-slate-950 font-mono">{matchedStudent.passingYear || matchedStudent.examinationYear}</strong></div>
                     <div>•</div>
                     <div>Academic Session: <strong className="text-slate-950 font-mono">{matchedStudent.session}</strong></div>
-                    {matchedStudent.affiliatedCollege && (
-                      <>
-                        <div>•</div>
-                        <div>College: <strong className="text-slate-950">{matchedStudent.affiliatedCollege}</strong></div>
-                      </>
-                    )}
                     <div>•</div>
                     <div className="font-mono text-slate-500">Scope: {displayedEndpointPeriod} {isTwoPage ? "(Page 1 of 2)" : "(Page 1 of 1)"}</div>
                     {!matchedStudent.isVerifiedAcademicRecord && (
@@ -1296,63 +1291,82 @@ export default function DegreeResultVerificationPage({
                   </div>
                 </div>
 
-                {/* Unified Candidate Particulars Table (Clean, Authentic Academic Ledger Format) */}
-                <div className="border border-slate-700 rounded-sm overflow-hidden text-[11px] sm:text-xs">
-                  <table className="w-full border-collapse">
-                    <tbody>
-                      <tr className="border-b border-slate-300">
-                        <td className="w-32 sm:w-36 py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-r border-slate-300">Name of Candidate</td>
-                        <td className="py-1 px-3 font-serif font-black text-slate-950 text-sm uppercase">{matchedStudent.name}</td>
-                        <td className="w-32 sm:w-36 py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-x border-slate-300">Roll Number</td>
-                        <td className="w-36 sm:w-44 py-1 px-3 font-mono font-black text-slate-950 text-sm">{matchedStudent.rollNumber}</td>
-                      </tr>
-                      <tr className="border-b border-slate-300">
-                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-r border-slate-300">Father's Name</td>
-                        <td className="py-1 px-3 font-semibold text-slate-900">{matchedStudent.fatherName || "—"}</td>
-                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-x border-slate-300">Registration No</td>
-                        <td className="py-1 px-3 font-mono font-bold text-slate-950">{matchedStudent.registrationNumber}</td>
-                      </tr>
-                      <tr className="border-b border-slate-300">
-                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-r border-slate-300">Mother's Name</td>
-                        <td className="py-1 px-3 font-semibold text-slate-900">{matchedStudent.motherName || "—"}</td>
-                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-x border-slate-300">Academic Session</td>
-                        <td className="py-1 px-3 font-mono font-semibold text-slate-950">{matchedStudent.session}</td>
-                      </tr>
-                      <tr className="border-b border-slate-300">
-                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-r border-slate-300">Degree &amp; Major</td>
-                        <td className="py-1 px-3 font-bold text-slate-950">
-                          {matchedStudent.degreeType || (examType === "Degree Pass" ? "Bachelor of Arts (B.A.) Degree Pass" : "Bachelor of Arts (B.A.) Honours")}
-                          {matchedStudent.majorSubject && examType !== "Degree Pass" ? ` (${matchedStudent.majorSubject})` : ""}
-                        </td>
-                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-x border-slate-300">Examination Year</td>
-                        <td className="py-1 px-3 font-mono font-semibold text-slate-950">{matchedStudent.passingYear || matchedStudent.examinationYear}</td>
-                      </tr>
-                      <tr className="border-b border-slate-300">
-                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-r border-slate-300">Affiliated College</td>
-                        <td className="py-1 px-3 font-semibold text-slate-900">{matchedStudent.affiliatedCollege || "Main Academic Campus"}</td>
-                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-x border-slate-300">Course Duration</td>
-                        <td className="py-1 px-3 font-semibold text-slate-950">{matchedStudent.courseDuration || (isHistorical ? "3 Years" : "4 Years")}</td>
-                      </tr>
-                      <tr>
-                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-r border-slate-300">Evaluation Standard</td>
-                        <td className="py-1 px-3 font-semibold text-slate-900">
-                          {isHistorical ? "Marks, Percentage & Division/Class Regulations" : "Semester Modular Scale (4.00 CGPA)"}
-                        </td>
-                        <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-x border-slate-300">Result Standing</td>
-                        <td className="py-1 px-3 font-bold text-slate-950">
-                          <span className="font-serif uppercase tracking-wide">{matchedStudent.resultStatus || "Passed"}</span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                {/* Unified Candidate Particulars & Profile Photo (Clean, Authentic Academic Ledger Format) */}
+                <div className="flex flex-col sm:flex-row items-stretch gap-2.5">
+                  <div className="flex-1 border border-slate-700 rounded-sm overflow-hidden text-[11px] sm:text-xs bg-white">
+                    <table className="w-full border-collapse">
+                      <tbody>
+                        <tr className="border-b border-slate-300">
+                          <td className="w-28 sm:w-32 py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-r border-slate-300">Name of Candidate</td>
+                          <td className="py-1 px-2.5 font-serif font-black text-slate-950 text-sm uppercase">{matchedStudent.name}</td>
+                          <td className="w-28 sm:w-32 py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-x border-slate-300">Roll Number</td>
+                          <td className="w-32 sm:w-36 py-1 px-2.5 font-mono font-black text-slate-950 text-sm">{matchedStudent.rollNumber}</td>
+                        </tr>
+                        <tr className="border-b border-slate-300">
+                          <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-r border-slate-300">Father's Name</td>
+                          <td className="py-1 px-2.5 font-semibold text-slate-900">{matchedStudent.fatherName || "—"}</td>
+                          <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-x border-slate-300">Registration No</td>
+                          <td className="py-1 px-2.5 font-mono font-bold text-slate-950">{matchedStudent.registrationNumber}</td>
+                        </tr>
+                        <tr className="border-b border-slate-300">
+                          <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-r border-slate-300">Mother's Name</td>
+                          <td className="py-1 px-2.5 font-semibold text-slate-900">{matchedStudent.motherName || "—"}</td>
+                          <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-x border-slate-300">Academic Session</td>
+                          <td className="py-1 px-2.5 font-mono font-semibold text-slate-950">{matchedStudent.session}</td>
+                        </tr>
+                        <tr className="border-b border-slate-300">
+                          <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-r border-slate-300">Degree &amp; Major</td>
+                          <td className="py-1 px-2.5 font-bold text-slate-950">
+                            {matchedStudent.degreeType || (examType === "Degree Pass" ? "Bachelor of Arts (B.A.) Degree Pass" : "Bachelor of Arts (B.A.) Honours")}
+                            {matchedStudent.majorSubject && examType !== "Degree Pass" ? ` (${matchedStudent.majorSubject})` : ""}
+                          </td>
+                          <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-x border-slate-300">Examination Year</td>
+                          <td className="py-1 px-2.5 font-mono font-semibold text-slate-950">{matchedStudent.passingYear || matchedStudent.examinationYear}</td>
+                        </tr>
+                        <tr className="border-b border-slate-300">
+                          <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-r border-slate-300">Student ID</td>
+                          <td className="py-1 px-2.5 font-mono font-black text-slate-950">{matchedStudent.id}</td>
+                          <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-x border-slate-300">Course Duration</td>
+                          <td className="py-1 px-2.5 font-semibold text-slate-950">{matchedStudent.courseDuration || (isHistorical ? "3 Years" : "4 Years")}</td>
+                        </tr>
+                        <tr>
+                          <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-r border-slate-300">Evaluation Standard</td>
+                          <td className="py-1 px-2.5 font-semibold text-slate-900">
+                            {isHistorical ? "Marks, Percentage & Division/Class Regulations" : "Semester Modular Scale (4.00 CGPA)"}
+                          </td>
+                          <td className="py-1 px-2.5 bg-slate-100 font-bold text-slate-700 uppercase text-[10px] border-x border-slate-300">Result Standing</td>
+                          <td className="py-1 px-2.5 font-bold text-slate-950">
+                            <span className="font-serif uppercase tracking-wide">{matchedStudent.resultStatus || "Passed"}</span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Candidate Profile Photo (Official Passport Size Frame) */}
+                  <div className="w-24 sm:w-28 shrink-0 border border-slate-700 rounded-sm bg-slate-50 p-1 flex flex-col items-center justify-between shadow-2xs">
+                    <div className="w-full h-28 sm:h-32 border border-slate-300 rounded-xs overflow-hidden bg-white">
+                      <img 
+                        src={matchedStudent.photoUrl || (matchedStudent.gender === "Female" ? PASSPORT_AVATARS.female1 : PASSPORT_AVATARS.male1)} 
+                        alt={matchedStudent.name}
+                        className="w-full h-full object-cover object-top"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = matchedStudent.gender === "Female" ? PASSPORT_AVATARS.female1 : PASSPORT_AVATARS.male1;
+                        }}
+                      />
+                    </div>
+                    <span className="text-[8px] font-mono font-bold uppercase tracking-wider text-slate-600 block text-center mt-0.5">
+                      Candidate Photo
+                    </span>
+                  </div>
                 </div>
 
               {/* FIRST PORTION OF ACADEMIC RESULTS (PAGE 1) */}
               <div className="space-y-4">
                 <div className="border-b border-slate-900 pb-1.5 flex items-center justify-between">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-950 flex items-center gap-1.5">
-                    <BookOpen className="w-3.5 h-3.5 text-amber-700" />
-                    <span>Academic Paper Record ({isTwoPage ? `Part I • ${page1Semesters.length} Period${page1Semesters.length > 1 ? "s" : ""}` : `Complete Record • ${page1Semesters.length} Period${page1Semesters.length > 1 ? "s" : ""}`})</span>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-950">
+                    Academic Paper Record ({isTwoPage ? `Part I • ${page1Semesters.length} Period${page1Semesters.length > 1 ? "s" : ""}` : `Complete Record • ${page1Semesters.length} Period${page1Semesters.length > 1 ? "s" : ""}`})
                   </h4>
                   <span className="text-[10px] font-mono font-bold text-slate-600">
                     {isHistorical ? "Standard: Marks & Percentage System" : "Grading Scale: 4.00 Max"}
@@ -1597,9 +1611,8 @@ export default function DegreeResultVerificationPage({
                   {/* INSTITUTION SEAL AND AUTHORIZED SIGNATURES */}
                   <div className="pt-3 border-t-2 border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left text-xs">
                     <div className="space-y-0.5">
-                      <div className="flex items-center justify-center sm:justify-start gap-1.5 font-bold text-slate-900 font-serif text-xs">
-                        <Landmark className="w-3.5 h-3.5 text-slate-700" />
-                        <span>Bangladesh National Institute of Education</span>
+                      <div className="font-bold text-slate-900 font-serif text-xs">
+                        Bangladesh National Institute of Education
                       </div>
                       <p className="text-[9px] text-slate-500">
                         This official transcript was electronically generated and authenticated from the secure institutional ledger.
@@ -1636,7 +1649,7 @@ export default function DegreeResultVerificationPage({
               <div className="pt-2 border-t border-slate-300 flex items-center justify-between text-[10px] text-slate-500 font-mono">
                 <span>Central Academic Archive: BNIE-{matchedStudent.rollNumber}-{matchedStudent.passingYear}</span>
                 <span className="font-bold text-slate-800">
-                  {isTwoPage ? "Page 1 of 2 • Transcript continues on Page 2 ➔" : "Page 1 of 1 • End of Official Academic Transcript"}
+                  {isTwoPage ? "Page 1 of 2 • Transcript continues on Page 2" : "Page 1 of 1 • End of Official Academic Transcript"}
                 </span>
               </div>
 
@@ -1679,9 +1692,8 @@ export default function DegreeResultVerificationPage({
                 {/* SECOND PORTION OF ACADEMIC RESULTS (PAGE 2) */}
                 <div className="space-y-4">
                   <div className="border-b border-slate-900 pb-1.5 flex items-center justify-between">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-950 flex items-center gap-1.5">
-                      <BookOpen className="w-3.5 h-3.5 text-amber-700" />
-                      <span>Academic Paper Record (Part II • Continuation • {page2Semesters.length} Period{page2Semesters.length > 1 ? "s" : ""})</span>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-950">
+                      Academic Paper Record (Part II • Continuation • {page2Semesters.length} Period{page2Semesters.length > 1 ? "s" : ""})
                     </h4>
                     <span className="text-[10px] font-mono font-bold text-slate-600">
                       Evaluation Scope: {displayedEndpointPeriod}
@@ -1787,7 +1799,6 @@ export default function DegreeResultVerificationPage({
                         {/* Period Header */}
                         <div className="bg-slate-100 p-2.5 px-3.5 flex flex-wrap items-center justify-between gap-2 border-b border-slate-300 text-xs">
                           <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-amber-600" />
                             <h5 className="font-extrabold text-[11px] uppercase tracking-wide text-slate-950 font-serif">
                               {sem.semesterName}
                             </h5>
@@ -1843,9 +1854,8 @@ export default function DegreeResultVerificationPage({
                 {/* CUMULATIVE SUMMARY BREAKDOWN BOX */}
                 <div className="bg-slate-50 border-2 border-slate-900/40 rounded-xl p-4 space-y-3">
                   <div className="border-b border-slate-300 pb-1.5 flex items-center justify-between">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-950 font-serif flex items-center gap-1.5">
-                      <FileCheck2 className="w-3.5 h-3.5 text-amber-700" />
-                      <span>Cumulative Result Summary &amp; Degree Classification</span>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-950 font-serif">
+                      Cumulative Result Summary &amp; Degree Classification
                     </h4>
                     <span className="text-[10px] font-mono text-slate-600">
                       {isHistorical ? "Marks & Percentage Scale" : "Scale: 4.00 Max"}
@@ -1909,9 +1919,8 @@ export default function DegreeResultVerificationPage({
                 {/* INSTITUTION SEAL AND AUTHORIZED SIGNATURES */}
                 <div className="pt-4 border-t-2 border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left text-xs">
                   <div className="space-y-1">
-                    <div className="flex items-center justify-center sm:justify-start gap-1.5 font-bold text-slate-900 font-serif">
-                      <Landmark className="w-3.5 h-3.5 text-amber-700" />
-                      <span>Bangladesh National Institute of Education</span>
+                    <div className="font-bold text-slate-900 font-serif text-xs">
+                      Bangladesh National Institute of Education
                     </div>
                     <p className="text-[9px] text-slate-500">
                       This official transcript was electronically generated and authenticated from the secure institutional ledger.
