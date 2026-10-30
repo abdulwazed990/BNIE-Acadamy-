@@ -48,12 +48,17 @@ export default function OnlineAdmissionPage({
   const [address, setAddress] = useState("");
   const [preferredShift, setPreferredShift] = useState("1st_morning");
   
-  // Previous Academic Info
   const [sscRoll, setSscRoll] = useState("");
   const [sscReg, setSscReg] = useState("");
   const [sscBoard, setSscBoard] = useState("Dhaka");
-  const [sscYear, setSscYear] = useState("2024");
+  const [sscYear, setSscYear] = useState(new Date().getFullYear().toString());
   const [sscGpa, setSscGpa] = useState("");
+
+  // Dynamic list of passing years for SSC / equivalent from current year+1 down to 1971 (Bangladesh national education records)
+  const availablePassingYears = Array.from(
+    { length: new Date().getFullYear() - 1970 + 2 },
+    (_, i) => (new Date().getFullYear() + 1 - i).toString()
+  );
 
   const [submittedApp, setSubmittedApp] = useState<SubmittedApplication | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -423,6 +428,8 @@ export default function OnlineAdmissionPage({
                       <option value="Sylhet">Sylhet</option>
                       <option value="Dinajpur">Dinajpur</option>
                       <option value="Mymensingh">Mymensingh</option>
+                      <option value="BOU">Bangladesh Open University (BOU)</option>
+                      <option value="Other">Other / Historical Board</option>
                     </select>
                   </div>
 
@@ -433,11 +440,11 @@ export default function OnlineAdmissionPage({
                       onChange={(e) => setSscYear(e.target.value)}
                       className="w-full px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium"
                     >
-                      <option value="2024">2024</option>
-                      <option value="2023">2023</option>
-                      <option value="2022">2022</option>
-                      <option value="2021">2021</option>
-                      <option value="2020">2020</option>
+                      {availablePassingYears.map((yr) => (
+                        <option key={yr} value={yr}>
+                          {yr}
+                        </option>
+                      ))}
                     </select>
                   </div>
 

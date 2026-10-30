@@ -363,8 +363,8 @@ export default function VerificationForm({
               <FileKey2 className="w-5 h-5 text-emerald-200" />
             </div>
             <div>
-              <h3 className="font-bold font-sans text-base md:text-lg">Certificate Verification Console</h3>
-              <p className="text-[11px] text-emerald-100">National Education Database Verification Interface</p>
+              <h2 className="font-bold font-sans text-base md:text-lg">BNIE Certificate Verification Online (সনদ যাচাই)</h2>
+              <p className="text-[11px] text-emerald-100">Bangladesh National Institute of Education (BNIE) • Central Credential Registry</p>
             </div>
           </div>
           <span className="text-[10px] bg-red-600/90 text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">

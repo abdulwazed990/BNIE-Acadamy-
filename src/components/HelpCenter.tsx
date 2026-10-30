@@ -15,6 +15,36 @@ interface FAQItem {
 
 const FAQ_LIST: FAQItem[] = [
   {
+    id: "q_bnie_what",
+    category: "verification",
+    question: "What is BNIE Bangladesh? | বাংলাদেশে BNIE কী?",
+    answer: "Bangladesh National Institute of Education (BNIE / বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট) is an autonomous national educational institute established in 1996 in Bangladesh. BNIE conducts 4-Year Bachelor Honours (BBA, CSE, Economics), 3-Year Bachelor Degree (Pass), Postgraduate (Masters/MBA), and 1 to 4 Year Polytechnic Diploma in Engineering programs, backed by a centralized 24/7 digital verification ledger for academic certificates and marksheets."
+  },
+  {
+    id: "q_result_check",
+    category: "verification",
+    question: "How do I check BNIE student result and marksheet online? | BNIE এর রেজাল্ট ও মার্কশিট কিভাবে দেখব?",
+    answer: "To check your BNIE exam result, visit the 'Degree Result' or 'Certificate Verification' portal on bnie.edu.bd. Enter your Student ID, Roll Number, or Registration Number and select your Exam Type (Honours, Degree Pass, Masters, or Diploma). The portal will instantly display your verified marksheet, semester GPA, and cumulative CGPA."
+  },
+  {
+    id: "q_cert_verify",
+    category: "verification",
+    question: "How do I perform BNIE certificate verification online? | BNIE সার্টিফিকেট অনলাইনে যাচাই করবেন কিভাবে?",
+    answer: "Visit the BNIE Certificate Verification console on our official website. Select your academic category (Degree, Honours, Masters, Diploma, SSC, or HSC), enter your authentic Roll and Registration numbers, and click 'Verify Record'. The system will generate an official verified transcript report with an embedded cryptographic QR code."
+  },
+  {
+    id: "q_honours_degree",
+    category: "verification",
+    question: "How do I check BNIE Honours and Degree Pass marksheet results? | BNIE অনার্স ও ডিগ্রি রেজাল্ট মার্কশিট যাচাই",
+    answer: "Go to the 'Degree / Honours / Masters Result Check' page, choose your program (Honours, Degree Pass, or Masters), enter your Student ID or Roll number, and choose your academic period or complete transcript view. The system renders an official continuous 2-page A4 marksheet with all subjects, marks, and grade points."
+  },
+  {
+    id: "q_masters_result",
+    category: "verification",
+    question: "How do I check BNIE Masters examination results? | BNIE মাস্টার্স রেজাল্ট চেক",
+    answer: "Select 'Masters' on the Degree Result Verification portal, enter your Student ID or Roll number, and search. Your postgraduate semester breakdown, MBA credit points, and final CGPA will be retrieved directly from the central database ledger."
+  },
+  {
     id: "v1",
     category: "verification",
     question: "How do I verify a certificate issued by BNIE?",
@@ -48,7 +78,7 @@ const FAQ_LIST: FAQItem[] = [
     id: "dp1",
     category: "diploma",
     question: "What are the requirements for 2-Year Diploma in Air Condition and Maintenance (ACM)?",
-    answer: "Candidates who have completed SSC or equivalent secondary education are eligible. The 2-Year Diploma curriculum comprises 13 specialized technical subjects across 2 academic sessions (e.g. Session 2020-2021, Passing Year 2022) focusing on practical HVAC, refrigeration, compressor servicing, and electrical troubleshooting."
+    answer: "Candidates who have completed SSC or equivalent secondary education are eligible. The 2-Year Diploma curriculum comprises 13 specialized technical subjects across 2 academic sessions focusing on practical HVAC, refrigeration, compressor servicing, and electrical troubleshooting."
   },
   {
     id: "dp2",
@@ -91,6 +121,25 @@ export default function HelpCenter({ onBackToHome, onNavigateToVerify }: HelpCen
 
   return (
     <div className="py-10 px-4 sm:px-6 max-w-5xl mx-auto">
+      {/* Schema.org FAQPage Structured Data for Google Search & AI Overviews */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": FAQ_LIST.map((faq) => ({
+              "@type": "Question",
+              "name": faq.question,
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": faq.answer
+              }
+            }))
+          })
+        }}
+      />
+
       {/* Top Breadcrumb */}
       <div className="mb-6 flex items-center justify-between border-b border-gray-150 pb-4">
         <button

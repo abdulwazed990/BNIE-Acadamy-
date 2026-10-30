@@ -12,7 +12,7 @@ import {
   Plus, Edit2, Trash2, Eye, ShieldCheck, LogOut, Search, User, Key, 
   Calendar, FileText, School, Clock, Upload, ArrowRight, Save, X, Image as ImageIcon,
   BookOpen, Tablet, CheckCircle2, Lock, ToggleLeft, ToggleRight, RefreshCw, Unlock,
-  Loader2, AlertCircle, LayoutTemplate, GraduationCap
+  Loader2, AlertCircle, LayoutTemplate, GraduationCap, Landmark
 } from "lucide-react";
 import { motion } from "motion/react";
 import { 
@@ -22,6 +22,7 @@ import {
 import LeadershipAdminModule from "./LeadershipAdminModule";
 import HomepageAdminModule from "./HomepageAdminModule";
 import AcademicProgramAdminModule from "./AcademicProgramAdminModule";
+import InstitutionalRecognitionAdminModule from "./InstitutionalRecognitionAdminModule";
 import DegreeStudentForm from "./DegreeStudentForm";
 import { 
   generateSchoolRollNumber, 
@@ -54,8 +55,8 @@ export default function AdminPanel({
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<Category | "ALL">("ALL");
 
-  // Admin section tab: "students" | "academic" | "resources" | "leadership" | "homepage"
-  const [adminActiveTab, setAdminActiveTab] = useState<"students" | "academic" | "resources" | "leadership" | "homepage">("students");
+  // Admin section tab: "students" | "academic" | "resources" | "leadership" | "homepage" | "recognition"
+  const [adminActiveTab, setAdminActiveTab] = useState<"students" | "academic" | "resources" | "leadership" | "homepage" | "recognition">("students");
   const [adminHandbooks, setAdminHandbooks] = useState<HandbookItem[]>(() => getStoredHandbooks());
   const [adminEbooks, setAdminEbooks] = useState<EbookItem[]>(() => getStoredEbooks());
 
@@ -883,6 +884,19 @@ export default function AdminPanel({
 
         <button
           type="button"
+          onClick={() => setAdminActiveTab("recognition")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            adminActiveTab === "recognition"
+              ? "bg-[#006a4e] text-white shadow-xs"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+        >
+          <Landmark className="w-4 h-4" />
+          <span>Government Approval &amp; Recognition (সরকারি অনুমোদন ও প্রাতিষ্ঠানিক স্বীকৃতি)</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setAdminActiveTab("resources")}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
             adminActiveTab === "resources"
@@ -895,7 +909,9 @@ export default function AdminPanel({
         </button>
       </div>
 
-      {adminActiveTab === "academic" ? (
+      {adminActiveTab === "recognition" ? (
+        <InstitutionalRecognitionAdminModule />
+      ) : adminActiveTab === "academic" ? (
         <AcademicProgramAdminModule />
       ) : adminActiveTab === "leadership" ? (
         <LeadershipAdminModule />

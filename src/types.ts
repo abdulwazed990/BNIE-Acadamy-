@@ -452,3 +452,38 @@ export function generateSecureToken(): string {
   }
   return token;
 }
+
+export type InstitutionalStatus = "Draft" | "Published" | "Official Documents Verified";
+
+export interface OfficialRecognitionDocument {
+  id: string;
+  title: string;
+  documentType: string;
+  fileData?: string;
+  fileName?: string;
+  fileSize?: string;
+  issueDate?: string;
+  memoReference?: string;
+  notes?: string;
+}
+
+export interface InstitutionalRecognitionSettings {
+  status: InstitutionalStatus;
+  institutionNameBn: string;
+  institutionNameEn: string;
+  establishedYear: string;
+  officialRegistrationNumber: string;
+  governmentApprovalNumber: string;
+  approvalDate: string;
+  registrationDate: string;
+  issuingGovernmentAuthority: string;
+  authorizedOfficerName: string;
+  authorizedOfficerDesignation: string;
+  governmentOrderReference: string;
+  officialApprovalDocumentTitle: string;
+  officialApprovalDocumentUrl: string;
+  recognitionDetails: string;
+  documents: OfficialRecognitionDocument[];
+  lastUpdated?: string;
+}
+

@@ -184,10 +184,13 @@ export default function DegreeResultVerificationPage({
   // View mode toggle: standard on-screen vs print/PDF preview (compact subject codes)
   const [viewMode, setViewMode] = useState<"standard" | "compact_preview">("standard");
 
-  // Dynamic available passing years: include "ALL", all distinct years from students, plus years 1990 - currentYear+2
+  // Dynamic available passing years: include "ALL", all distinct years from students, plus years 1971 - currentYear+1
   const availableYears = (() => {
     const studentYears = students.map((s) => s.passingYear).filter(Boolean);
-    const standardYears = Array.from({ length: 36 }, (_, i) => (new Date().getFullYear() + 1 - i).toString());
+    const standardYears = Array.from(
+      { length: new Date().getFullYear() - 1970 + 2 },
+      (_, i) => (new Date().getFullYear() + 1 - i).toString()
+    );
     const unique = Array.from(new Set([...studentYears, ...standardYears])).sort((a, b) => parseInt(b, 10) - parseInt(a, 10));
     return ["ALL", ...unique];
   })();
@@ -736,6 +739,32 @@ export default function DegreeResultVerificationPage({
         }
       `}</style>
 
+      {/* Schema.org ItemPage Structured Data for Google Indexing & AI Search */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ItemPage",
+            "name": "BNIE Degree, Honours & Masters Result Check | Marksheet Verification",
+            "alternateName": [
+              "বিএনআইই ডিগ্রি ও অনার্স রেজাল্ট",
+              "BNIE Degree Result",
+              "BNIE Honours Result",
+              "BNIE Masters Result",
+              "BNIE Marksheet Verification"
+            ],
+            "description": "Online BNIE student result check and marksheet verification for Bachelor Degree, Honours, and Masters programs at Bangladesh National Institute of Education.",
+            "url": "https://bnie.edu.bd/?page=degree-marksheet-result",
+            "provider": {
+              "@type": "EducationalOrganization",
+              "name": "Bangladesh National Institute of Education (BNIE)",
+              "url": "https://bnie.edu.bd/"
+            }
+          })
+        }}
+      />
+
       <div className="max-w-5xl mx-auto space-y-6">
 
         {/* Top Navigation & Breadcrumb Bar */}
@@ -784,10 +813,10 @@ export default function DegreeResultVerificationPage({
                   Higher Education Division • National Academic Ledger
                 </span>
                 <h1 className="text-xl sm:text-2xl font-black text-gray-950 font-sans tracking-tight">
-                  Degree / Honours / Masters — Full Marksheet Result Check
+                  BNIE Degree, Honours &amp; Masters — Marksheet Result Check
                 </h1>
                 <p className="text-xs text-gray-600">
-                  Two-Page Continuous A4 Portrait Marksheet &amp; Verified Official Transcript Portal
+                  বিএনআইই ডিগ্রি, অনার্স ও মাস্টার্স পরীক্ষার ফলাফল ও মার্কশিট যাচাইকরণ পোর্টাল • Two-Page Continuous A4 Portrait Marksheet &amp; Verified Official Transcript Portal
                 </p>
               </div>
             </div>

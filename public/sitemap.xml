@@ -3,103 +3,133 @@
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://bnie.edu.bd/</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://bnie.edu.bd/?page=degree-marksheet-result</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
     <loc>https://bnie.edu.bd/?page=verify</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
     <loc>https://bnie.edu.bd/?page=find-program</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://bnie.edu.bd/?page=online-admission</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-30</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.80</priority>
+    <priority>0.85</priority>
   </url>
   <url>
     <loc>https://bnie.edu.bd/?page=accreditation</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://bnie.edu.bd/?page=services</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-30</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.75</priority>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://bnie.edu.bd/?page=courses</loc>
+    <lastmod>2026-10-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
   </url>
   <url>
     <loc>https://bnie.edu.bd/?page=notices</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
+    <loc>https://bnie.edu.bd/?page=specializations</loc>
+    <lastmod>2026-10-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://bnie.edu.bd/?page=help-center</loc>
+    <lastmod>2026-10-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://bnie.edu.bd/?page=student-handbooks</loc>
+    <lastmod>2026-10-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.70</priority>
+  </url>
+  <url>
     <loc>https://bnie.edu.bd/?page=research-publications</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
   </url>
   <url>
     <loc>https://bnie.edu.bd/?page=regional-centers</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
   </url>
   <url>
     <loc>https://bnie.edu.bd/?page=leadership</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=student-handbooks</loc>
-    <lastmod>2026-10-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.65</priority>
-  </url>
-  <url>
     <loc>https://bnie.edu.bd/?page=vc-message</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.65</priority>
   </url>
   <url>
     <loc>https://bnie.edu.bd/?page=complaints-services</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.60</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=help-center</loc>
-    <lastmod>2026-10-22</lastmod>
+    <loc>https://bnie.edu.bd/?page=osaps-login</loc>
+    <lastmod>2026-10-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.60</priority>
+  </url>
+  <url>
+    <loc>https://bnie.edu.bd/?page=ebook</loc>
+    <lastmod>2026-10-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.60</priority>
+  </url>
+  <url>
+    <loc>https://bnie.edu.bd/?page=web-email</loc>
+    <lastmod>2026-10-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.60</priority>
   </url>
   <url>
     <loc>https://bnie.edu.bd/?page=privacy-policy</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-30</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.50</priority>
   </url>
   <url>
     <loc>https://bnie.edu.bd/?page=terms-conditions</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-30</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.50</priority>
   </url>

@@ -1,6 +1,6 @@
 {
   "name": "Bangladesh National Institute of Education",
-  "description": "Bangladesh National Institute of Education (BNIE) — explore available academic programs, student results, certificate verification and educational services through the institution’s website.",
+  "description": "Official website of Bangladesh National Institute of Education (BNIE Bangladesh / বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট). Check student result, marksheet verification, certificate check, Degree, Honours, Masters, and online admission.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

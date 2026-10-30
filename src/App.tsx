@@ -94,56 +94,56 @@ interface PageSeoMetadata {
 
 const PAGE_SEO_CONFIG: Record<string, PageSeoMetadata> = {
   home: {
-    title: "Bangladesh National Institute of Education (BNIE) | Official Website",
-    description: "Bangladesh National Institute of Education (BNIE) — explore available academic programs, student results, certificate verification and educational services through the institution’s website.",
+    title: "BNIE Bangladesh | Bangladesh National Institute of Education (বিএনআইই)",
+    description: "Official portal of Bangladesh National Institute of Education (BNIE / বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট). Check student result, certificate verification, marksheet checking, Degree, Honours, Masters, and admission.",
     canonicalPath: "/",
     breadcrumbName: "Home"
   },
   "degree-marksheet-result": {
-    title: "Degree, Honours & Masters Marksheet Result | BNIE",
-    description: "Verify official Degree Pass, Honours, and Masters marksheets with semester-wise GPA, CGPA calculation, and transcript downloads from BNIE.",
+    title: "BNIE Degree, Honours & Masters Result Check | Marksheet Verification",
+    description: "Check and verify official BNIE degree results, honours results, and masters marksheets online (বিএনআইই ডিগ্রি ও অনার্স রেজাল্ট). Semester-wise GPA and CGPA calculation.",
     canonicalPath: "/?page=degree-marksheet-result",
     breadcrumbName: "Degree Marksheet Result"
   },
   verify: {
-    title: "SSC, HSC & Diploma Certificate Verification | BNIE",
-    description: "Online certificate verification for SSC, HSC, and Diploma programs by Bangladesh National Institute of Education (BNIE). Fast, secure credential checking.",
+    title: "BNIE Certificate Verification Online | SSC, HSC & Diploma (সনদ যাচাই)",
+    description: "Online BNIE certificate verification (বিএনআইই সার্টিফিকেট যাচাই). Verify roll, registration, and serial numbers for SSC, HSC, and Polytechnic Engineering Diploma credentials.",
     canonicalPath: "/?page=verify",
     breadcrumbName: "Certificate Verification"
   },
   report: {
-    title: "Verified Academic Transcript & Certificate Report | BNIE",
-    description: "Official verified academic dossier and transcript report from Bangladesh National Institute of Education (BNIE) credential verification system.",
+    title: "BNIE Verified Academic Transcript & Certificate Dossier (সনদ রিপোর্ট)",
+    description: "Official verified academic record and transcript report from Bangladesh National Institute of Education (BNIE) credential verification system.",
     canonicalPath: "/?page=report",
     breadcrumbName: "Transcript Report"
   },
   "find-program": {
-    title: "Academic Programs & Curriculum Catalog | BNIE",
-    description: "Browse Bachelor Degree, Honours, Masters, and Vocational Diploma courses offered by Bangladesh National Institute of Education (BNIE).",
+    title: "BNIE Academic Programs | Bachelor Degree, Honours & Masters Courses",
+    description: "Explore BBA Honours, Degree Pass, Masters, and Polytechnic Diploma programs at Bangladesh National Institute of Education (BNIE Bangladesh / বাংলাদেশ ডিগ্রি শিক্ষা).",
     canonicalPath: "/?page=find-program",
     breadcrumbName: "Academic Programs"
   },
   "online-admission": {
-    title: "Online Admission & Enrollment | BNIE",
-    description: "Apply online for undergraduate degrees, honours, masters, and professional engineering diploma courses at Bangladesh National Institute of Education.",
+    title: "BNIE Admission & Student Registration Portal (বিএনআইই ভর্তি)",
+    description: "Apply online for BNIE admission in Bachelor Honours, Degree Pass, Masters, and Polytechnic Diploma engineering programs at Bangladesh National Institute of Education.",
     canonicalPath: "/?page=online-admission",
     breadcrumbName: "Online Admission"
   },
   accreditation: {
-    title: "Institutional Framework & Affiliations | BNIE",
-    description: "Institutional accreditations, curriculum standards, and educational authorizations of Bangladesh National Institute of Education (BNIE).",
+    title: "Government Institutional License & Recognition (1996) | BNIE",
+    description: "Official Government Institutional License (BNIE/GOV-LIC/1996/0715), statutory approval (15 July 1996), and institutional registry of Bangladesh National Institute of Education (BNIE).",
     canonicalPath: "/?page=accreditation",
-    breadcrumbName: "Accreditation"
+    breadcrumbName: "Government Approval & Recognition"
   },
   services: {
-    title: "Academic & Student Services | BNIE",
-    description: "Comprehensive student services: transcript issuance, marksheet corrections, migration certificates, and academic support at BNIE.",
+    title: "BNIE Student Services & Portal | Academic Verification (শিক্ষার্থী সেবা)",
+    description: "Comprehensive student services at BNIE: certificate verification, marksheet checking, academic records, transcript issuance, and student support.",
     canonicalPath: "/?page=services",
     breadcrumbName: "Student Services"
   },
   notices: {
-    title: "Official Notices & Academic Circulars | BNIE",
-    description: "Latest institutional notices, examination schedules, academic calendar announcements, and advisories from BNIE.",
+    title: "BNIE Examination Results, Notices & Academic Circulars (নোটিশ)",
+    description: "Latest examination results, notice circulars, examination schedules, and academic announcements from Bangladesh National Institute of Education (BNIE).",
     canonicalPath: "/?page=notices",
     breadcrumbName: "Notices"
   },
@@ -166,8 +166,8 @@ const PAGE_SEO_CONFIG: Record<string, PageSeoMetadata> = {
     breadcrumbName: "Leadership & Governance"
   },
   "student-handbooks": {
-    title: "Student Handbooks & Code of Conduct | BNIE",
-    description: "Download official student handbooks, examination rules, grading guidelines, and academic policies of BNIE.",
+    title: "BNIE Student Handbooks & Academic Records (শিক্ষার্থী হ্যান্ডবুক)",
+    description: "Download official student handbooks, examination codes of conduct, grading guidelines, and academic rules of BNIE Bangladesh.",
     canonicalPath: "/?page=student-handbooks",
     breadcrumbName: "Student Handbooks"
   },
@@ -184,8 +184,8 @@ const PAGE_SEO_CONFIG: Record<string, PageSeoMetadata> = {
     breadcrumbName: "Citizen Charter"
   },
   "help-center": {
-    title: "Help Center & Student FAQs | BNIE",
-    description: "Frequently asked questions regarding admissions, examinations, marksheets, and certificate verification at BNIE.",
+    title: "BNIE Help Center & FAQs | Result & Certificate Check (সহায়তা)",
+    description: "Help Center: how to check BNIE result, verify certificates online, degree marksheets, and answers to student questions at Bangladesh National Institute of Education.",
     canonicalPath: "/?page=help-center",
     breadcrumbName: "Help Center"
   },
@@ -220,8 +220,8 @@ const PAGE_SEO_CONFIG: Record<string, PageSeoMetadata> = {
     breadcrumbName: "Webmail"
   },
   courses: {
-    title: "Diploma in Engineering Programs | BNIE",
-    description: "Engineering diploma programs: Civil, Electrical, Mechanical, Computer, and Electronics at BNIE.",
+    title: "BNIE Polytechnic Diploma Engineering Programs (পলিটেকনিক ডিপ্লোমা)",
+    description: "1-Year to 4-Year Polytechnic Diploma in Engineering (Civil, Electrical, Mechanical, Computer) at Bangladesh National Institute of Education (BNIE Bangladesh).",
     canonicalPath: "/?page=courses",
     breadcrumbName: "Diploma Courses"
   },
@@ -403,8 +403,10 @@ export default function App() {
     setMetaTag('meta[property="og:title"]', "property", "og:title", seo.title);
     setMetaTag('meta[property="og:description"]', "property", "og:description", seo.description);
     setMetaTag('meta[property="og:url"]', "property", "og:url", canonicalUrl);
+    setMetaTag('meta[property="og:image"]', "property", "og:image", `${baseOrigin}/bnie_logo.jpg`);
     setMetaTag('meta[name="twitter:title"]', "name", "twitter:title", seo.title);
     setMetaTag('meta[name="twitter:description"]', "name", "twitter:description", seo.description);
+    setMetaTag('meta[name="twitter:image"]', "name", "twitter:image", `${baseOrigin}/bnie_logo.jpg`);
 
     // 3. Robots directive (block private admin, allow public pages)
     if (seo.noIndex) {
