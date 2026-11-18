@@ -1,6 +1,7 @@
 import { Category, Group, Religion, Student } from "../types";
 import { generateEmptySubjectGrades } from "./subjectLoader";
 import { getHistorical3YearHonoursHistoryPreset, getDegreePassPreset } from "./baHistoryCatalogue";
+import { distributeDiplomaSubjectGrades } from "../lib/diplomaGradeDistributor";
 
 // SVG avatar data representing realistic passport photos for government credentials
 export const PASSPORT_AVATARS = {
@@ -92,32 +93,29 @@ diplomaGrades[8].gradePoint = 5.0;
 diplomaGrades[9].gradePoint = 5.0;
 diplomaGrades[10].gradePoint = 5.0;
 
-const eeeGrades = generateEmptySubjectGrades(Category.DIPLOMA, Group.ELECTRICAL_ELECTRONICS_ENGINEERING, Religion.ISLAM);
-eeeGrades.forEach((g) => {
-  g.gradePoint = 3.85;
-  g.marks = 82;
-});
+const eeeGrades = distributeDiplomaSubjectGrades(
+  generateEmptySubjectGrades(Category.DIPLOMA, Group.ELECTRICAL_ELECTRONICS_ENGINEERING, Religion.ISLAM),
+  3.85,
+  "stud_4_667101"
+);
 
-const acmGrades = generateEmptySubjectGrades(Category.DIPLOMA, Group.AIR_CONDITION_MAINTENANCE, Religion.ISLAM);
-acmGrades.forEach((g, idx) => {
-  const sampleMarks = [88, 85, 90, 82, 86, 84, 92, 87, 85, 89, 88, 86, 90];
-  g.marks = sampleMarks[idx % 13];
-  g.gradePoint = 4.00;
-});
+const acmGrades = distributeDiplomaSubjectGrades(
+  generateEmptySubjectGrades(Category.DIPLOMA, Group.AIR_CONDITION_MAINTENANCE, Religion.ISLAM),
+  4.00,
+  "stud_5_ACM1029"
+);
 
-const electronicsGrades = generateEmptySubjectGrades(Category.DIPLOMA, Group.ELECTRONICS_TECHNOLOGY, Religion.ISLAM);
-electronicsGrades.forEach((g, idx) => {
-  const sampleMarks = [85, 82, 88, 79, 90, 84, 86, 88, 83, 85, 92, 87, 81, 84, 89, 86, 88, 90, 85, 83, 87, 89, 91];
-  g.marks = sampleMarks[idx % sampleMarks.length];
-  g.gradePoint = 3.82;
-});
+const electronicsGrades = distributeDiplomaSubjectGrades(
+  generateEmptySubjectGrades(Category.DIPLOMA, Group.ELECTRONICS_TECHNOLOGY, Religion.ISLAM),
+  3.82,
+  "stud_6_ET88291"
+);
 
-const mechanicalGrades = generateEmptySubjectGrades(Category.DIPLOMA, Group.MECHANICAL_ENGINEERING, Religion.ISLAM);
-mechanicalGrades.forEach((g, idx) => {
-  const sampleMarks = [86, 84, 88, 82, 89, 85, 87, 83, 88, 90, 84, 86, 89, 87, 85, 88, 86, 91, 84, 88, 87, 92, 90];
-  g.marks = sampleMarks[idx % sampleMarks.length];
-  g.gradePoint = 3.88;
-});
+const mechanicalGrades = distributeDiplomaSubjectGrades(
+  generateEmptySubjectGrades(Category.DIPLOMA, Group.MECHANICAL_ENGINEERING, Religion.ISLAM),
+  3.88,
+  "stud_7_ME77412"
+);
 
 // Pre-2001 Bangladesh Board Division System presets (Subject Marks & Divisions, No GPA)
 const pre2001SscGrades = generateEmptySubjectGrades(Category.SSC, Group.SCIENCE, Religion.ISLAM);

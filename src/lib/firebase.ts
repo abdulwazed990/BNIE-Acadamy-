@@ -15,6 +15,7 @@ import {
 import { Student, SemesterResult, Category } from "../types";
 import { DEFAULT_STUDENTS } from "../data/defaultStudents";
 import { getBbaAccountingCurriculum, getMbaAccountingCurriculum, generateDefaultSemesterResults } from "../data/degreeProgramsCatalog";
+import { normalizeDiplomaStudentGrades } from "./diplomaGradeDistributor";
 
 const firebaseConfig = {
   apiKey: "AIzaSyChRPYx_95hDfi7ZRDSnrVFcmZQnYdWDaM",
@@ -81,9 +82,22 @@ export async function seedDatabaseIfEmpty(): Promise<Student[]> {
       return DEFAULT_STUDENTS;
     } else {
       const students: Student[] = [];
-      querySnapshot.forEach((doc) => {
-        students.push(doc.data() as Student);
+      const repairedStudents: Student[] = [];
+      querySnapshot.forEach((docSnap) => {
+        const raw = docSnap.data() as Student;
+        const { student: normalized, changed } = normalizeDiplomaStudentGrades(raw);
+        students.push(normalized);
+        if (changed) {
+          repairedStudents.push(normalized);
+        }
       });
+      if (repairedStudents.length > 0) {
+        Promise.allSettled(
+          repairedStudents.map((s) =>
+            setDoc(doc(db, STUDENTS_COLLECTION, s.id), sanitizeForFirestore(s))
+          )
+        ).catch(() => {});
+      }
       return students;
     }
   } catch (error) {
@@ -105,9 +119,22 @@ export async function fetchAllStudents(): Promise<Student[]> {
     
     const querySnapshot = await Promise.race([getDocsPromise, timeoutPromise]);
     const students: Student[] = [];
-    querySnapshot.forEach((doc) => {
-      students.push(doc.data() as Student);
+    const repairedStudents: Student[] = [];
+    querySnapshot.forEach((docSnap) => {
+      const raw = docSnap.data() as Student;
+      const { student: normalized, changed } = normalizeDiplomaStudentGrades(raw);
+      students.push(normalized);
+      if (changed) {
+        repairedStudents.push(normalized);
+      }
     });
+    if (repairedStudents.length > 0) {
+      Promise.allSettled(
+        repairedStudents.map((s) =>
+          setDoc(doc(db, STUDENTS_COLLECTION, s.id), sanitizeForFirestore(s))
+        )
+      ).catch(() => {});
+    }
     return students;
   } catch (error) {
     console.error("Error fetching students from Firestore:", error);
@@ -212,7 +239,14 @@ export async function findStudentInDatabase(
       }
     });
 
-    return matched || null;
+    if (matched) {
+      const { student: normalized, changed } = normalizeDiplomaStudentGrades(matched);
+      if (changed) {
+        setDoc(doc(db, STUDENTS_COLLECTION, normalized.id), sanitizeForFirestore(normalized)).catch(() => {});
+      }
+      return normalized;
+    }
+    return null;
   } catch (error) {
     console.warn("Live database search failed, falling back to local memory:", error);
     return null;

@@ -33,6 +33,7 @@ import LeadershipAdministrationPage, { LeadershipSectionId } from "./components/
 import DegreeResultVerificationPage from "./components/DegreeResultVerificationPage";
 import { Student, HomepageContentSettings } from "./types";
 import { DEFAULT_STUDENTS } from "./data/defaultStudents";
+import { normalizeDiplomaStudentGrades } from "./lib/diplomaGradeDistributor";
 import { 
   seedDatabaseIfEmpty, 
   fetchAllStudents,
@@ -271,12 +272,13 @@ export default function App() {
     }
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved) as Student[];
+        return parsed.map((s) => normalizeDiplomaStudentGrades(s).student);
       } catch (e) {
         console.error("Failed to parse saved students", e);
       }
     }
-    return DEFAULT_STUDENTS;
+    return DEFAULT_STUDENTS.map((s) => normalizeDiplomaStudentGrades(s).student);
   });
 
   // Load and sync with Cloud Firestore on mount

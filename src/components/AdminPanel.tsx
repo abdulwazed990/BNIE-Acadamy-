@@ -28,6 +28,7 @@ import {
   generateSchoolRollNumber, 
   generateSchoolRegistrationNumber 
 } from "../lib/academicNumberingService";
+import { distributeDiplomaSubjectGrades, normalizeDiplomaStudentGrades } from "../lib/diplomaGradeDistributor";
 
 interface AdminPanelProps {
   students: Student[];
@@ -276,7 +277,8 @@ export default function AdminPanel({
     setFormDivision(student.division || divResult.division);
     
     // Ensure existing subjects have proper subjectCode, marks, credit, and year
-    const mappedSubjects = student.subjects.map((sub) => ({
+    const normalizedStudent = normalizeDiplomaStudentGrades(student).student;
+    const mappedSubjects = normalizedStudent.subjects.map((sub) => ({
       ...sub,
       subjectName: sub.subjectName,
       subjectCode: sub.subjectCode || getSubjectCode(sub.subjectName),
@@ -539,7 +541,17 @@ export default function AdminPanel({
     
     const numSubjects = formSubjects.length;
     if (numSubjects === 0) return;
-    
+
+    if (isDiploma) {
+      const distributed = distributeDiplomaSubjectGrades(
+        formSubjects,
+        totalGpa,
+        `${formRoll || formName || "diploma"}-${Date.now()}`
+      );
+      setFormSubjects(distributed);
+      return;
+    }
+
     let distributedPoints = Array(numSubjects).fill(totalGpa);
     
     // Add small realistic variation if totalGpa is not extremely high or low
@@ -636,14 +648,17 @@ export default function AdminPanel({
       distributedMarks[i] += 1;
     }
     
-    // Introduce some realistic variation (e.g., some subjects higher, some lower)
+    // Introduce realistic varied distribution across subjects & years
     if (totalMarks > numSubjects * 33 && totalMarks < numSubjects * 95) {
-      for (let i = 0; i < numSubjects; i += 2) {
-        if (i + 1 < numSubjects) {
-          const spread = Math.min(12, Math.floor(Math.random() * 8) + 3);
-          if (distributedMarks[i] + spread <= 100 && distributedMarks[i + 1] - spread >= 0) {
+      const rounds = numSubjects * 2;
+      for (let r = 0; r < rounds; r++) {
+        const i = Math.floor(Math.random() * numSubjects);
+        const j = Math.floor(Math.random() * numSubjects);
+        if (i !== j) {
+          const spread = Math.floor(Math.random() * 9) + 2;
+          if (distributedMarks[i] + spread <= 96 && distributedMarks[j] - spread >= 40) {
             distributedMarks[i] += spread;
-            distributedMarks[i + 1] -= spread;
+            distributedMarks[j] -= spread;
           }
         }
       }
