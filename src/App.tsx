@@ -95,7 +95,7 @@ interface PageSeoMetadata {
 const PAGE_SEO_CONFIG: Record<string, PageSeoMetadata> = {
   home: {
     title: "BNIE Bangladesh | Bangladesh National Institute of Education (বিএনআইই)",
-    description: "Official portal of Bangladesh National Institute of Education (BNIE / বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট). Check student result, certificate verification, marksheet checking, Degree, Honours, Masters, and admission.",
+    description: "Official portal of Bangladesh National Institute of Education (BNIE), a Government-approved autonomous institute established & approved on 15 July 1996 (License: BNIE/GOV-LIC/1996/0715). Check results, marksheets & certificate verification.",
     canonicalPath: "/",
     breadcrumbName: "Home"
   },
@@ -130,8 +130,8 @@ const PAGE_SEO_CONFIG: Record<string, PageSeoMetadata> = {
     breadcrumbName: "Online Admission"
   },
   accreditation: {
-    title: "Government Institutional License & Recognition (1996) | BNIE",
-    description: "Official Government Institutional License (BNIE/GOV-LIC/1996/0715), statutory approval (15 July 1996), and institutional registry of Bangladesh National Institute of Education (BNIE).",
+    title: "Government Institutional License & Recognition (Approved 15 July 1996) | BNIE",
+    description: "Official Government Institutional License (BNIE/GOV-LIC/1996/0715), approved by the Government of Bangladesh on 15 July 1996 (Memo: MOE/REG-1996/0715-BNIE). Statutory institutional registry of BNIE.",
     canonicalPath: "/?page=accreditation",
     breadcrumbName: "Government Approval & Recognition"
   },

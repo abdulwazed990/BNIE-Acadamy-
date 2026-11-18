@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
+Allow: /llms.txt
 Disallow: /?page=admin*
 Disallow: /admin
 Disallow: /*?token=*
@@ -19,8 +20,23 @@ Disallow: /admin
 Disallow: /*?token=*
 Disallow: /*?id=*
 
+User-agent: OAI-SearchBot
+Allow: /
+Allow: /llms.txt
+Disallow: /?page=admin*
+Disallow: /admin
+Disallow: /*?token=*
+Disallow: /*?id=*
+
+User-agent: ChatGPT-User
+Allow: /
+Allow: /llms.txt
+Disallow: /?page=admin*
+Disallow: /admin
+
 User-agent: GPTBot
 Allow: /
+Allow: /llms.txt
 Disallow: /?page=admin*
 Disallow: /admin
 Disallow: /*?token=*
@@ -28,6 +44,7 @@ Disallow: /*?id=*
 
 User-agent: Google-Extended
 Allow: /
+Allow: /llms.txt
 Disallow: /?page=admin*
 Disallow: /admin
 Disallow: /*?token=*
@@ -35,6 +52,7 @@ Disallow: /*?id=*
 
 User-agent: PerplexityBot
 Allow: /
+Allow: /llms.txt
 Disallow: /?page=admin*
 Disallow: /admin
 Disallow: /*?token=*
@@ -42,9 +60,22 @@ Disallow: /*?id=*
 
 User-agent: ClaudeBot
 Allow: /
+Allow: /llms.txt
 Disallow: /?page=admin*
 Disallow: /admin
 Disallow: /*?token=*
 Disallow: /*?id=*
+
+User-agent: Applebot-Extended
+Allow: /
+Allow: /llms.txt
+Disallow: /?page=admin*
+Disallow: /admin
+
+User-agent: Meta-ExternalAgent
+Allow: /
+Allow: /llms.txt
+Disallow: /?page=admin*
+Disallow: /admin
 
 Sitemap: https://bnie.edu.bd/sitemap.xml

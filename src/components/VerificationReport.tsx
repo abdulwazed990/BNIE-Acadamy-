@@ -592,76 +592,76 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
               Candidate Academic Profile
             </h4>
             
-            <div className="border border-gray-300 rounded-lg overflow-x-auto shadow-2xs">
-              <table className="w-full border-collapse text-xs min-w-[600px] sm:min-w-0 text-left">
+            <div className="border border-gray-300 rounded-lg overflow-hidden shadow-2xs">
+              <table className="w-full table-fixed border-collapse text-[10px] sm:text-xs text-left">
                 <tbody>
                   <tr className="border-b border-gray-300">
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Student Name</td>
-                    <td className="px-3 py-1.5 font-extrabold text-gray-950 text-xs sm:text-[13px] uppercase" colSpan={3}>{student.name}</td>
+                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Student Name</td>
+                    <td className="px-2 sm:px-3 py-1.5 font-extrabold text-gray-950 text-[11px] sm:text-[13px] uppercase break-words" colSpan={3}>{student.name}</td>
                   </tr>
                   <tr className="border-b border-gray-300">
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Father's Name</td>
-                    <td className="px-3 py-1.5 font-bold text-gray-800" colSpan={3}>{student.fatherName}</td>
+                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Father&apos;s Name</td>
+                    <td className="px-2 sm:px-3 py-1.5 font-bold text-gray-800 break-words" colSpan={3}>{student.fatherName}</td>
                   </tr>
                   <tr className="border-b border-gray-300">
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Mother's Name</td>
-                    <td className="px-3 py-1.5 font-bold text-gray-800" colSpan={3}>{student.motherName}</td>
+                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Mother&apos;s Name</td>
+                    <td className="px-2 sm:px-3 py-1.5 font-bold text-gray-800 break-words" colSpan={3}>{student.motherName}</td>
                   </tr>
                   <tr className="border-b border-gray-300">
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Institute Name</td>
-                    <td className="px-3 py-1.5 font-extrabold text-gray-900" colSpan={3}>{student.instituteName}</td>
+                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Institute Name</td>
+                    <td className="px-2 sm:px-3 py-1.5 font-extrabold text-gray-900 break-words" colSpan={3}>{student.instituteName}</td>
                   </tr>
                   <tr className="border-b border-gray-300">
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Date of Birth</td>
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-800 w-[28%] whitespace-nowrap">
+                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Date of Birth</td>
+                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-800 w-[26%] sm:w-[28%] break-words">
                       {new Date(student.dob).toLocaleDateString("en-GB", {
                         day: "2-digit",
                         month: "long",
                         year: "numeric"
                       })}
                     </td>
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Session</td>
-                    <td className="px-3 py-1.5 font-bold text-gray-800 font-mono w-[28%] whitespace-nowrap">{student.session}</td>
+                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Session</td>
+                    <td className="px-2 sm:px-3 py-1.5 font-bold text-gray-800 font-mono w-[26%] sm:w-[28%] break-words">{student.session}</td>
                   </tr>
                   <tr className="border-b border-gray-300">
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Program / Course</td>
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-extrabold text-[#006a4e] w-[28%]">
+                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Program / Course</td>
+                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-extrabold text-[#006a4e] w-[26%] sm:w-[28%] break-words">
                       {student.category === "Diploma" ? "Diploma in Engineering" : `${student.category} Program`}
                     </td>
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Group / Dept</td>
-                    <td className="px-3 py-1.5 font-extrabold text-gray-900 w-[28%]">{student.group}</td>
+                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Group / Dept</td>
+                    <td className="px-2 sm:px-3 py-1.5 font-extrabold text-gray-900 w-[26%] sm:w-[28%] break-words">{student.group}</td>
                   </tr>
                   <tr className="border-b border-gray-300">
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Roll Number</td>
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-black text-[#006a4e] font-number digit-clear text-xs sm:text-[13px] w-[28%] whitespace-nowrap">{student.rollNumber}</td>
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Registration No</td>
-                    <td className="px-3 py-1.5 font-bold text-gray-900 font-number digit-clear w-[28%] whitespace-nowrap">{student.registrationNumber}</td>
+                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Roll Number</td>
+                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-black text-[#006a4e] font-number digit-clear text-[11px] sm:text-[13px] w-[26%] sm:w-[28%] break-all">{student.rollNumber}</td>
+                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Registration No</td>
+                    <td className="px-2 sm:px-3 py-1.5 font-bold text-gray-900 font-number digit-clear w-[26%] sm:w-[28%] break-all">{student.registrationNumber}</td>
                   </tr>
                   <tr className="border-b border-gray-300">
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Certificate No</td>
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-800 font-number digit-clear text-[10px] sm:text-[11px] w-[28%] whitespace-nowrap">{student.certificateSerialNumber}</td>
-                    <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Passing Year</td>
-                    <td className="px-3 py-1.5 font-bold text-gray-800 font-number digit-clear w-[28%] whitespace-nowrap">{student.passingYear}</td>
+                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Certificate No</td>
+                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-800 font-number digit-clear text-[9.5px] sm:text-[11px] w-[26%] sm:w-[28%] break-all">{student.certificateSerialNumber}</td>
+                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Passing Year</td>
+                    <td className="px-2 sm:px-3 py-1.5 font-bold text-gray-800 font-number digit-clear w-[26%] sm:w-[28%] break-words">{student.passingYear}</td>
                   </tr>
                   {isDivision ? (
                     <>
                       <tr className="border-b border-gray-300">
-                        <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Examination Year</td>
-                        <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-800 font-number digit-clear w-[28%] whitespace-nowrap">{student.passingYear}</td>
-                        <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">
+                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Examination Year</td>
+                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-800 font-number digit-clear w-[26%] sm:w-[28%] break-words">{student.passingYear}</td>
+                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">
                           Total Marks Obtained
                         </td>
-                        <td className="px-3 py-1.5 font-black text-[#006a4e] text-xs sm:text-sm font-number digit-clear w-[28%] whitespace-nowrap">
+                        <td className="px-2 sm:px-3 py-1.5 font-black text-[#006a4e] text-[11px] sm:text-sm font-number digit-clear w-[26%] sm:w-[28%] break-words">
                           {displayTotalMarks} / {divisionResult.totalFullMarks} ({divisionResult.percentage}%)
                         </td>
                       </tr>
                       <tr>
-                        <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Official Division</td>
-                        <td className="border-r border-gray-300 px-3 py-1.5 font-black text-[#006a4e] uppercase text-xs sm:text-[13px] w-[28%] whitespace-nowrap">
+                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Official Division</td>
+                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-black text-[#006a4e] uppercase text-[11px] sm:text-[13px] w-[26%] sm:w-[28%] break-words">
                           {displayDivision}
                         </td>
-                        <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Result Status</td>
-                        <td className="px-3 py-1.5 font-extrabold text-emerald-800 bg-emerald-50/40 w-[28%] whitespace-nowrap">
+                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Result Status</td>
+                        <td className="px-2 sm:px-3 py-1.5 font-extrabold text-emerald-800 bg-emerald-50/40 w-[26%] sm:w-[28%] break-words">
                           {divisionResult.isPassed ? "PASSED" : "FAILED"}
                         </td>
                       </tr>
@@ -669,18 +669,18 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
                   ) : (
                     <>
                       <tr className="border-b border-gray-300">
-                        <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Examination Year</td>
-                        <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-800 font-number digit-clear w-[28%] whitespace-nowrap">{student.passingYear}</td>
-                        <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">
+                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Examination Year</td>
+                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-800 font-number digit-clear w-[26%] sm:w-[28%] break-words">{student.passingYear}</td>
+                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">
                           {student.category === "Diploma" ? "CGPA" : "GPA / CGPA"}
                         </td>
-                        <td className="px-3 py-1.5 font-black text-[#006a4e] text-xs sm:text-sm font-number digit-clear w-[28%] whitespace-nowrap">
+                        <td className="px-2 sm:px-3 py-1.5 font-black text-[#006a4e] text-[11px] sm:text-sm font-number digit-clear w-[26%] sm:w-[28%] break-words">
                           {student.category === "Diploma" ? `CGPA: ${student.finalGpa.toFixed(2)} / 4.00` : student.finalGpa.toFixed(2)}
                         </td>
                       </tr>
                       <tr>
-                        <td className="border-r border-gray-300 px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[22%] whitespace-nowrap">Result Status</td>
-                        <td className="px-3 py-1.5 font-extrabold text-emerald-800 bg-emerald-50/40" colSpan={3}>
+                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Result Status</td>
+                        <td className="px-2 sm:px-3 py-1.5 font-extrabold text-emerald-800 bg-emerald-50/40 break-words" colSpan={3}>
                           {student.finalGpa > 0.00 ? "PASSED" : "FAILED"}
                         </td>
                       </tr>
@@ -901,9 +901,9 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
           </span>
         </div>
 
-        {/* Footer block: Timestamp details and Blank Signature & Seal */}
+        {/* Footer block: Timestamp details */}
         <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-6 pt-6 border-t border-gray-200 mt-auto">
-          {/* Left Side: System Verification Timestamps */}
+          {/* System Verification Timestamps */}
           <div className="space-y-1.5 text-xs text-gray-500 text-center sm:text-left w-full sm:w-auto">
             <div className="flex items-center justify-center sm:justify-start space-x-1.5 font-semibold">
               <Calendar className="w-3.5 h-3.5 text-[#006a4e]" />
@@ -916,18 +916,6 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
             <div className="text-[9px] text-gray-400 font-mono mt-2 block uppercase text-center sm:text-left">
               Fingerprint: BNIE_REGISTRY_{student.rollNumber}_{student.passingYear}
             </div>
-          </div>
-
-          {/* Right Side: Blank Signature and Seal Section */}
-          <div className="flex flex-col items-center w-full sm:w-auto">
-            {/* Blank line for signature and seal */}
-            <div className="w-full max-w-[260px] sm:w-64 border-t-2 border-gray-400 border-dashed mb-2 mt-6 sm:mt-10"></div>
-            <p className="text-xs font-bold text-gray-900 uppercase tracking-wide">
-              Authorized Signature &amp; Seal
-            </p>
-            <p className="text-[10px] text-gray-400 uppercase tracking-wider text-center">
-              Bangladesh National Institute of Education
-            </p>
           </div>
         </div>
 

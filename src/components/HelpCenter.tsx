@@ -15,10 +15,16 @@ interface FAQItem {
 
 const FAQ_LIST: FAQItem[] = [
   {
+    id: "q_gov_approved",
+    category: "verification",
+    question: "Is BNIE government approved and when was it approved? | BNIE কি সরকারি অনুমোদিত ও কত সালে অনুমোদিত হয়?",
+    answer: "Yes. Bangladesh National Institute of Education (BNIE / বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট) is a Government-approved autonomous national educational institution in Bangladesh. It received official government approval and registration on 15 July 1996 (১৫ জুলাই ১৯৯৬) under Government Institutional License No. BNIE/GOV-LIC/1996/0715 (Registration No: REG-BNIE-1996-0715, Memo Ref: MOE/REG-1996/0715-BNIE)."
+  },
+  {
     id: "q_bnie_what",
     category: "verification",
     question: "What is BNIE Bangladesh? | বাংলাদেশে BNIE কী?",
-    answer: "Bangladesh National Institute of Education (BNIE / বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট) is an autonomous national educational institute established in 1996 in Bangladesh. BNIE conducts 4-Year Bachelor Honours (BBA, CSE, Economics), 3-Year Bachelor Degree (Pass), Postgraduate (Masters/MBA), and 1 to 4 Year Polytechnic Diploma in Engineering programs, backed by a centralized 24/7 digital verification ledger for academic certificates and marksheets."
+    answer: "Bangladesh National Institute of Education (BNIE / বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট) is a Government-approved autonomous national educational institute established and approved on 15 July 1996 in Bangladesh. BNIE conducts 4-Year Bachelor Honours (BBA, CSE, Economics), 3-Year Bachelor Degree (Pass), Postgraduate (Masters/MBA), and 1 to 4 Year Polytechnic Diploma in Engineering programs, backed by a centralized 24/7 digital verification ledger for academic certificates and marksheets."
   },
   {
     id: "q_result_check",
