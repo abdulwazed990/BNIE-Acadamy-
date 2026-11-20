@@ -23,7 +23,7 @@ export default function Footer({ onNavigate }: FooterProps) {
               </div>
             </div>
             <p className="text-xs text-gray-600 leading-relaxed max-w-sm">
-              গণপ্রজাতন্ত্রী বাংলাদেশ সরকার অনুমোদিত একটি স্বায়ত্তশাসিত জাতীয় শিক্ষা প্রতিষ্ঠান। এস.এস.সি, এইচ.এস.সি, ভোকেশনাল এবং ১ বছর থেকে ৪ বছর মেয়াদী পলিটেকনিক ডিপ্লোমা সনদ ও কেন্দ্রীয় ডিজিটাল ভেরিফিকেশন পোর্টাল।
+              গণপ্রজাতন্ত্রী বাংলাদেশ সরকার অনুমোদিত একটি স্বায়ত্তশাসিত জাতীয় উচ্চশিক্ষা ও কারিগরি শিক্ষা প্রতিষ্ঠান। ৪ বছর মেয়াদী স্নাতক সম্মান (অনার্স), ৩ বছর মেয়াদী ডিগ্রি (পাস), স্নাতকোত্তর (মাস্টার্স), ১ থেকে ৪ বছর মেয়াদী পলিটেকনিক ডিপ্লোমা এবং এস.এস.সি, এইচ.এস.সি ও ভোকেশনাল সনদ ও কেন্দ্রীয় ডিজিটাল ভেরিফিকেশন পোর্টাল।
             </p>
             <div className="inline-block bg-emerald-50 text-[#006a4e] border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded">
               Govt. Approved &amp; Accredited Institute
@@ -38,84 +38,111 @@ export default function Footer({ onNavigate }: FooterProps) {
               </h4>
               <ul className="space-y-2">
                 <li>
-                  <button
-                    onClick={() => onNavigate("home")}
+                  <a
+                    href="/"
+                    onClick={(e) => { e.preventDefault(); onNavigate("home"); }}
                     className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer"
                   >
-                    Home
-                  </button>
+                    Home — BNIE Bangladesh
+                  </a>
                 </li>
                 <li>
-                  <button
-                    onClick={() => onNavigate("accreditation")}
+                  <a
+                    href="/?page=verify"
+                    onClick={(e) => { e.preventDefault(); onNavigate("verify"); }}
+                    className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer font-medium"
+                  >
+                    Certificate Verification (সনদ যাচাই)
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/?page=degree-marksheet-result"
+                    onClick={(e) => { e.preventDefault(); onNavigate("degree-marksheet-result"); }}
+                    className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer font-medium"
+                  >
+                    Online Marksheet (Honours / Degree / Masters)
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/?page=courses"
+                    onClick={(e) => { e.preventDefault(); onNavigate("courses"); }}
+                    className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer"
+                  >
+                    Diploma in Engineering Courses
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/?page=online-admission"
+                    onClick={(e) => { e.preventDefault(); onNavigate("online-admission"); }}
+                    className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer"
+                  >
+                    Online Admission (অনলাইন ভর্তি)
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/?page=accreditation"
+                    onClick={(e) => { e.preventDefault(); onNavigate("accreditation"); }}
                     className="text-xs text-[#006a4e] hover:underline font-bold transition-colors cursor-pointer"
                   >
                     Govt. Approval (সরকারি অনুমোদন)
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => onNavigate("verify")}
-                    className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer font-medium"
-                  >
-                    Verify Certificate (পরীক্ষার ফলাফল)
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => onNavigate("vc-message")}
-                    className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer"
-                  >
-                    উপাচার্যের শুভেচ্ছাপত্র
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => onNavigate("complaints-services")}
-                    className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer"
-                  >
-                    অভিযোগ ও সেবা (GRS)
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => onNavigate("services")}
-                    className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer"
-                  >
-                    Our Services
-                  </button>
+                  </a>
                 </li>
               </ul>
             </div>
 
             <div>
               <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
-                Legal & Support
+                Academic &amp; Support
               </h4>
               <ul className="space-y-2">
                 <li>
-                  <button
-                    onClick={() => onNavigate("privacy")}
+                  <a
+                    href="/?page=find-program"
+                    onClick={(e) => { e.preventDefault(); onNavigate("find-program"); }}
                     className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer"
                   >
-                    Privacy Policy
-                  </button>
+                    Honours, Degree &amp; Masters Programs
+                  </a>
                 </li>
                 <li>
-                  <button
-                    onClick={() => onNavigate("terms")}
+                  <a
+                    href="/?page=services"
+                    onClick={(e) => { e.preventDefault(); onNavigate("services"); }}
                     className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer"
                   >
-                    Terms & Conditions
-                  </button>
+                    Student Services (শিক্ষার্থী সেবা)
+                  </a>
                 </li>
                 <li>
-                  <button
-                    onClick={() => onNavigate("help")}
+                  <a
+                    href="/?page=help-center"
+                    onClick={(e) => { e.preventDefault(); onNavigate("help-center"); }}
                     className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer"
                   >
                     Help Center
-                  </button>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/?page=privacy-policy"
+                    onClick={(e) => { e.preventDefault(); onNavigate("privacy-policy"); }}
+                    className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer"
+                  >
+                    Privacy Policy
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/?page=terms-conditions"
+                    onClick={(e) => { e.preventDefault(); onNavigate("terms-conditions"); }}
+                    className="text-xs text-gray-600 hover:text-[#006a4e] transition-colors cursor-pointer"
+                  >
+                    Terms &amp; Conditions
+                  </a>
                 </li>
               </ul>
             </div>
@@ -156,10 +183,6 @@ export default function Footer({ onNavigate }: FooterProps) {
           >
             © Bangladesh National Institute of Education (BNIE). All Rights Reserved.
           </p>
-          <div className="flex space-x-2">
-            <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#006a4e]" title="Active Registry Portal" />
-            <span className="text-[10px] text-gray-400 font-mono">SECURE REGISTRY SSL v3.4</span>
-          </div>
         </div>
       </div>
     </footer>

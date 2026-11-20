@@ -187,10 +187,10 @@ export default function OnlineAdmissionPage({
                   <span>Central Admission Desk • Session 2024–2025</span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-                  Online Admission Application (অনলাইন ভর্তি আবেদন)
+                  Online Admission — BNIE Bangladesh (অনলাইন ভর্তি আবেদন)
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                  বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউটের ৪ বছর মেয়াদী অনার্স, ৩ বছর মেয়াদী ডিগ্রি (পাস), স্নাতকোত্তর (মাস্টার্স), ডিপ্লোমা ইন ইঞ্জিনিয়ারিং ও ভোকেশনাল কোর্সে ভর্তির জন্য নির্ধারিত ফরমটি নির্ভুলভাবে পূরণ করুন।
+                  বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউটের ৪ বছর মেয়াদী অনার্স ভর্তি, ৩ বছর মেয়াদী ডিগ্রি (পাস), মাস্টার্স, ডিপ্লোমা ইন ইঞ্জিনিয়ারিং (কম্পিউটার, সিভিল, ইলেকট্রিক্যাল, মেকানিক্যাল) ও ভোকেশনাল কোর্সে ভর্তির আবেদন ফরম।
                 </p>
               </div>
             </div>

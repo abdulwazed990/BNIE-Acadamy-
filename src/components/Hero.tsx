@@ -37,8 +37,8 @@ export default function Hero({
 }: HeroProps) {
   const titleBn = homepageSettings?.heroTitleBn || "বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট";
   const titleEn = homepageSettings?.heroTitleEn || "Bangladesh National Institute of Education (BNIE)";
-  const subtitleBn = homepageSettings?.heroSubtitleBn || "ডিজিটাল সনদ ও মার্কশিট যাচাইকরণ পোর্টাল";
-  const subtitleEn = homepageSettings?.heroSubtitleEn || "গণপ্রজাতন্ত্রী বাংলাদেশ সরকার অনুমোদিত স্বায়ত্তশাসিত জাতীয় উচ্চশিক্ষা ও কারিগরি শিক্ষা ইনস্টিটিউট (BNIE)। এখানে ৪ বছর মেয়াদী স্নাতক (সম্মান/অনার্স), ৩ বছর মেয়াদী স্নাতক ডিগ্রি (পাস), স্নাতকোত্তর (মাস্টার্স), ১ থেকে ৪ বছর মেয়াদী ডিপ্লোমা ইন ইঞ্জিনিয়ারিং এবং এস.এস.সি ও এইচ.এস.সি এর প্রাতিষ্ঠানিক সনদ ও পূর্ণাঙ্গ সেমিস্টারভিত্তিক মার্কশিট অনলাইন যাচাইকরণের কেন্দ্রীয় সুবিধা রয়েছে।";
+  const subtitleBn = homepageSettings?.heroSubtitleBn || "BNIE Bangladesh • ডিজিটাল সনদ ও মার্কশিট যাচাইকরণ পোর্টাল";
+  const subtitleEn = homepageSettings?.heroSubtitleEn || "BNIE Bangladesh একটি স্বায়ত্তশাসিত জাতীয় শিক্ষা প্রতিষ্ঠান। এখানে ৪ বছর মেয়াদী স্নাতক সম্মান (অনার্স), ৩ বছর মেয়াদী ডিগ্রি (পাস), স্নাতকোত্তর (মাস্টার্স), ১ থেকে ৪ বছর মেয়াদী পলিটেকনিক ডিপ্লোমা ইন ইঞ্জিনিয়ারিং এবং এস.এস.সি ও এইচ.এস.সি ভোকেশনাল সনদ ও পূর্ণাঙ্গ সেমিস্টারভিত্তিক অনলাইন মার্কশিট, QR কোড সার্টিফিকেট যাচাই ও অনলাইন ভর্তি আবেদন সুবিধা রয়েছে।";
 
 
 
@@ -50,23 +50,23 @@ export default function Hero({
 
         {/* Centered Top Heading Block */}
         <div className="max-w-4xl mx-auto text-center">
-          {/* Hero Title with Bilingual Branding */}
-          <motion.h2
+          {/* Primary Semantic H1 Heading with Bilingual Branding */}
+          <motion.h1
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
             className="text-3xl md:text-5xl font-extrabold text-gray-950 font-sans tracking-tight leading-tight"
           >
-            {titleBn} <br />
-            <span className="text-2xl md:text-3xl font-bold text-gray-700 block mt-1">
-              {titleEn}
+            {titleEn}
+            <span className="text-2xl md:text-3xl font-bold text-gray-800 block mt-1.5" lang="bn">
+              {titleBn}
             </span>
             {subtitleBn && (
-              <span className="text-xl md:text-2xl font-bold text-[#006a4e] block mt-1">
+              <span className="text-lg md:text-2xl font-bold text-[#006a4e] block mt-1">
                 {subtitleBn}
               </span>
             )}
-          </motion.h2>
+          </motion.h1>
 
           {/* Hero Subtitle */}
           <motion.p

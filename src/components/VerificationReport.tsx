@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Student, getLetterGrade, getDiplomaLetterGrade, isDivisionSystemStudent, calculateDivisionFromMarks } from "../types";
-import { ArrowLeft, Printer, Award, Calendar, Clock, CheckCircle2, FileDown } from "lucide-react";
+import { ArrowLeft, Printer, Award, Calendar, CheckCircle2, FileDown } from "lucide-react";
 import { motion } from "motion/react";
 import { QRCodeCanvas } from "qrcode.react";
 import Logo from "./Logo";
@@ -241,52 +241,97 @@ interface VerificationReportProps {
 }
 
 export default function VerificationReport({ student, onBack }: VerificationReportProps) {
-  const [currentDateTime, setCurrentDateTime] = useState(() => {
-    const now = new Date();
-    const dateStr = now.toLocaleDateString("en-GB", {
+  const [verificationDate] = useState(() =>
+    new Date().toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
       year: "numeric"
-    });
-    const timeStr = now.toLocaleTimeString("en-US", {
-      hour12: true,
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit"
-    });
-    return { date: dateStr, time: timeStr };
-  });
+    })
+  );
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
+  // Normalize subjects list (supports both direct subjects and semesterResults if a higher-ed record is viewed here)
+  const effectiveSubjects =
+    student.subjects && student.subjects.length > 0
+      ? student.subjects
+      : student.semesterResults && student.semesterResults.length > 0
+      ? student.semesterResults.flatMap((sem) =>
+          sem.subjects.map((sub) => ({
+            ...sub,
+            year: sub.year || sem.semesterName
+          }))
+        )
+      : [];
+
+  const is4Scale =
+    student.category === "Diploma" ||
+    student.category === "Degree Pass" ||
+    student.category === "Honours" ||
+    student.category === "Masters" ||
+    Boolean(student.academicLevel);
 
   // Check if student belongs to the pre-2001 (1995-2000) Bangladesh Division System
   const isDivision = isDivisionSystemStudent(student);
-  const divisionResult = calculateDivisionFromMarks(student.subjects);
+  const divisionResult = calculateDivisionFromMarks(effectiveSubjects);
   const displayDivision = student.division || divisionResult.division;
   const displayTotalMarks = student.totalMarks !== undefined ? student.totalMarks : divisionResult.totalMarks;
 
-  useEffect(() => {
-    const updateDateTime = () => {
-      const now = new Date();
-      // Format Date: DD MMM YYYY (e.g. 16 Jul 2026)
-      const dateStr = now.toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric"
-      });
-      // Format Time: HH:MM:SS AM/PM
-      const timeStr = now.toLocaleTimeString("en-US", {
-        hour12: true,
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit"
-      });
-      setCurrentDateTime({ date: dateStr, time: timeStr });
-    };
+  // Group subjects by year/semester in preserved display order
+  const orderedGroupLabels: string[] = [];
+  if (effectiveSubjects.some((s) => s.year !== undefined)) {
+    const standardYearOrder = ["FIRST YEAR", "SECOND YEAR", "THIRD YEAR", "FOURTH YEAR"];
+    for (const yr of standardYearOrder) {
+      if (effectiveSubjects.some((s) => s.year === yr)) {
+        orderedGroupLabels.push(yr);
+      }
+    }
+    for (const sub of effectiveSubjects) {
+      if (sub.year && !orderedGroupLabels.includes(sub.year)) {
+        orderedGroupLabels.push(sub.year);
+      }
+    }
+  }
 
-    updateDateTime();
-    const timer = setInterval(updateDateTime, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const totalSubjects = effectiveSubjects.length;
+  const hasGroupedPeriods = orderedGroupLabels.length >= 2;
+  const isTwoPageReport = totalSubjects > 15 || orderedGroupLabels.length > 2;
+  const isDenseReport = totalSubjects > 20;
+
+  let page1GroupLabels: string[] = [];
+  let page2GroupLabels: string[] = [];
+  let page1FlatSubjects = effectiveSubjects;
+  let page2FlatSubjects: typeof effectiveSubjects = [];
+
+  if (isTwoPageReport) {
+    if (hasGroupedPeriods) {
+      const targetHalf = Math.ceil(totalSubjects / 2);
+      let runningCount = 0;
+      let splitGroupIdx = Math.ceil(orderedGroupLabels.length / 2);
+
+      for (let i = 0; i < orderedGroupLabels.length - 1; i++) {
+        const grpCount = effectiveSubjects.filter((s) => s.year === orderedGroupLabels[i]).length;
+        runningCount += grpCount;
+        // Prefer keeping FIRST & SECOND YEAR together on Sheet 1 for 4-year programs when they fit comfortably
+        if (orderedGroupLabels.length === 4 && i === 1) {
+          splitGroupIdx = 2;
+          break;
+        }
+        if (runningCount >= targetHalf) {
+          splitGroupIdx = i + 1;
+          break;
+        }
+      }
+
+      page1GroupLabels = orderedGroupLabels.slice(0, splitGroupIdx);
+      page2GroupLabels = orderedGroupLabels.slice(splitGroupIdx);
+    } else {
+      const mid = Math.ceil(totalSubjects / 2);
+      page1FlatSubjects = effectiveSubjects.slice(0, mid);
+      page2FlatSubjects = effectiveSubjects.slice(mid);
+    }
+  } else {
+    page1GroupLabels = orderedGroupLabels;
+  }
 
   // Generate secure URL with encrypted identifier
   const verificationUrl = `${window.location.origin}${window.location.pathname}?token=${student.secureToken || student.id}`;
@@ -313,7 +358,7 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
     iframe.style.top = "0";
     iframe.style.left = "-9999px";
     iframe.style.width = "1024px"; // Fixed desktop width
-    iframe.style.height = "1400px"; // Tall height to prevent cutoff
+    iframe.style.height = "2800px"; // Tall height for multi-page A4 sheet layout
     iframe.style.border = "0";
     iframe.style.pointerEvents = "none";
     document.body.appendChild(iframe);
@@ -332,17 +377,17 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
       <!DOCTYPE html>
       <html>
         <head>
-          <title>A4 Verification Report Renderer</title>
+          <title>Verification Report Renderer</title>
           <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
         </head>
         <body style="margin: 0; padding: 0; background-color: #ffffff; -webkit-print-color-adjust: exact; font-family: 'Hind Siliguri', 'Inter', sans-serif;">
-          <div id="sandbox-root" style="width: 840px; margin: 0 auto; padding: 10px; font-family: 'Hind Siliguri', 'Inter', sans-serif;"></div>
+          <div id="sandbox-root" style="width: 840px; margin: 0 auto; padding: 0; font-family: 'Hind Siliguri', 'Inter', sans-serif;"></div>
         </body>
       </html>
     `);
     iframeDoc.close();
 
-    // Copy all style blocks and link stylesheets from parent document to ensure Tailwind CSS and custom webfonts are perfectly loaded
+    // Copy all style blocks and link stylesheets from parent document
     const parentHead = document.head;
     const iframeHead = iframeDoc.head;
     Array.from(parentHead.querySelectorAll("link, style")).forEach((node) => {
@@ -350,7 +395,7 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
       iframeHead.appendChild(clonedNode);
     });
 
-    // Wait for custom fonts to resolve completely inside both window contexts to prevent character shifts/overlaps
+    // Wait for custom fonts to resolve completely inside both window contexts
     try {
       if (document.fonts) {
         await Promise.all([
@@ -361,7 +406,7 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
           document.fonts.load("400 12px 'Inter'"),
           document.fonts.load("700 12px 'Inter'"),
           document.fonts.ready
-        ]).catch(err => console.warn("Parent fonts preload warning:", err));
+        ]).catch((err) => console.warn("Parent fonts preload warning:", err));
       }
       if (iframe.contentWindow?.document?.fonts) {
         await Promise.all([
@@ -372,13 +417,12 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
           iframe.contentWindow.document.fonts.load("400 12px 'Inter'"),
           iframe.contentWindow.document.fonts.load("700 12px 'Inter'"),
           iframe.contentWindow.document.fonts.ready
-        ]).catch(err => console.warn("Iframe fonts preload warning:", err));
+        ]).catch((err) => console.warn("Iframe fonts preload warning:", err));
       }
     } catch (e) {
       console.warn("Font loading wait skipped:", e);
     }
 
-    // Patch the iframe's content window computed styles as well to resolve OKLCH color parsing inside the iframe context
     let restoreIframeWindowStyles = () => {};
     if (iframe.contentWindow) {
       restoreIframeWindowStyles = patchGetComputedStyle(iframe.contentWindow);
@@ -390,18 +434,12 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
         throw new Error("Sandbox container root was not initialized correctly.");
       }
 
-      // Clone original element
+      // Clone original report wrapper
       const clone = reportElement.cloneNode(true) as HTMLDivElement;
-      
-      // Override responsive classes by styling the cloned root node explicitly
       clone.style.width = "840px";
       clone.style.maxWidth = "840px";
       clone.style.margin = "0 auto";
-      clone.style.boxShadow = "none";
-      clone.style.backgroundColor = "#ffffff";
-      clone.style.fontFamily = "'Hind Siliguri', 'Inter', sans-serif";
-      
-      // Append clone to sandbox
+      clone.style.padding = "0";
       sandboxRoot.appendChild(clone);
 
       // Copy canvas pixel buffer for interactive QR code canvases
@@ -417,8 +455,8 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
         }
       });
 
-      // Wait a moment for layout reflow and rendering styles inside the sandboxed iframe
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      // Wait for layout reflow and rendering styles inside sandbox
+      await new Promise((resolve) => setTimeout(resolve, 600));
 
       // Resolve and wait for all images inside the clone container to fully load
       const images = Array.from(clone.querySelectorAll("img"));
@@ -432,21 +470,13 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
         })
       );
 
-      // Render with 3.0 scale for crisp, high-definition output
-      const renderScale = 3.0;
-      const canvas = await html2canvas(clone, {
-        scale: renderScale,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: 1024, // Direct rendering engine to draw using a 1024px wide browser viewport
-        windowHeight: 1400,
-      });
+      // Exact A4 portrait proportions: 210mm x 297mm => 840px x 1188px
+      const TARGET_SHEET_WIDTH = 840;
+      const TARGET_SHEET_HEIGHT = 1188;
 
-      // Generate the landscape/portrait PDF conforming exactly to A4 proportions
-      const imgData = canvas.toDataURL("image/jpeg", 1.0); // 100% Crisp JPG quality
+      const sheetElements = Array.from(clone.querySelectorAll(".a4-report-sheet")) as HTMLDivElement[];
+      const sheetsToRender = sheetElements.length > 0 ? sheetElements : [clone];
+
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
@@ -455,40 +485,82 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
 
       const pdfWidth = 210;
       const pdfHeight = 297;
-      const margin = 4; // Compact margin matching print layout
+      const margin = 5; // Uniform printer-safe margin around the A4 border
+      const printableWidth = pdfWidth - margin * 2; // 200mm
+      const printableHeight = pdfHeight - margin * 2; // 287mm
 
-      const printableWidth = pdfWidth - (margin * 2); // 202mm
-      const printableHeight = pdfHeight - (margin * 2); // 289mm
-      
-      const canvasWidth = canvas.width;
-      const canvasHeight = canvas.height;
-      const contentRatio = canvasHeight / canvasWidth;
+      for (let i = 0; i < sheetsToRender.length; i++) {
+        const sheet = sheetsToRender[i];
+        sheet.style.width = `${TARGET_SHEET_WIDTH}px`;
+        sheet.style.maxWidth = `${TARGET_SHEET_WIDTH}px`;
+        sheet.style.minHeight = `${TARGET_SHEET_HEIGHT}px`;
+        sheet.style.height = "auto";
+        sheet.style.margin = "0";
+        sheet.style.boxSizing = "border-box";
+        sheet.style.boxShadow = "none";
+        sheet.style.backgroundColor = "#ffffff";
+        sheet.style.fontFamily = "'Hind Siliguri', 'Inter', sans-serif";
 
-      let finalImgWidth = printableWidth;
-      let finalImgHeight = printableWidth * contentRatio;
-      let xOffset = margin;
-      let yOffset = margin;
+        // Allow inner content fit check so nothing ever clips or spills past 1188px
+        const inner = sheet.querySelector(".a4-sheet-inner") as HTMLElement | null;
+        if (inner) {
+          const measuredHeight = sheet.scrollHeight;
+          if (measuredHeight > TARGET_SHEET_HEIGHT) {
+            const verticalFrame = measuredHeight - inner.scrollHeight;
+            const availableInnerHeight = Math.max(400, TARGET_SHEET_HEIGHT - verticalFrame - 8);
+            const fitScale = Math.min(1, availableInnerHeight / inner.scrollHeight);
+            inner.style.transform = `scale(${fitScale})`;
+            inner.style.transformOrigin = "top left";
+            inner.style.width = `${100 / fitScale}%`;
+          }
+        }
 
-      if (finalImgHeight > printableHeight) {
-        finalImgHeight = printableHeight;
-        finalImgWidth = printableHeight / contentRatio;
-        xOffset = margin + (printableWidth - finalImgWidth) / 2;
-      } else {
-        yOffset = margin + (printableHeight - finalImgHeight) / 2;
+        sheet.style.height = `${TARGET_SHEET_HEIGHT}px`;
+        sheet.style.overflow = "hidden";
+
+        await new Promise((resolve) => setTimeout(resolve, 120));
+
+        const canvas = await html2canvas(sheet, {
+          scale: 2.5,
+          useCORS: true,
+          logging: false,
+          backgroundColor: "#ffffff",
+          width: TARGET_SHEET_WIDTH,
+          height: TARGET_SHEET_HEIGHT,
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: 1024,
+          windowHeight: 1400,
+        });
+
+        const imgData = canvas.toDataURL("image/jpeg", 0.98);
+        const contentRatio = canvas.height / canvas.width;
+
+        let finalImgWidth = printableWidth;
+        let finalImgHeight = printableWidth * contentRatio;
+        let xOffset = margin;
+        let yOffset = margin + (printableHeight - finalImgHeight) / 2;
+
+        if (finalImgHeight > printableHeight) {
+          finalImgHeight = printableHeight;
+          finalImgWidth = printableHeight / contentRatio;
+          xOffset = margin + (printableWidth - finalImgWidth) / 2;
+          yOffset = margin;
+        }
+
+        if (i > 0) {
+          pdf.addPage("a4", "portrait");
+        }
+        pdf.addImage(imgData, "JPEG", xOffset, yOffset, finalImgWidth, finalImgHeight);
       }
 
-      pdf.addImage(imgData, "JPEG", xOffset, yOffset, finalImgWidth, finalImgHeight);
-
-      // Save using standard clean naming convention
       const sanitizedName = student.name.trim().replace(/\s+/g, "_");
       const filename = `${sanitizedName}_BNIE_Verification_Report.pdf`;
       pdf.save(filename);
-
     } catch (error) {
       console.error("Failed to generate PDF inside sandbox:", error);
       alert("An error occurred during PDF generation. Please use the 'Print Report' feature as a stable fallback.");
     } finally {
-      // Cleanup DOM resources completely
       if (iframe.parentNode) {
         iframe.parentNode.removeChild(iframe);
       }
@@ -498,6 +570,143 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
     }
   };
 
+  // Helper to render subject rows cleanly with responsive density
+  const rowPadClass = isDenseReport ? "py-[2.5px] px-2.5 text-[10.5px]" : "py-1.5 px-3 text-xs";
+  const groupBannerClass = isDenseReport
+    ? "py-1 px-2.5 font-extrabold text-[#006a4e] uppercase text-[9.5px] tracking-wider"
+    : "py-1.5 px-3 font-extrabold text-[#006a4e] uppercase text-[10.5px] tracking-wider";
+
+  const renderFlatSubjectRows = (subs: typeof effectiveSubjects) =>
+    subs.map((sub, idx) => {
+      const subCode = sub.subjectCode || "—";
+      const subMarks = sub.marks !== undefined ? sub.marks : "—";
+      const letterGrade = is4Scale ? getDiplomaLetterGrade(sub.gradePoint) : getLetterGrade(sub.gradePoint);
+      return (
+        <tr key={`${sub.subjectCode || sub.subjectName}-${idx}`} className="hover:bg-gray-50/50 transition-colors">
+          <td className={`${rowPadClass} text-center font-mono font-semibold text-gray-600 border-r border-gray-200 print-compact-py whitespace-nowrap`}>
+            {subCode}
+          </td>
+          <td className={`${rowPadClass} font-bold text-gray-800 border-r border-gray-200 print-compact-py`}>
+            {sub.subjectName}
+          </td>
+          <td className={`${rowPadClass} text-center font-mono font-semibold text-gray-700 border-r border-gray-200 print-compact-py whitespace-nowrap`}>
+            {subMarks}
+          </td>
+          <td className={`${rowPadClass} text-center font-mono font-bold text-gray-900 border-r border-gray-200 print-compact-py whitespace-nowrap`}>
+            {sub.gradePoint.toFixed(2)}
+          </td>
+          <td className={`${rowPadClass} text-center print-compact-py whitespace-nowrap`}>
+            <span
+              className={`inline-block text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap ${
+                letterGrade === "A+" || letterGrade === "A"
+                  ? "bg-emerald-100 text-emerald-800"
+                  : letterGrade === "F"
+                  ? "bg-red-100 text-red-800"
+                  : "bg-blue-100 text-blue-800"
+              }`}
+            >
+              {letterGrade}
+            </span>
+          </td>
+        </tr>
+      );
+    });
+
+  const renderGroupedSubjectRows = (groupLabels: string[]) =>
+    groupLabels.map((yr) => {
+      const yearSubs = effectiveSubjects.filter((s) => s.year === yr);
+      if (yearSubs.length === 0) return null;
+      return (
+        <React.Fragment key={yr}>
+          <tr className="bg-emerald-50/80 border-y border-emerald-200">
+            <td colSpan={5} className={groupBannerClass}>
+              {yr} — {yearSubs.length} Subjects
+            </td>
+          </tr>
+          {yearSubs.map((sub, idx) => {
+            const subCode = sub.subjectCode || "—";
+            const subMarks = sub.marks !== undefined ? sub.marks : "—";
+            const letterGrade = is4Scale ? getDiplomaLetterGrade(sub.gradePoint) : getLetterGrade(sub.gradePoint);
+            return (
+              <tr key={`${yr}-${idx}`} className="hover:bg-gray-50/50 transition-colors">
+                <td className={`${rowPadClass} text-center font-mono font-semibold text-gray-600 border-r border-gray-200 print-compact-py whitespace-nowrap`}>
+                  {subCode}
+                </td>
+                <td className={`${rowPadClass} font-bold text-gray-800 border-r border-gray-200 print-compact-py`}>
+                  {sub.subjectName}
+                </td>
+                <td className={`${rowPadClass} text-center font-mono font-semibold text-gray-700 border-r border-gray-200 print-compact-py whitespace-nowrap`}>
+                  {subMarks}
+                </td>
+                <td className={`${rowPadClass} text-center font-mono font-bold text-gray-900 border-r border-gray-200 print-compact-py whitespace-nowrap`}>
+                  {sub.gradePoint.toFixed(2)}
+                </td>
+                <td className={`${rowPadClass} text-center print-compact-py whitespace-nowrap`}>
+                  <span
+                    className={`inline-block text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap ${
+                      letterGrade === "A+" || letterGrade === "A"
+                        ? "bg-emerald-100 text-emerald-800"
+                        : letterGrade === "F"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-blue-100 text-blue-800"
+                    }`}
+                  >
+                    {letterGrade}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </React.Fragment>
+      );
+    });
+
+  const renderSummaryRow = () => (
+    <tr className="bg-emerald-50/30 font-bold border-t-2 border-emerald-600">
+      <td colSpan={2} className="py-2 px-3 text-xs text-[#006a4e] uppercase font-bold border-r border-gray-200 whitespace-nowrap">
+        {is4Scale ? "Cumulative Grade Point Average (CGPA) — 4.00 Scale" : "Cumulative Grade Point Average (CGPA / GPA)"}
+      </td>
+      <td className="py-2 px-3 text-center font-mono text-xs text-gray-700 border-r border-gray-200 whitespace-nowrap">
+        {student.totalMarks !== undefined ? `${student.totalMarks} Total` : "—"}
+      </td>
+      <td className="py-2 px-3 text-center font-mono text-sm text-[#006a4e] font-black border-r border-gray-200 whitespace-nowrap">
+        {is4Scale ? `CGPA: ${student.finalGpa.toFixed(2)} / 4.00` : student.finalGpa.toFixed(2)}
+      </td>
+      <td className="py-2 px-3 text-center whitespace-nowrap">
+        <span className="text-[10px] bg-[#006a4e] text-white font-bold px-3 py-0.5 rounded-full shadow-2xs whitespace-nowrap">
+          {is4Scale ? getDiplomaLetterGrade(student.finalGpa) : getLetterGrade(student.finalGpa)}
+        </span>
+      </td>
+    </tr>
+  );
+
+  const renderVerificationFooter = () => (
+    <>
+      {/* Verification Status Banner */}
+      <div className="bg-emerald-50/60 border border-emerald-200 p-2.5 rounded-lg text-center flex items-center justify-center space-x-2 mb-4">
+        <CheckCircle2 className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
+        <span className="text-xs font-bold text-emerald-900">
+          This verification report is dynamically validated against the official BNIE divisional database records.
+        </span>
+      </div>
+
+      {/* Footer block: Verification Date details */}
+      <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4 pt-4 border-t border-gray-200 mt-auto">
+        {/* System Verification Date */}
+        <div className="space-y-1.5 text-xs text-gray-500 text-center sm:text-left w-full sm:w-auto">
+          <div className="flex items-center justify-center sm:justify-start space-x-1.5 font-semibold">
+            <Calendar className="w-3.5 h-3.5 text-[#006a4e]" />
+            <span>
+              Verification Date: <span className="text-gray-800 font-bold">{verificationDate}</span>
+            </span>
+          </div>
+          <div className="text-[9px] text-gray-400 font-mono mt-1.5 block uppercase text-center sm:text-left">
+            Fingerprint: BNIE_REGISTRY_{student.rollNumber}_{student.passingYear}
+          </div>
+        </div>
+      </div>
+    </>
+  );
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -538,387 +747,358 @@ export default function VerificationReport({ student, onBack }: VerificationRepo
             className="hidden sm:inline-flex items-center space-x-2 text-xs font-bold text-white bg-[#006a4e] hover:bg-[#00563f] px-5 py-2.5 rounded-xl transition-all shadow-md cursor-pointer border border-[#00563f]"
           >
             <Printer className="w-4 h-4" />
-            <span>Print Report (A4)</span>
+            <span>Print Report</span>
           </button>
         </div>
       </div>
 
-
-
-      {/* Official A4 Certificate Verification Card */}
+      {/* Official Certificate Verification Report Container (1 Sheet or 2 Exact Sheets) */}
       <motion.div
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4 }}
-        className="bg-white border-[4px] sm:border-[6px] md:border-[10px] border-double border-[#006a4e] p-4 sm:p-6 md:p-10 rounded-2xl shadow-xl relative overflow-hidden print-card max-w-[840px] mx-auto flex flex-col justify-between text-left"
         id="a4-verification-report"
+        className="space-y-6 print:space-y-0 print-report-wrapper"
       >
-        {/* Government Watermark background */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
-          <svg className="w-[450px] h-[450px]" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="40" fill="none" stroke="#006a4e" strokeWidth="1.5" />
-            <circle cx="50" cy="50" r="30" fill="none" stroke="#f42a41" strokeWidth="1.5" />
-          </svg>
-        </div>
-
-        {/* Certificate Frame/Header */}
-        <div className="text-center border-b-2 border-gray-300 pb-4 mb-6 relative flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center shrink-0">
-            <Logo size={70} className="object-contain" />
+        {/* ================================================================= */}
+        {/* SHEET 1                                                           */}
+        {/* ================================================================= */}
+        <div className="a4-report-sheet bg-white border-[4px] sm:border-[6px] md:border-[10px] border-double border-[#006a4e] p-4 sm:p-6 md:p-8 rounded-2xl shadow-xl relative overflow-hidden print-card max-w-[840px] w-full mx-auto flex flex-col justify-between text-left">
+          {/* Government Watermark background */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
+            <svg className="w-[450px] h-[450px]" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#006a4e" strokeWidth="1.5" />
+              <circle cx="50" cy="50" r="30" fill="none" stroke="#f42a41" strokeWidth="1.5" />
+            </svg>
           </div>
-          <div className="flex-1 text-center px-1 sm:px-4">
-            <span className="text-[9px] sm:text-[10px] text-gray-500 font-extrabold uppercase tracking-widest block leading-none mb-1">
-              People's Republic of Bangladesh
-            </span>
-            <h2 className="text-base sm:text-lg md:text-2xl font-black text-gray-950 font-sans tracking-tight uppercase leading-snug">
-              Bangladesh National Institute of Education
-            </h2>
-            <p className="text-[9px] sm:text-[10px] text-[#006a4e] font-black tracking-widest mt-1 uppercase">
-              BNIE Divisional Academic Ledger Registry
-            </p>
-            <div className="inline-block bg-[#f42a41] text-white font-extrabold text-[9px] sm:text-[10px] px-3.5 py-0.5 rounded-full uppercase tracking-wider mt-2.5 shadow-xs">
-              Certificate Verification Report
-            </div>
-          </div>
-          <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 pointer-events-none select-none opacity-0" aria-hidden="true"></div>
-        </div>
 
-        {/* Candidate Profile and QR Column Layout */}
-        <div className="grid grid-cols-12 gap-4 md:gap-6 mb-6 items-stretch relative">
-          
-          {/* Left Column: Stable Grid-Layout Table */}
-          <div className="col-span-12 md:col-span-9 space-y-3">
-            <h4 className="text-[11px] font-black text-gray-900 uppercase tracking-widest border-l-4 border-[#006a4e] pl-2 mb-2">
-              Candidate Academic Profile
-            </h4>
-            
-            <div className="border border-gray-300 rounded-lg overflow-hidden shadow-2xs">
-              <table className="w-full table-fixed border-collapse text-[10px] sm:text-xs text-left">
-                <tbody>
-                  <tr className="border-b border-gray-300">
-                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Student Name</td>
-                    <td className="px-2 sm:px-3 py-1.5 font-extrabold text-gray-950 text-[11px] sm:text-[13px] uppercase break-words" colSpan={3}>{student.name}</td>
-                  </tr>
-                  <tr className="border-b border-gray-300">
-                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Father&apos;s Name</td>
-                    <td className="px-2 sm:px-3 py-1.5 font-bold text-gray-800 break-words" colSpan={3}>{student.fatherName}</td>
-                  </tr>
-                  <tr className="border-b border-gray-300">
-                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Mother&apos;s Name</td>
-                    <td className="px-2 sm:px-3 py-1.5 font-bold text-gray-800 break-words" colSpan={3}>{student.motherName}</td>
-                  </tr>
-                  <tr className="border-b border-gray-300">
-                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Institute Name</td>
-                    <td className="px-2 sm:px-3 py-1.5 font-extrabold text-gray-900 break-words" colSpan={3}>{student.instituteName}</td>
-                  </tr>
-                  <tr className="border-b border-gray-300">
-                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Date of Birth</td>
-                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-800 w-[26%] sm:w-[28%] break-words">
-                      {new Date(student.dob).toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "long",
-                        year: "numeric"
-                      })}
-                    </td>
-                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Session</td>
-                    <td className="px-2 sm:px-3 py-1.5 font-bold text-gray-800 font-mono w-[26%] sm:w-[28%] break-words">{student.session}</td>
-                  </tr>
-                  <tr className="border-b border-gray-300">
-                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Program / Course</td>
-                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-extrabold text-[#006a4e] w-[26%] sm:w-[28%] break-words">
-                      {student.category === "Diploma" ? "Diploma in Engineering" : `${student.category} Program`}
-                    </td>
-                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Group / Dept</td>
-                    <td className="px-2 sm:px-3 py-1.5 font-extrabold text-gray-900 w-[26%] sm:w-[28%] break-words">{student.group}</td>
-                  </tr>
-                  <tr className="border-b border-gray-300">
-                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Roll Number</td>
-                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-black text-[#006a4e] font-number digit-clear text-[11px] sm:text-[13px] w-[26%] sm:w-[28%] break-all">{student.rollNumber}</td>
-                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Registration No</td>
-                    <td className="px-2 sm:px-3 py-1.5 font-bold text-gray-900 font-number digit-clear w-[26%] sm:w-[28%] break-all">{student.registrationNumber}</td>
-                  </tr>
-                  <tr className="border-b border-gray-300">
-                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Certificate No</td>
-                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-800 font-number digit-clear text-[9.5px] sm:text-[11px] w-[26%] sm:w-[28%] break-all">{student.certificateSerialNumber}</td>
-                    <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Passing Year</td>
-                    <td className="px-2 sm:px-3 py-1.5 font-bold text-gray-800 font-number digit-clear w-[26%] sm:w-[28%] break-words">{student.passingYear}</td>
-                  </tr>
+          <div className="a4-sheet-inner flex-1 flex flex-col justify-between relative">
+            <div>
+              {/* Certificate Frame/Header */}
+              <div className={`text-center border-b-2 border-gray-300 ${isDenseReport ? "pb-3 mb-3.5" : "pb-4 mb-5"} relative flex flex-col sm:flex-row items-center justify-between gap-3 w-full`}>
+                <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center shrink-0">
+                  <Logo size={isDenseReport ? 62 : 70} className="object-contain" />
+                </div>
+                <div className="flex-1 text-center px-1 sm:px-4">
+                  <span className="text-[9px] sm:text-[10px] text-gray-500 font-extrabold uppercase tracking-widest block leading-none mb-1">
+                    People's Republic of Bangladesh
+                  </span>
+                  <h2 className="text-base sm:text-lg md:text-2xl font-black text-gray-950 font-sans tracking-tight uppercase leading-snug">
+                    Bangladesh National Institute of Education
+                  </h2>
+                  <p className="text-[9px] sm:text-[10px] text-[#006a4e] font-black tracking-widest mt-1 uppercase">
+                    BNIE Divisional Academic Ledger Registry
+                  </p>
+                  <div className="inline-block bg-[#f42a41] text-white font-extrabold text-[9px] sm:text-[10px] px-3.5 py-0.5 rounded-full uppercase tracking-wider mt-2 shadow-xs">
+                    Certificate Verification Report
+                  </div>
+                </div>
+                <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 pointer-events-none select-none opacity-0" aria-hidden="true"></div>
+              </div>
+
+              {/* Candidate Profile and QR Column Layout */}
+              <div className={`grid grid-cols-12 gap-4 ${isDenseReport ? "mb-3.5" : "md:gap-5 mb-5"} items-stretch relative`}>
+                {/* Left Column: Stable Grid-Layout Table */}
+                <div className="col-span-12 md:col-span-9 space-y-2">
+                  <h4 className="text-[11px] font-black text-gray-900 uppercase tracking-widest border-l-4 border-[#006a4e] pl-2 mb-1.5">
+                    Candidate Academic Profile
+                  </h4>
+
+                  <div className="border border-gray-300 rounded-lg overflow-hidden shadow-2xs">
+                    <table className={`w-full table-fixed border-collapse ${isDenseReport ? "text-[9.5px] sm:text-[11px]" : "text-[10px] sm:text-xs"} text-left`}>
+                      <tbody>
+                        <tr className="border-b border-gray-300">
+                          <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Student Name</td>
+                          <td className="px-2 sm:px-3 py-1 font-extrabold text-gray-950 text-[11px] sm:text-[13px] uppercase break-words" colSpan={3}>{student.name}</td>
+                        </tr>
+                        <tr className="border-b border-gray-300">
+                          <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Father&apos;s Name</td>
+                          <td className="px-2 sm:px-3 py-1 font-bold text-gray-800 break-words" colSpan={3}>{student.fatherName}</td>
+                        </tr>
+                        <tr className="border-b border-gray-300">
+                          <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Mother&apos;s Name</td>
+                          <td className="px-2 sm:px-3 py-1 font-bold text-gray-800 break-words" colSpan={3}>{student.motherName}</td>
+                        </tr>
+                        <tr className="border-b border-gray-300">
+                          <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Institute Name</td>
+                          <td className="px-2 sm:px-3 py-1 font-extrabold text-gray-900 break-words" colSpan={3}>{student.instituteName}</td>
+                        </tr>
+                        <tr className="border-b border-gray-300">
+                          <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Date of Birth</td>
+                          <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-800 w-[26%] sm:w-[28%] break-words">
+                            {new Date(student.dob).toLocaleDateString("en-GB", {
+                              day: "2-digit",
+                              month: "long",
+                              year: "numeric"
+                            })}
+                          </td>
+                          <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Session</td>
+                          <td className="px-2 sm:px-3 py-1 font-bold text-gray-800 font-mono w-[26%] sm:w-[28%] break-words">{student.session}</td>
+                        </tr>
+                        <tr className="border-b border-gray-300">
+                          <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Program / Course</td>
+                          <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-extrabold text-[#006a4e] w-[26%] sm:w-[28%] break-words">
+                            {student.programName || (student.category === "Diploma" ? "Diploma in Engineering" : `${student.category} Program`)}
+                          </td>
+                          <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Group / Dept</td>
+                          <td className="px-2 sm:px-3 py-1 font-extrabold text-gray-900 w-[26%] sm:w-[28%] break-words">{student.majorSubject || student.group}</td>
+                        </tr>
+                        <tr className="border-b border-gray-300">
+                          <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Roll Number</td>
+                          <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-black text-[#006a4e] font-number digit-clear text-[11px] sm:text-[13px] w-[26%] sm:w-[28%] break-all">{student.rollNumber}</td>
+                          <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Registration No</td>
+                          <td className="px-2 sm:px-3 py-1 font-bold text-gray-900 font-number digit-clear w-[26%] sm:w-[28%] break-all">{student.registrationNumber}</td>
+                        </tr>
+                        <tr className="border-b border-gray-300">
+                          <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Certificate No</td>
+                          <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-800 font-number digit-clear text-[9.5px] sm:text-[11px] w-[26%] sm:w-[28%] break-all">{student.certificateSerialNumber}</td>
+                          <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Passing Year</td>
+                          <td className="px-2 sm:px-3 py-1 font-bold text-gray-800 font-number digit-clear w-[26%] sm:w-[28%] break-words">{student.passingYear}</td>
+                        </tr>
+                        {isDivision ? (
+                          <>
+                            <tr className="border-b border-gray-300">
+                              <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Examination Year</td>
+                              <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-800 font-number digit-clear w-[26%] sm:w-[28%] break-words">{student.passingYear}</td>
+                              <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">
+                                Total Marks Obtained
+                              </td>
+                              <td className="px-2 sm:px-3 py-1 font-black text-[#006a4e] text-[11px] sm:text-sm font-number digit-clear w-[26%] sm:w-[28%] break-words">
+                                {displayTotalMarks} / {divisionResult.totalFullMarks} ({divisionResult.percentage}%)
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Official Division</td>
+                              <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-black text-[#006a4e] uppercase text-[11px] sm:text-[13px] w-[26%] sm:w-[28%] break-words">
+                                {displayDivision}
+                              </td>
+                              <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Result Status</td>
+                              <td className="px-2 sm:px-3 py-1 font-extrabold text-emerald-800 bg-emerald-50/40 w-[26%] sm:w-[28%] break-words">
+                                {divisionResult.isPassed ? "PASSED" : "FAILED"}
+                              </td>
+                            </tr>
+                          </>
+                        ) : (
+                          <>
+                            <tr className="border-b border-gray-300">
+                              <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Examination Year</td>
+                              <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-800 font-number digit-clear w-[26%] sm:w-[28%] break-words">{student.passingYear}</td>
+                              <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">
+                                {is4Scale ? "CGPA" : "GPA / CGPA"}
+                              </td>
+                              <td className="px-2 sm:px-3 py-1 font-black text-[#006a4e] text-[11px] sm:text-sm font-number digit-clear w-[26%] sm:w-[28%] break-words">
+                                {is4Scale ? `CGPA: ${student.finalGpa.toFixed(2)} / 4.00` : student.finalGpa.toFixed(2)}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="border-r border-gray-300 px-2 sm:px-3 py-1 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Result Status</td>
+                              <td className="px-2 sm:px-3 py-1 font-extrabold text-emerald-800 bg-emerald-50/40 break-words" colSpan={3}>
+                                {student.finalGpa > 0.00 ? "PASSED" : "FAILED"}
+                              </td>
+                            </tr>
+                          </>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Right Column: Photo and QR Code */}
+                <div className="col-span-12 md:col-span-3 flex flex-row md:flex-col justify-around md:justify-between items-center border border-gray-300 rounded-lg p-3 bg-gray-50/50 gap-3">
+                  {/* Student Passport Photo */}
+                  <div className="flex flex-col items-center shrink-0">
+                    <div className="w-24 h-28 border border-gray-300 bg-white rounded-md overflow-hidden relative shadow-sm shrink-0">
+                      <img
+                        src={getSafePhotoUrl(student.photoUrl)}
+                        alt={`${student.name} — BNIE Bangladesh Education`}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[7px] font-mono py-0.5 text-center tracking-widest uppercase">
+                        SECURED PHOTO
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="hidden md:block border-t border-gray-200 w-full my-1.5"></div>
+                  <div className="block md:hidden border-l border-gray-200 h-20 my-auto"></div>
+
+                  {/* QR Code */}
+                  <div className="flex flex-col items-center shrink-0">
+                    <div className="bg-white p-1.5 border border-gray-200 rounded-lg shadow-2xs">
+                      <QRCodeCanvas
+                        value={verificationUrl}
+                        size={150}
+                        style={{ width: "74px", height: "74px" }}
+                        bgColor={"#ffffff"}
+                        fgColor={"#006a4e"}
+                        level={"H"}
+                        includeMargin={false}
+                      />
+                    </div>
+                    <span className="text-[7px] text-gray-400 font-mono mt-1 uppercase tracking-wider block text-center font-bold">
+                      Scan to Verify
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Detailed Subject Transcript / Marks Sheet (Full or Part I) */}
+              <div className="space-y-2 mb-3">
+                <h4 className="text-[11px] font-black text-gray-900 uppercase tracking-widest border-l-4 border-[#006a4e] pl-2 mb-1.5">
+                  {isDivision
+                    ? "Subject-wise Marks Sheet (Pre-2001 Bangladesh Board Division System)"
+                    : `Subject-wise Grade Transcript ${student.category === "Diploma" ? "(Diploma in Engineering — Scale 4.00)" : is4Scale ? "(Scale 4.00)" : ""}`}
+                </h4>
+
+                <div className="border border-gray-300 rounded-lg overflow-x-auto shadow-2xs">
                   {isDivision ? (
-                    <>
-                      <tr className="border-b border-gray-300">
-                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Examination Year</td>
-                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-800 font-number digit-clear w-[26%] sm:w-[28%] break-words">{student.passingYear}</td>
-                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">
-                          Total Marks Obtained
-                        </td>
-                        <td className="px-2 sm:px-3 py-1.5 font-black text-[#006a4e] text-[11px] sm:text-sm font-number digit-clear w-[26%] sm:w-[28%] break-words">
-                          {displayTotalMarks} / {divisionResult.totalFullMarks} ({divisionResult.percentage}%)
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Official Division</td>
-                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-black text-[#006a4e] uppercase text-[11px] sm:text-[13px] w-[26%] sm:w-[28%] break-words">
-                          {displayDivision}
-                        </td>
-                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Result Status</td>
-                        <td className="px-2 sm:px-3 py-1.5 font-extrabold text-emerald-800 bg-emerald-50/40 w-[26%] sm:w-[28%] break-words">
-                          {divisionResult.isPassed ? "PASSED" : "FAILED"}
-                        </td>
-                      </tr>
-                    </>
-                  ) : (
-                    <>
-                      <tr className="border-b border-gray-300">
-                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Examination Year</td>
-                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-800 font-number digit-clear w-[26%] sm:w-[28%] break-words">{student.passingYear}</td>
-                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">
-                          {student.category === "Diploma" ? "CGPA" : "GPA / CGPA"}
-                        </td>
-                        <td className="px-2 sm:px-3 py-1.5 font-black text-[#006a4e] text-[11px] sm:text-sm font-number digit-clear w-[26%] sm:w-[28%] break-words">
-                          {student.category === "Diploma" ? `CGPA: ${student.finalGpa.toFixed(2)} / 4.00` : student.finalGpa.toFixed(2)}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="border-r border-gray-300 px-2 sm:px-3 py-1.5 font-bold text-gray-500 bg-gray-50/70 w-[24%] sm:w-[22%] break-words">Result Status</td>
-                        <td className="px-2 sm:px-3 py-1.5 font-extrabold text-emerald-800 bg-emerald-50/40 break-words" colSpan={3}>
-                          {student.finalGpa > 0.00 ? "PASSED" : "FAILED"}
-                        </td>
-                      </tr>
-                    </>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                    /* Pre-2001 Division System Marks Sheet */
+                    <table className="w-full min-w-[500px] sm:min-w-0 text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-gray-100 border-b border-gray-300 text-gray-700 font-bold uppercase tracking-wider text-[10px]">
+                          <th className="py-2 px-3 w-32 text-center border-r border-gray-200">Subject Code</th>
+                          <th className="py-2 px-3 border-r border-gray-200">Name of Subject</th>
+                          <th className="py-2 px-3 text-center w-28 border-r border-gray-200">Full Marks</th>
+                          <th className="py-2 px-3 text-center w-36">Marks Obtained</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {effectiveSubjects.map((sub, idx) => {
+                          const subCode = sub.subjectCode || "—";
+                          const subMarks = sub.marks !== undefined ? sub.marks : "—";
+                          return (
+                            <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                              <td className="py-1.5 px-3 text-center font-mono font-semibold text-gray-600 border-r border-gray-200 print-compact-py whitespace-nowrap">
+                                {subCode}
+                              </td>
+                              <td className="py-1.5 px-3 font-bold text-gray-800 border-r border-gray-200 print-compact-py">
+                                {sub.subjectName}
+                              </td>
+                              <td className="py-1.5 px-3 text-center font-mono font-semibold text-gray-600 border-r border-gray-200 print-compact-py whitespace-nowrap">
+                                100
+                              </td>
+                              <td className="py-1.5 px-3 text-center font-mono font-extrabold text-gray-950 text-xs sm:text-sm print-compact-py whitespace-nowrap">
+                                {subMarks}
+                              </td>
+                            </tr>
+                          );
+                        })}
 
-          {/* Right Column: Photo and QR Code side-by-side on mobile, stacked on desktop */}
-          <div className="col-span-12 md:col-span-3 flex flex-row md:flex-col justify-around md:justify-between items-center border border-gray-300 rounded-lg p-3 bg-gray-50/50 gap-4">
-            {/* Student Passport Photo */}
-            <div className="flex flex-col items-center shrink-0">
-              <div className="w-24 h-28 border border-gray-300 bg-white rounded-md overflow-hidden relative shadow-sm shrink-0">
-                <img
-                  src={getSafePhotoUrl(student.photoUrl)}
-                  alt={student.name}
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[7px] font-mono py-0.5 text-center tracking-widest uppercase">
-                  SECURED PHOTO
+                        <tr className="bg-emerald-50/40 font-bold border-t-2 border-emerald-600">
+                          <td colSpan={2} className="py-2.5 px-3 text-xs text-[#006a4e] uppercase font-black border-r border-gray-200 whitespace-nowrap">
+                            Grand Total Marks &amp; Official Division
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-mono text-xs font-bold text-gray-700 border-r border-gray-200 whitespace-nowrap">
+                            {divisionResult.totalFullMarks}
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-mono text-sm text-[#006a4e] font-black whitespace-nowrap">
+                            {displayTotalMarks} — <span className="font-sans font-extrabold uppercase text-emerald-900">{displayDivision}</span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  ) : (
+                    /* Modern GPA Scale & Diploma Transcript (Sheet 1) */
+                    <table className="w-full min-w-[600px] sm:min-w-0 text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-gray-100 border-b border-gray-300 text-gray-700 font-bold uppercase tracking-wider text-[10px]">
+                          <th className="py-1.5 px-3 w-28 text-center border-r border-gray-200">Subject Code</th>
+                          <th className="py-1.5 px-3 border-r border-gray-200">Subject Name</th>
+                          <th className="py-1.5 px-3 text-center w-24 border-r border-gray-200">Marks</th>
+                          <th className="py-1.5 px-3 text-center w-32 border-r border-gray-200">Grade Point (GP)</th>
+                          <th className="py-1.5 px-3 text-center w-28">Letter Grade</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {hasGroupedPeriods
+                          ? renderGroupedSubjectRows(page1GroupLabels)
+                          : renderFlatSubjectRows(page1FlatSubjects)}
+
+                        {!isTwoPageReport && renderSummaryRow()}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             </div>
-            
-            <div className="hidden md:block border-t border-gray-200 w-full my-3"></div>
-            <div className="block md:hidden border-l border-gray-200 h-20 my-auto"></div>
 
-            {/* QR Code */}
-            <div className="flex flex-col items-center shrink-0">
-              <div className="bg-white p-1.5 border border-gray-200 rounded-lg shadow-2xs">
-                <QRCodeCanvas
-                  value={verificationUrl}
-                  size={150}
-                  style={{ width: "76px", height: "76px" }}
-                  bgColor={"#ffffff"}
-                  fgColor={"#006a4e"}
-                  level={"H"}
-                  includeMargin={false}
-                />
-              </div>
-              <span className="text-[7px] text-gray-400 font-mono mt-1 uppercase tracking-wider block text-center font-bold">
-                Scan to Verify
-              </span>
-            </div>
+            {!isTwoPageReport && <div className="mt-auto">{renderVerificationFooter()}</div>}
           </div>
-
         </div>
 
-        {/* Detailed Subject Transcript / Marks Sheet */}
-        <div className="space-y-2 mb-4">
-          <h4 className="text-[11px] font-black text-gray-900 uppercase tracking-widest border-l-4 border-[#006a4e] pl-2 mb-2">
-            {isDivision
-              ? "Subject-wise Marks Sheet (Pre-2001 Bangladesh Board Division System)"
-              : `Subject-wise Grade Transcript ${student.category === "Diploma" ? "(Diploma in Engineering — Scale 4.00)" : ""}`}
-          </h4>
+        {/* ================================================================= */}
+        {/* SHEET 2 (Rendered automatically for long Diploma/Degree/Masters)  */}
+        {/* ================================================================= */}
+        {isTwoPageReport && !isDivision && (
+          <div className="a4-report-sheet bg-white border-[4px] sm:border-[6px] md:border-[10px] border-double border-[#006a4e] p-4 sm:p-6 md:p-8 rounded-2xl shadow-xl relative overflow-hidden print-card max-w-[840px] w-full mx-auto flex flex-col justify-between text-left">
+            {/* Government Watermark background */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
+              <svg className="w-[450px] h-[450px]" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#006a4e" strokeWidth="1.5" />
+                <circle cx="50" cy="50" r="30" fill="none" stroke="#f42a41" strokeWidth="1.5" />
+              </svg>
+            </div>
 
-          <div className="border border-gray-300 rounded-lg overflow-x-auto shadow-2xs">
-            {isDivision ? (
-              /* Pre-2001 Division System Marks Sheet: Marks & Numbers Only (No GPA, No Letter Grades) */
-              <table className="w-full min-w-[500px] sm:min-w-0 text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-gray-100 border-b border-gray-300 text-gray-700 font-bold uppercase tracking-wider text-[10px]">
-                    <th className="py-2 px-3 w-32 text-center border-r border-gray-200">Subject Code</th>
-                    <th className="py-2 px-3 border-r border-gray-200">Name of Subject</th>
-                    <th className="py-2 px-3 text-center w-28 border-r border-gray-200">Full Marks</th>
-                    <th className="py-2 px-3 text-center w-36">Marks Obtained</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {student.subjects.map((sub, idx) => {
-                    const subCode = sub.subjectCode || "—";
-                    const subMarks = sub.marks !== undefined ? sub.marks : "—";
-                    return (
-                      <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="py-2 px-3 text-center font-mono font-semibold text-gray-600 border-r border-gray-200 print-compact-py whitespace-nowrap">
-                          {subCode}
-                        </td>
-                        <td className="py-2 px-3 font-bold text-gray-800 border-r border-gray-200 print-compact-py">
-                          {sub.subjectName}
-                        </td>
-                        <td className="py-2 px-3 text-center font-mono font-semibold text-gray-600 border-r border-gray-200 print-compact-py whitespace-nowrap">
-                          100
-                        </td>
-                        <td className="py-2 px-3 text-center font-mono font-extrabold text-gray-950 text-xs sm:text-sm print-compact-py whitespace-nowrap">
-                          {subMarks}
-                        </td>
-                      </tr>
-                    );
-                  })}
+            <div className="a4-sheet-inner flex-1 flex flex-col justify-between relative">
+              <div>
+                {/* Compact Continuation Letterhead */}
+                <div className="border-b-2 border-gray-300 pb-3 mb-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 flex items-center justify-center shrink-0">
+                      <Logo size={42} className="object-contain" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm sm:text-base font-black text-gray-950 font-sans tracking-tight uppercase">
+                        Bangladesh National Institute of Education
+                      </h3>
+                      <p className="text-[9px] sm:text-[10px] text-[#006a4e] font-extrabold tracking-widest uppercase">
+                        Certificate Verification Report — Academic Transcript Continuation
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-[10px] font-mono text-gray-700 bg-gray-50 border border-gray-300 rounded-md px-2.5 py-1.5 text-center sm:text-right shrink-0">
+                    <div className="font-extrabold text-gray-950 uppercase">{student.name}</div>
+                    <div>
+                      Roll: <span className="font-bold text-[#006a4e]">{student.rollNumber}</span> • Reg:{" "}
+                      <span className="font-bold text-gray-900">{student.registrationNumber}</span>
+                    </div>
+                  </div>
+                </div>
 
-                  {/* Division System Summary Row */}
-                  <tr className="bg-emerald-50/40 font-bold border-t-2 border-emerald-600">
-                    <td colSpan={2} className="py-2.5 px-3 text-xs text-[#006a4e] uppercase font-black border-r border-gray-200 whitespace-nowrap">
-                      Grand Total Marks &amp; Official Division
-                    </td>
-                    <td className="py-2.5 px-3 text-center font-mono text-xs font-bold text-gray-700 border-r border-gray-200 whitespace-nowrap">
-                      {divisionResult.totalFullMarks}
-                    </td>
-                    <td className="py-2.5 px-3 text-center font-mono text-sm text-[#006a4e] font-black whitespace-nowrap">
-                      {displayTotalMarks} — <span className="font-sans font-extrabold uppercase text-emerald-900">{displayDivision}</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            ) : (
-              /* Post-2001 Modern GPA Scale & Diploma Transcript */
-              <table className="w-full min-w-[600px] sm:min-w-0 text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-gray-100 border-b border-gray-300 text-gray-700 font-bold uppercase tracking-wider text-[10px]">
-                    <th className="py-1.5 px-3 w-28 text-center border-r border-gray-200">Subject Code</th>
-                    <th className="py-1.5 px-3 border-r border-gray-200">Subject Name</th>
-                    <th className="py-1.5 px-3 text-center w-24 border-r border-gray-200">Marks</th>
-                    <th className="py-1.5 px-3 text-center w-32 border-r border-gray-200">Grade Point (GP)</th>
-                    <th className="py-1.5 px-3 text-center w-28">Letter Grade</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {student.subjects.some((s) => s.year !== undefined) ? (
-                    // Group subjects Year-wise
-                    ["FIRST YEAR", "SECOND YEAR", "THIRD YEAR", "FOURTH YEAR"].map((yr) => {
-                      const yearSubs = student.subjects.filter((s) => s.year === yr);
-                      if (yearSubs.length === 0) return null;
-                      return (
-                        <React.Fragment key={yr}>
-                          <tr className="bg-emerald-50/80 border-y border-emerald-200">
-                            <td colSpan={5} className="py-1.5 px-3 font-extrabold text-[#006a4e] uppercase text-[10.5px] tracking-wider">
-                              {yr} — {yearSubs.length} Subjects
-                            </td>
-                          </tr>
-                          {yearSubs.map((sub, idx) => {
-                            const subCode = sub.subjectCode || "—";
-                            const subMarks = sub.marks !== undefined ? sub.marks : "—";
-                            const is4Scale = student.category === "Diploma";
-                            const letterGrade = is4Scale ? getDiplomaLetterGrade(sub.gradePoint) : getLetterGrade(sub.gradePoint);
-                            return (
-                              <tr key={`${yr}-${idx}`} className="hover:bg-gray-50/50 transition-colors">
-                                <td className="py-1.5 px-3 text-center font-mono font-semibold text-gray-600 border-r border-gray-200 print-compact-py whitespace-nowrap">{subCode}</td>
-                                <td className="py-1.5 px-3 font-bold text-gray-800 border-r border-gray-200 print-compact-py">{sub.subjectName}</td>
-                                <td className="py-1.5 px-3 text-center font-mono font-semibold text-gray-700 border-r border-gray-200 print-compact-py whitespace-nowrap">{subMarks}</td>
-                                <td className="py-1.5 px-3 text-center font-mono font-bold text-gray-900 border-r border-gray-200 print-compact-py whitespace-nowrap">{sub.gradePoint.toFixed(2)}</td>
-                                <td className="py-1.5 px-3 text-center print-compact-py whitespace-nowrap">
-                                  <span className={`inline-block text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap ${
-                                    letterGrade === "A+" || letterGrade === "A" ? "bg-emerald-100 text-emerald-800" :
-                                    letterGrade === "F" ? "bg-red-100 text-red-800" :
-                                    "bg-blue-100 text-blue-800"
-                                  }`}>
-                                    {letterGrade}
-                                  </span>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </React.Fragment>
-                      );
-                    })
-                  ) : (
-                    // Flat list for subjects without year (SSC / HSC / General)
-                    student.subjects.map((sub, idx) => {
-                      const subCode = sub.subjectCode || "—";
-                      const subMarks = sub.marks !== undefined ? sub.marks : "—";
-                      const is4Scale = student.category === "Diploma";
-                      const letterGrade = is4Scale ? getDiplomaLetterGrade(sub.gradePoint) : getLetterGrade(sub.gradePoint);
-                      return (
-                        <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="py-2 px-3 text-center font-mono font-semibold text-gray-600 border-r border-gray-200 print-compact-py whitespace-nowrap">{subCode}</td>
-                          <td className="py-2 px-3 font-bold text-gray-800 border-r border-gray-200 print-compact-py">
-                            {sub.subjectName}
-                          </td>
-                          <td className="py-2 px-3 text-center font-mono font-semibold text-gray-700 border-r border-gray-200 print-compact-py whitespace-nowrap">{subMarks}</td>
-                          <td className="py-2 px-3 text-center font-mono font-bold text-gray-900 border-r border-gray-200 print-compact-py whitespace-nowrap">
-                            {sub.gradePoint.toFixed(2)}
-                          </td>
-                          <td className="py-2 px-3 text-center print-compact-py whitespace-nowrap">
-                            <span className={`inline-block text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap ${
-                              letterGrade === "A+" || letterGrade === "A" ? "bg-emerald-100 text-emerald-800" :
-                              letterGrade === "F" ? "bg-red-100 text-red-800" :
-                              "bg-blue-100 text-blue-800"
-                            }`}>
-                              {letterGrade}
-                            </span>
-                          </td>
+                {/* Remaining Subject Transcript */}
+                <div className="space-y-2 mb-4">
+                  <h4 className="text-[11px] font-black text-gray-900 uppercase tracking-widest border-l-4 border-[#006a4e] pl-2 mb-1.5">
+                    Subject-wise Grade Transcript (Continued)
+                  </h4>
+
+                  <div className="border border-gray-300 rounded-lg overflow-x-auto shadow-2xs">
+                    <table className="w-full min-w-[600px] sm:min-w-0 text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-gray-100 border-b border-gray-300 text-gray-700 font-bold uppercase tracking-wider text-[10px]">
+                          <th className="py-1.5 px-3 w-28 text-center border-r border-gray-200">Subject Code</th>
+                          <th className="py-1.5 px-3 border-r border-gray-200">Subject Name</th>
+                          <th className="py-1.5 px-3 text-center w-24 border-r border-gray-200">Marks</th>
+                          <th className="py-1.5 px-3 text-center w-32 border-r border-gray-200">Grade Point (GP)</th>
+                          <th className="py-1.5 px-3 text-center w-28">Letter Grade</th>
                         </tr>
-                      );
-                    })
-                  )}
-                  
-                  {/* Result Summary Row */}
-                  <tr className="bg-emerald-50/30 font-bold border-t-2 border-emerald-600">
-                    <td colSpan={2} className="py-2 px-3 text-xs text-[#006a4e] uppercase font-bold border-r border-gray-200 whitespace-nowrap">
-                      {student.category === "Diploma" ? "Cumulative Grade Point Average (CGPA) — 4.00 Scale" : "Cumulative Grade Point Average (CGPA / GPA)"}
-                    </td>
-                    <td className="py-2 px-3 text-center font-mono text-xs text-gray-700 border-r border-gray-200 whitespace-nowrap">
-                      {student.totalMarks !== undefined ? `${student.totalMarks} Total` : "—"}
-                    </td>
-                    <td className="py-2 px-3 text-center font-mono text-sm text-[#006a4e] font-black border-r border-gray-200 whitespace-nowrap">
-                      {student.category === "Diploma" ? `CGPA: ${student.finalGpa.toFixed(2)} / 4.00` : student.finalGpa.toFixed(2)}
-                    </td>
-                    <td className="py-2 px-3 text-center whitespace-nowrap">
-                      <span className="text-[10px] bg-[#006a4e] text-white font-bold px-3 py-0.5 rounded-full shadow-2xs whitespace-nowrap">
-                        {student.category === "Diploma" ? getDiplomaLetterGrade(student.finalGpa) : getLetterGrade(student.finalGpa)}
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {hasGroupedPeriods
+                          ? renderGroupedSubjectRows(page2GroupLabels)
+                          : renderFlatSubjectRows(page2FlatSubjects)}
 
-        {/* Verification Status Banner */}
-        <div className="bg-emerald-50/60 border border-emerald-200 p-2.5 rounded-lg text-center flex items-center justify-center space-x-2 mb-6">
-          <CheckCircle2 className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
-          <span className="text-xs font-bold text-emerald-900">
-            This verification report is dynamically validated against the official BNIE divisional database records.
-          </span>
-        </div>
+                        {renderSummaryRow()}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
 
-        {/* Footer block: Timestamp details */}
-        <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-6 pt-6 border-t border-gray-200 mt-auto">
-          {/* System Verification Timestamps */}
-          <div className="space-y-1.5 text-xs text-gray-500 text-center sm:text-left w-full sm:w-auto">
-            <div className="flex items-center justify-center sm:justify-start space-x-1.5 font-semibold">
-              <Calendar className="w-3.5 h-3.5 text-[#006a4e]" />
-              <span>Verification Date: <span className="text-gray-800 font-bold">{currentDateTime.date}</span></span>
-            </div>
-            <div className="flex items-center justify-center sm:justify-start space-x-1.5 font-semibold">
-              <Clock className="w-3.5 h-3.5 text-[#f42a41]" />
-              <span>Verification Time: <span className="text-gray-800 font-bold">{currentDateTime.time}</span></span>
-            </div>
-            <div className="text-[9px] text-gray-400 font-mono mt-2 block uppercase text-center sm:text-left">
-              Fingerprint: BNIE_REGISTRY_{student.rollNumber}_{student.passingYear}
+              <div className="mt-auto">{renderVerificationFooter()}</div>
             </div>
           </div>
-        </div>
-
+        )}
       </motion.div>
     </div>
   );

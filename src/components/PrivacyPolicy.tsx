@@ -59,7 +59,7 @@ export default function PrivacyPolicy({ onBackToHome }: PrivacyPolicyProps) {
             <h2>1. Institutional Mandate &amp; Scope</h2>
           </div>
           <p className="text-gray-650">
-            The <strong>Bangladesh National Institute of Education (BNIE)</strong> operates this centralized digital registry under regulatory educational frameworks to validate SSC, HSC, Vocational, and Polytechnic Diploma certificates. We are strictly committed to safeguarding the privacy, integrity, and authenticity of all student records and public verification interactions.
+            The <strong>Bangladesh National Institute of Education (BNIE)</strong> operates this centralized digital registry under regulatory educational frameworks to validate 4-Year Bachelor (Honours), 3-Year Degree Pass, Masters, Polytechnic Diploma, SSC, HSC, and Vocational certificates. We are strictly committed to safeguarding the privacy, integrity, and authenticity of all student records and public verification interactions.
           </p>
           <p className="text-gray-650">
             This Privacy Policy explains the nature of personal and academic data held in the BNIE registry, the methods by which information is verified, and the robust security protocols enforced to prevent unauthorized alterations or data breaches.

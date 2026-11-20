@@ -23,7 +23,7 @@ export default function ServicesPage({
       icon: ShieldCheck,
       badge: "Public & Instant",
       description:
-        "Centralized digital verification for SSC, HSC, Vocational, and Diploma certificates. Provides instantaneous authentication against institutional ledgers for corporate recruiters, educational institutes, and foreign embassies.",
+        "Centralized digital verification for Honours, Degree Pass, Masters, Polytechnic Diploma, SSC, HSC, and Vocational certificates & marksheets. Provides instantaneous authentication against institutional ledgers for corporate recruiters, educational institutes, and foreign embassies.",
       features: [
         "Instant dual-factor validation (Roll & Registration Number)",
         "Cryptographic QR code integration on printed documents",
@@ -226,7 +226,7 @@ export default function ServicesPage({
           <div className="space-y-1 sm:border-x sm:border-gray-200 sm:px-4">
             <p className="text-2xl font-black text-[#006a4e]">Scale 5.00 &amp; 4.00</p>
             <p className="text-xs font-bold text-gray-900">National Standard Transcript</p>
-            <p className="text-[11px] text-gray-500">Dual grading scale support for SSC, HSC &amp; Diploma</p>
+            <p className="text-[11px] text-gray-500">Dual grading scale support for Honours, Degree, Masters, Diploma &amp; SSC/HSC</p>
           </div>
           <div className="space-y-1">
             <p className="text-2xl font-black text-[#006a4e]">Anti-Forgery</p>

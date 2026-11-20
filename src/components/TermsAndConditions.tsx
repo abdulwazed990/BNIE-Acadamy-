@@ -85,7 +85,7 @@ export default function TermsAndConditions({ onBackToHome, onNavigateToVerify }:
             </div>
             <div className="p-3 bg-gray-50 border border-gray-150 rounded-lg">
               <strong className="text-gray-900 block mb-1">Official Scale Standards</strong>
-              Grading parameters strictly follow the national educational standard: Scale 5.00 for SSC/HSC groups and Scale 4.00 for Polytechnic Diploma programs (e.g. Electrical &amp; Electronics Engineering, Air Condition and Maintenance 2-Year Diploma).
+              Grading parameters strictly follow the national educational standard: Scale 5.00 for SSC/HSC groups and Scale 4.00 CGPA for Honours, Degree Pass, Masters, and Polytechnic Diploma programs.
             </div>
           </div>
         </section>

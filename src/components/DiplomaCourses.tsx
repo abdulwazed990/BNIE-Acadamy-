@@ -72,7 +72,7 @@ function CourseImage({
   return (
     <img
       src={imgSrc || "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&q=80&w=600"}
-      alt={alt}
+      alt={`${alt} — BNIE Bangladesh Education`}
       className={className}
       onError={handleImageError}
       loading={loading}
@@ -202,13 +202,13 @@ export default function DiplomaCourses({ onBackToHome, onNavigateToVerify }: Dip
               <span className="text-emerald-200 text-xs font-semibold">• BNIE Dhaka Divisional Office</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-extrabold font-sans tracking-tight">
-              Diploma Courses & Programs
+              Diploma in Engineering &amp; Polytechnic Courses
             </h1>
             <h2 className="text-lg md:text-xl font-medium text-emerald-100 font-sans tracking-normal Bengali-Font">
-              ডিপ্লোমা কোর্স ও প্রফেশনাল প্রোগ্রামসমূহ
+              ডিপ্লোমা ইন ইঞ্জিনিয়ারিং ও পলিটেকনিক কারিগরি কোর্সসমূহ
             </h2>
             <p className="text-xs md:text-sm text-emerald-100/90 max-w-2xl font-light">
-              Explore 45 highly accredited Technical, Vocational, and Professional Engineering & Business diplomas designed to align with Bangladesh National Technical and Vocational Qualifications Framework (NTVQF).
+              Explore Computer, Civil, Electrical, Mechanical, and Vocational Engineering Diploma programs designed for technical skills development at BNIE Bangladesh.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

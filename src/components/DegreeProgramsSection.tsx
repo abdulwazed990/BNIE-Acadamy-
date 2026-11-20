@@ -38,9 +38,9 @@ export default function DegreeProgramsSection({
             <span>উচ্চশিক্ষা ও বিশ্ববিদ্যালয় পাঠ্যক্রম বিভাগ</span>
           </div>
 
-          <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-950 font-sans tracking-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-950 font-sans tracking-tight">
             স্নাতক ডিগ্রি (পাস), অনার্স ও মাস্টার্স প্রোগ্রাম
-          </h3>
+          </h2>
           
           <p className="text-gray-600 text-xs sm:text-sm leading-relaxed font-normal">
             বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট (BNIE)-এর আওতাধীন ৩ বছর মেয়াদী ডিগ্রি (পাস), ৪ বছর মেয়াদী সম্মান (অনার্স) এবং স্নাতকোত্তর (মাস্টার্স) শিক্ষাক্রম। আধুনিক সিলেবাস, সেমিস্টারভিত্তিক মূল্যায়ন ও CGPA ৪.০০ স্কেলের পূর্ণাঙ্গ ডিজিটাল ট্রান্সক্রিপ্ট ব্যবস্থা।

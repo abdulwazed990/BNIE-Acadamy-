@@ -32,23 +32,24 @@ body {
   letter-spacing: 0.04em;
 }
 
-/* Global Print Layouts Optimization for Portrait A4 */
+/* Global Print Layouts Optimization for Portrait A4 (210mm x 297mm) */
 @media print {
   @page {
     size: A4 portrait !important;
-    margin: 8mm 10mm 8mm 10mm !important;
+    margin: 6mm !important;
   }
   
   html, body {
     width: 210mm !important;
-    height: 297mm !important;
+    height: auto !important;
+    min-height: 0 !important;
     background-color: white !important;
     background: white !important;
     color: black !important;
     font-size: 11px !important;
     margin: 0 !important;
     padding: 0 !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
@@ -68,24 +69,53 @@ body {
     zoom: 1 !important;
     transform: none !important;
   }
+
+  /* Wrapper for 1 or 2 A4 sheets */
+  .print-report-wrapper {
+    width: 198mm !important;
+    max-width: 198mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+  }
+
+  /* Exact A4 printable sheet inside 6mm margins (198mm x 285mm => 210mm x 297mm paper) */
+  .a4-report-sheet {
+    width: 198mm !important;
+    max-width: 198mm !important;
+    height: 285mm !important;
+    max-height: 285mm !important;
+    margin: 0 auto !important;
+    padding: 7mm !important;
+    box-sizing: border-box !important;
+    box-shadow: none !important;
+    background-color: white !important;
+    background: white !important;
+    overflow: hidden !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .a4-report-sheet:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
   
-  /* Scale content perfectly for printing single A4 with zero margins overflow */
+  /* Scale content perfectly for printing A4 with zero margins overflow */
   .print-card {
     box-shadow: none !important;
     background-color: white !important;
     background: white !important;
-    page-break-inside: avoid !important;
-    page-break-after: avoid !important;
-    page-break-before: avoid !important;
   }
 
   .print-compact-py {
-    padding-top: 3px !important;
-    padding-bottom: 3px !important;
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
   }
   
   .print-compact-my {
-    margin-top: 6px !important;
-    margin-bottom: 6px !important;
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
   }
 }

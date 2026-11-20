@@ -10,7 +10,7 @@ export default function Logo({ className = "", size = 100 }: LogoProps) {
   return (
     <img
       src={officialLogo}
-      alt="Bangladesh National Institute of Education (BNIE) Logo | বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট (বিএনআইই)"
+      alt="BNIE Bangladesh Education — Bangladesh National Institute of Education (বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট)"
       style={{ width: size, height: size }}
       className={`object-contain select-none mix-blend-multiply transition-all duration-300 ${className}`}
       referrerPolicy="no-referrer"

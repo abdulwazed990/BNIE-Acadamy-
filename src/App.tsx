@@ -95,50 +95,51 @@ interface PageSeoMetadata {
 
 const PAGE_SEO_CONFIG: Record<string, PageSeoMetadata> = {
   home: {
-    title: "BNIE Bangladesh | Bangladesh National Institute of Education (বিএনআইই)",
-    description: "Official portal of Bangladesh National Institute of Education (BNIE), a Government-approved autonomous institute established & approved on 15 July 1996 (License: BNIE/GOV-LIC/1996/0715). Check results, marksheets & certificate verification.",
+    title: "BNIE Bangladesh | Bangladesh National Institute of Education",
+    description: "Bangladesh National Institute of Education (BNIE / বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট) — Official portal for certificate verification, online marksheet, Honours, Degree, Masters, Diploma & admission.",
     canonicalPath: "/",
     breadcrumbName: "Home"
   },
   "degree-marksheet-result": {
-    title: "BNIE Degree, Honours & Masters Result Check | Marksheet Verification",
-    description: "Check and verify official BNIE degree results, honours results, and masters marksheets online (বিএনআইই ডিগ্রি ও অনার্স রেজাল্ট). Semester-wise GPA and CGPA calculation.",
+    title: "Online Marksheet & Degree, Honours, Masters Result | BNIE",
+    description: "Check BNIE online marksheet and academic transcript verification (অনলাইন মার্কশিট যাচাই) for Bachelor Honours, Degree Pass, and Masters programs in Bangladesh.",
     canonicalPath: "/?page=degree-marksheet-result",
-    breadcrumbName: "Degree Marksheet Result"
+    breadcrumbName: "Online Marksheet Verification"
   },
   verify: {
-    title: "BNIE Certificate Verification Online | SSC, HSC & Diploma (সনদ যাচাই)",
-    description: "Online BNIE certificate verification (বিএনআইই সার্টিফিকেট যাচাই). Verify roll, registration, and serial numbers for SSC, HSC, and Polytechnic Engineering Diploma credentials.",
+    title: "Certificate Verification Online | BNIE Bangladesh (সনদ যাচাই)",
+    description: "BNIE Certificate Verification online (অনলাইন সার্টিফিকেট ও সনদ যাচাই) via Roll, Registration, or QR code for SSC Vocational, HSC Vocational & Diploma in Engineering.",
     canonicalPath: "/?page=verify",
     breadcrumbName: "Certificate Verification"
   },
   report: {
-    title: "BNIE Verified Academic Transcript & Certificate Dossier (সনদ রিপোর্ট)",
-    description: "Official verified academic record and transcript report from Bangladesh National Institute of Education (BNIE) credential verification system.",
+    title: "Digital Academic Transcript & Certificate Report | BNIE",
+    description: "Official verified academic record, QR code dossier, and marksheet transcript from Bangladesh National Institute of Education (BNIE Bangladesh).",
     canonicalPath: "/?page=report",
-    breadcrumbName: "Transcript Report"
+    breadcrumbName: "Transcript Report",
+    noIndex: true
   },
   "find-program": {
-    title: "BNIE Academic Programs | Bachelor Degree, Honours & Masters Courses",
-    description: "Explore BBA Honours, Degree Pass, Masters, and Polytechnic Diploma programs at Bangladesh National Institute of Education (BNIE Bangladesh / বাংলাদেশ ডিগ্রি শিক্ষা).",
+    title: "Bachelor Honours, Degree Pass, Masters & Diploma Programs | BNIE",
+    description: "Explore Bachelor Honours, Degree Pass courses, Masters programs, and Polytechnic Diploma in Engineering at Bangladesh National Institute of Education (BNIE).",
     canonicalPath: "/?page=find-program",
     breadcrumbName: "Academic Programs"
   },
   "online-admission": {
-    title: "BNIE Admission & Student Registration Portal (বিএনআইই ভর্তি)",
-    description: "Apply online for BNIE admission in Bachelor Honours, Degree Pass, Masters, and Polytechnic Diploma engineering programs at Bangladesh National Institute of Education.",
+    title: "Online Admission Application | BNIE Bangladesh (অনলাইন ভর্তি)",
+    description: "Apply online for Honours admission, Degree Pass, Masters, and Diploma in Engineering (Computer, Civil, Electrical, Mechanical) at BNIE Bangladesh.",
     canonicalPath: "/?page=online-admission",
     breadcrumbName: "Online Admission"
   },
   accreditation: {
-    title: "Government Institutional License & Recognition (Approved 15 July 1996) | BNIE",
-    description: "Official Government Institutional License (BNIE/GOV-LIC/1996/0715), approved by the Government of Bangladesh on 15 July 1996 (Memo: MOE/REG-1996/0715-BNIE). Statutory institutional registry of BNIE.",
+    title: "Government Approval & Institutional License (1996) | BNIE",
+    description: "Official institutional recognition and Government License (BNIE/GOV-LIC/1996/0715) of Bangladesh National Institute of Education, approved 15 July 1996.",
     canonicalPath: "/?page=accreditation",
     breadcrumbName: "Government Approval & Recognition"
   },
   services: {
-    title: "BNIE Student Services & Portal | Academic Verification (শিক্ষার্থী সেবা)",
-    description: "Comprehensive student services at BNIE: certificate verification, marksheet checking, academic records, transcript issuance, and student support.",
+    title: "BNIE Student Services & Digital Education Portal Bangladesh",
+    description: "BNIE student services: online certificate verification, marksheet check, academic transcripts, SSC/HSC Vocational, Honours, Masters & technical courses.",
     canonicalPath: "/?page=services",
     breadcrumbName: "Student Services"
   },
@@ -186,18 +187,36 @@ const PAGE_SEO_CONFIG: Record<string, PageSeoMetadata> = {
   },
   "help-center": {
     title: "BNIE Help Center & FAQs | Result & Certificate Check (সহায়তা)",
-    description: "Help Center: how to check BNIE result, verify certificates online, degree marksheets, and answers to student questions at Bangladesh National Institute of Education.",
+    description: "Help Center: how to check BNIE result, verify certificates online, online marksheet, and answers to student questions at BNIE Bangladesh.",
+    canonicalPath: "/?page=help-center",
+    breadcrumbName: "Help Center"
+  },
+  help: {
+    title: "BNIE Help Center & FAQs | Result & Certificate Check (সহায়তা)",
+    description: "Help Center: how to check BNIE result, verify certificates online, online marksheet, and answers to student questions at BNIE Bangladesh.",
     canonicalPath: "/?page=help-center",
     breadcrumbName: "Help Center"
   },
   "privacy-policy": {
-    title: "Privacy Policy & Data Protection | BNIE",
+    title: "Privacy Policy & Data Protection | BNIE Bangladesh",
+    description: "Student data privacy principles, verification record security, and digital privacy policy of Bangladesh National Institute of Education.",
+    canonicalPath: "/?page=privacy-policy",
+    breadcrumbName: "Privacy Policy"
+  },
+  privacy: {
+    title: "Privacy Policy & Data Protection | BNIE Bangladesh",
     description: "Student data privacy principles, verification record security, and digital privacy policy of Bangladesh National Institute of Education.",
     canonicalPath: "/?page=privacy-policy",
     breadcrumbName: "Privacy Policy"
   },
   "terms-conditions": {
-    title: "Terms of Service & Usage Conditions | BNIE",
+    title: "Terms of Service & Usage Conditions | BNIE Bangladesh",
+    description: "Terms of service governing use of the BNIE portal, online certificate verification, and institutional digital resources.",
+    canonicalPath: "/?page=terms-conditions",
+    breadcrumbName: "Terms & Conditions"
+  },
+  terms: {
+    title: "Terms of Service & Usage Conditions | BNIE Bangladesh",
     description: "Terms of service governing use of the BNIE portal, online certificate verification, and institutional digital resources.",
     canonicalPath: "/?page=terms-conditions",
     breadcrumbName: "Terms & Conditions"
@@ -861,7 +880,7 @@ export default function App() {
           )}
 
           {/* PRIVACY POLICY PAGE ROUTE */}
-          {currentPage === "privacy" && (
+          {(currentPage === "privacy" || currentPage === "privacy-policy") && (
             <motion.div
               key="privacy"
               initial={{ opacity: 0, y: 10 }}
@@ -871,14 +890,14 @@ export default function App() {
             >
               <PrivacyPolicy
                 onBackToHome={() => handleNavigate("home")}
-                onNavigateToContact={() => handleNavigate("help")}
+                onNavigateToContact={() => handleNavigate("help-center")}
               />
               <Contact />
             </motion.div>
           )}
 
           {/* TERMS & CONDITIONS PAGE ROUTE */}
-          {currentPage === "terms" && (
+          {(currentPage === "terms" || currentPage === "terms-conditions") && (
             <motion.div
               key="terms"
               initial={{ opacity: 0, y: 10 }}
@@ -895,7 +914,7 @@ export default function App() {
           )}
 
           {/* HELP CENTER PAGE ROUTE */}
-          {currentPage === "help" && (
+          {(currentPage === "help" || currentPage === "help-center") && (
             <motion.div
               key="help"
               initial={{ opacity: 0, y: 10 }}

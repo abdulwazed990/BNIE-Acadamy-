@@ -19,9 +19,9 @@ export default function DiplomaStreams() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-4">
           <div className="max-w-xl">
-            <h3 className="text-2xl md:text-3xl font-bold text-gray-950 font-sans tracking-tight">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-950 font-sans tracking-tight">
               Diploma in Engineering Streams
-            </h3>
+            </h2>
             <p className="text-gray-500 text-sm mt-1">
               ১ বছর থেকে ৪ বছর মেয়াদী প্রফেশনাল ডিপ্লোমা ইঞ্জিনিয়ারিং কারিকুলাম — বাস্তবমুখী ল্যাবরেটরি ও ইন্ডাস্ট্রিয়াল ট্রেনিং।
             </p>
@@ -48,9 +48,9 @@ export default function DiplomaStreams() {
                   <div className="p-2.5 rounded-lg bg-gray-100 text-gray-700 group-hover:bg-[#006a4e]/10 group-hover:text-[#006a4e] transition-colors">
                     <IconComp className="w-5 h-5 stroke-[2]" />
                   </div>
-                  <h4 className="font-bold text-gray-950 text-sm md:text-base leading-snug font-sans group-hover:text-[#006a4e] transition-colors">
+                  <h3 className="font-bold text-gray-950 text-sm md:text-base leading-snug font-sans group-hover:text-[#006a4e] transition-colors">
                     {stream.name}
-                  </h4>
+                  </h3>
                 </div>
                 <p className="text-xs text-gray-500 leading-relaxed font-normal">
                   {stream.desc}

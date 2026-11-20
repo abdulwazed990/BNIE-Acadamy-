@@ -559,18 +559,6 @@ export default function SideDrawer({
                 >
                   FAQs
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleLinkClick("admin-login")}
-                  className={`w-full text-left px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer block ${
-                    currentPage === "admin-login"
-                      ? "bg-gray-100 text-[#000000] font-bold"
-                      : "text-[#000000] hover:bg-gray-100 hover:text-[#000000]"
-                  }`}
-                >
-                  Administrator Management Panel
-                </button>
               </div>
 
             </div>

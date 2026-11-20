@@ -44,9 +44,9 @@ export default function MissionAndServices() {
                 Our Mandate
               </div>
               
-              <h3 className="text-3xl font-bold text-gray-900 font-sans tracking-tight leading-tight">
+              <h2 className="text-3xl font-bold text-gray-900 font-sans tracking-tight leading-tight">
                 Our Mission &amp; National Commitment
-              </h3>
+              </h2>
               
               <p className="text-gray-650 text-base leading-relaxed font-medium text-gray-700 italic">
                 "Bangladesh National Institute of Education is committed to providing reliable educational services, certificate verification and vocational skill development for students across the country."
@@ -73,9 +73,9 @@ export default function MissionAndServices() {
           {/* Services Column (Span 7) */}
           <div className="lg:col-span-7 flex flex-col justify-center space-y-6">
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 font-sans tracking-tight">
+              <h2 className="text-2xl font-bold text-gray-900 font-sans tracking-tight">
                 Key Educational &amp; Registry Services
-              </h3>
+              </h2>
               <p className="text-gray-400 text-xs mt-1">
                 The official service desk at BNIE guarantees prompt digital processing of the following student service modules:
               </p>
@@ -97,9 +97,9 @@ export default function MissionAndServices() {
                       <IconComponent className="w-5 h-5 stroke-[2]" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-gray-900 text-sm md:text-base group-hover:text-[#006a4e] transition-colors">
+                      <h3 className="font-bold text-gray-900 text-sm md:text-base group-hover:text-[#006a4e] transition-colors">
                         {serv.title}
-                      </h4>
+                      </h3>
                       <p className="text-xs text-gray-500 mt-1 leading-relaxed max-w-2xl font-normal">
                         {serv.desc}
                       </p>

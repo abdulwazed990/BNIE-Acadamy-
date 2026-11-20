@@ -46,21 +46,21 @@ export default function Header({ onNavigate, onOpenDrawer, isDbLoading }: Header
                 </span>
               </div>
 
-              <h1 
+              <div 
                 className="text-lg sm:text-xl md:text-2xl font-black text-gray-950 font-sans tracking-tight leading-tight truncate"
                 itemProp="name"
                 lang="bn"
               >
                 বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট
-              </h1>
+              </div>
 
-              <h2 
+              <div 
                 className="text-xs sm:text-sm font-medium text-gray-700 tracking-wide font-sans truncate"
                 itemProp="alternateName"
                 lang="en"
               >
                 Bangladesh National Institute of Education (BNIE)
-              </h2>
+              </div>
             </div>
           </button>
 

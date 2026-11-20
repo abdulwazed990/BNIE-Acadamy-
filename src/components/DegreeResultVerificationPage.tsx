@@ -590,7 +590,7 @@ export default function DegreeResultVerificationPage({
     window.print();
   };
 
-  // High-fidelity Multi-Page A4 PDF Generator
+  // High-fidelity Offscreen A4 Portrait (840x1188px => 210x297mm) PDF Generator
   const handleDownloadPDF = async () => {
     const page1Element = document.getElementById("marksheet-page-1");
     if (!page1Element) {
@@ -598,20 +598,74 @@ export default function DegreeResultVerificationPage({
       return;
     }
 
+    const page2Element = isTwoPage ? document.getElementById("marksheet-page-2") : null;
+    const sourcePages = page2Element ? [page1Element, page2Element] : [page1Element];
+
     setIsGeneratingPdf(true);
-    const restoreWindowStyles = patchGetComputedStyle(window);
+    const restoreMainWindowStyles = patchGetComputedStyle(window);
+
+    // Fixed desktop offscreen iframe so mobile/tablet viewports never squash the sheet width
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.top = "0";
+    iframe.style.left = "-9999px";
+    iframe.style.width = "1024px";
+    iframe.style.height = "2800px";
+    iframe.style.border = "0";
+    iframe.style.pointerEvents = "none";
+    document.body.appendChild(iframe);
+
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!iframeDoc) {
+      iframe.parentNode?.removeChild(iframe);
+      restoreMainWindowStyles();
+      setIsGeneratingPdf(false);
+      window.print();
+      return;
+    }
+
+    iframeDoc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Marksheet Renderer</title>
+          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #ffffff; -webkit-print-color-adjust: exact; font-family: 'Hind Siliguri', 'Inter', sans-serif;">
+          <div id="sandbox-root" style="width: 840px; margin: 0 auto; padding: 0;"></div>
+        </body>
+      </html>
+    `);
+    iframeDoc.close();
+
+    Array.from(document.head.querySelectorAll("link, style")).forEach((node) => {
+      iframeDoc.head.appendChild(node.cloneNode(true));
+    });
 
     try {
-      const renderScale = 2.5;
+      if (document.fonts?.ready) {
+        await document.fonts.ready.catch(() => {});
+      }
+      if (iframe.contentWindow?.document?.fonts?.ready) {
+        await iframe.contentWindow.document.fonts.ready.catch(() => {});
+      }
+    } catch {
+      // Ignore font readiness warnings
+    }
 
-      // Render Page 1
-      const canvas1 = await html2canvas(page1Element, {
-        scale: renderScale,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        windowWidth: 1024,
-      });
+    let restoreIframeWindowStyles = () => {};
+    if (iframe.contentWindow) {
+      restoreIframeWindowStyles = patchGetComputedStyle(iframe.contentWindow);
+    }
+
+    try {
+      const sandboxRoot = iframeDoc.getElementById("sandbox-root");
+      if (!sandboxRoot) {
+        throw new Error("Sandbox root unavailable");
+      }
+
+      const TARGET_SHEET_WIDTH = 840;
+      const TARGET_SHEET_HEIGHT = 1188; // Exact 210:297 A4 portrait aspect ratio
 
       const pdf = new jsPDF({
         orientation: "portrait",
@@ -622,43 +676,90 @@ export default function DegreeResultVerificationPage({
       const pdfWidth = 210;
       const pdfHeight = 297;
       const margin = 5;
-      const printableWidth = pdfWidth - margin * 2;
-      const printableHeight = pdfHeight - margin * 2;
+      const printableWidth = pdfWidth - margin * 2; // 200mm
+      const printableHeight = pdfHeight - margin * 2; // 287mm
 
-      // Add Page 1 to PDF
-      const img1Data = canvas1.toDataURL("image/jpeg", 0.95);
-      const ratio1 = canvas1.height / canvas1.width;
-      let img1Height = printableWidth * ratio1;
-      let img1Width = printableWidth;
-      if (img1Height > printableHeight) {
-        img1Height = printableHeight;
-        img1Width = printableHeight / ratio1;
-      }
-      const x1 = margin + (printableWidth - img1Width) / 2;
-      pdf.addImage(img1Data, "JPEG", x1, margin, img1Width, img1Height);
+      for (let i = 0; i < sourcePages.length; i++) {
+        const srcPage = sourcePages[i];
+        sandboxRoot.innerHTML = "";
 
-      // Render Page 2 if applicable
-      const page2Element = document.getElementById("marksheet-page-2");
-      if (isTwoPage && page2Element) {
-        const canvas2 = await html2canvas(page2Element, {
-          scale: renderScale,
+        const clone = srcPage.cloneNode(true) as HTMLElement;
+        clone.style.width = `${TARGET_SHEET_WIDTH}px`;
+        clone.style.maxWidth = `${TARGET_SHEET_WIDTH}px`;
+        clone.style.minHeight = `${TARGET_SHEET_HEIGHT}px`;
+        clone.style.height = "auto";
+        clone.style.margin = "0";
+        clone.style.boxSizing = "border-box";
+        clone.style.boxShadow = "none";
+        clone.style.borderRadius = "4px";
+        clone.style.backgroundColor = "#ffffff";
+        clone.style.display = "flex";
+        clone.style.flexDirection = "column";
+        sandboxRoot.appendChild(clone);
+
+        // Wait for layout & images inside cloned sheet
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        const images = Array.from(clone.querySelectorAll("img"));
+        await Promise.all(
+          images.map((img) => {
+            if (img.complete) return Promise.resolve();
+            return new Promise((resolve) => {
+              img.onload = resolve;
+              img.onerror = resolve;
+            });
+          })
+        );
+
+        // Ensure all content fits inside exact 840x1188px frame without overflowing or squashing
+        const inner = clone.querySelector(".marksheet-sheet-inner") as HTMLElement | null;
+        if (inner) {
+          const measuredHeight = clone.scrollHeight;
+          if (measuredHeight > TARGET_SHEET_HEIGHT) {
+            const verticalFrame = measuredHeight - inner.scrollHeight;
+            const availableInnerHeight = Math.max(400, TARGET_SHEET_HEIGHT - verticalFrame - 8);
+            const fitScale = Math.min(1, availableInnerHeight / inner.scrollHeight);
+            inner.style.transform = `scale(${fitScale})`;
+            inner.style.transformOrigin = "top left";
+            inner.style.width = `${100 / fitScale}%`;
+          }
+        }
+
+        clone.style.height = `${TARGET_SHEET_HEIGHT}px`;
+        clone.style.overflow = "hidden";
+
+        await new Promise((resolve) => setTimeout(resolve, 120));
+
+        const canvas = await html2canvas(clone, {
+          scale: 2.5,
           useCORS: true,
           logging: false,
           backgroundColor: "#ffffff",
+          width: TARGET_SHEET_WIDTH,
+          height: TARGET_SHEET_HEIGHT,
+          scrollX: 0,
+          scrollY: 0,
           windowWidth: 1024,
+          windowHeight: 1400,
         });
 
-        const img2Data = canvas2.toDataURL("image/jpeg", 0.95);
-        const ratio2 = canvas2.height / canvas2.width;
-        let img2Height = printableWidth * ratio2;
-        let img2Width = printableWidth;
-        if (img2Height > printableHeight) {
-          img2Height = printableHeight;
-          img2Width = printableHeight / ratio2;
+        const imgData = canvas.toDataURL("image/jpeg", 0.96);
+        const ratio = canvas.height / canvas.width;
+        let imgWidth = printableWidth;
+        let imgHeight = printableWidth * ratio;
+        let xOffset = margin;
+        let yOffset = margin + (printableHeight - imgHeight) / 2;
+
+        if (imgHeight > printableHeight) {
+          imgHeight = printableHeight;
+          imgWidth = printableHeight / ratio;
+          xOffset = margin + (printableWidth - imgWidth) / 2;
+          yOffset = margin;
         }
-        const x2 = margin + (printableWidth - img2Width) / 2;
-        pdf.addPage();
-        pdf.addImage(img2Data, "JPEG", x2, margin, img2Width, img2Height);
+
+        if (i > 0) {
+          pdf.addPage("a4", "portrait");
+        }
+        pdf.addImage(imgData, "JPEG", xOffset, yOffset, imgWidth, imgHeight);
       }
 
       const cleanFileName = `BNIE-Marksheet-${matchedStudent?.rollNumber || matchedStudent?.id || "transcript"}.pdf`.replace(/[^a-zA-Z0-9.\-_]/g, "_");
@@ -667,7 +768,11 @@ export default function DegreeResultVerificationPage({
       console.error("PDF generation error, falling back to print:", err);
       window.print();
     } finally {
-      restoreWindowStyles();
+      if (iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
+      restoreMainWindowStyles();
+      restoreIframeWindowStyles();
       setIsGeneratingPdf(false);
     }
   };
@@ -675,50 +780,66 @@ export default function DegreeResultVerificationPage({
   return (
     <div className="min-h-screen bg-gray-50/70 py-8 px-4 sm:px-6 lg:px-8">
       
-      {/* Print-specific stylesheet ensuring exact 2-Page A4 Portrait division */}
+      {/* Print-specific stylesheet ensuring exact A4 Portrait dimensions */}
       <style>{`
         @media print {
           @page {
-            size: A4 portrait;
-            margin: 6mm 8mm 6mm 8mm;
+            size: A4 portrait !important;
+            margin: 6mm !important;
           }
           html, body {
+            width: 210mm !important;
+            height: auto !important;
+            min-height: 0 !important;
             margin: 0 !important;
             padding: 0 !important;
             background: #ffffff !important;
             color: #000000 !important;
-            font-size: 10px !important;
+            font-size: 9.5px !important;
+            overflow: visible !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
           .no-print {
             display: none !important;
           }
-          .marksheet-page-1 {
+          .marksheet-page-1,
+          .marksheet-page-2 {
+            width: 198mm !important;
+            max-width: 198mm !important;
+            min-height: 285mm !important;
+            height: 285mm !important;
+            max-height: 285mm !important;
+            box-sizing: border-box !important;
+            padding: 4px 6px !important;
+            margin: 0 auto !important;
+            border: 1.5px solid #334155 !important;
+            border-radius: 4px !important;
+            box-shadow: none !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          .marksheet-page-1.is-two-page {
             page-break-after: always !important;
             break-after: page !important;
-            box-sizing: border-box !important;
-            padding: 8px 12px !important;
-            margin: 0 !important;
-            border: 1px solid #374151 !important;
-            border-radius: 6px !important;
-            box-shadow: none !important;
           }
           .marksheet-page-2 {
             page-break-before: always !important;
             break-before: page !important;
-            box-sizing: border-box !important;
-            padding: 8px 12px !important;
-            margin-top: 0 !important;
-            border: 1px solid #374151 !important;
-            border-radius: 6px !important;
-            box-shadow: none !important;
+            page-break-after: auto !important;
+            break-after: auto !important;
           }
-          /* Hide full subject names in print to save space with compact subject codes */
+          .marksheet-sheet-inner {
+            flex: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-start !important;
+            padding: 8px 10px !important;
+          }
           .print-hide-title {
             display: none !important;
           }
-          /* Prevent any individual table row or semester block from breaking awkwardly */
           tr {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
@@ -729,7 +850,7 @@ export default function DegreeResultVerificationPage({
             margin-bottom: 3px !important;
           }
           .print-compact-table {
-            font-size: 8.5px !important;
+            font-size: 8px !important;
             line-height: 1.15 !important;
           }
           .print-compact-table th, 
@@ -813,10 +934,10 @@ export default function DegreeResultVerificationPage({
                   Higher Education Division • National Academic Ledger
                 </span>
                 <h1 className="text-xl sm:text-2xl font-black text-gray-950 font-sans tracking-tight">
-                  BNIE Degree, Honours &amp; Masters — Marksheet Result Check
+                  Online Marksheet — BNIE Degree, Honours &amp; Masters Result Check
                 </h1>
                 <p className="text-xs text-gray-600">
-                  বিএনআইই ডিগ্রি, অনার্স ও মাস্টার্স পরীক্ষার ফলাফল ও মার্কশিট যাচাইকরণ পোর্টাল • Two-Page Continuous A4 Portrait Marksheet &amp; Verified Official Transcript Portal
+                  বিএনআইই অনলাইন মার্কশিট যাচাই ও ডিগ্রি, অনার্স ও মাস্টার্স পরীক্ষার ফলাফল পোর্টাল • Digital Academic Transcript Verification
                 </p>
               </div>
             </div>
@@ -1031,7 +1152,7 @@ export default function DegreeResultVerificationPage({
                   Multiple Academic Records Found ({multiMatchStudents.length})
                 </h3>
                 <p className="text-xs text-gray-600">
-                  Multiple qualification records match your search query. Please select the specific record to view the verified two-page marksheet:
+                  Multiple qualification records match your search query. Please select the specific record to view the verified marksheet:
                 </p>
               </div>
             </div>
@@ -1215,7 +1336,7 @@ export default function DegreeResultVerificationPage({
                     Certificate Verification Status: Verified Authentic
                   </span>
                   <span className="text-[11px] text-gray-600">
-                    Official Central Ledger Archive • Evaluated Period: {displayedEndpointPeriod} • Two-Page A4 Continuous Marksheet
+                    Official Central Ledger Archive • Evaluated Period: {displayedEndpointPeriod}
                   </span>
                 </div>
               </div>
@@ -1227,12 +1348,12 @@ export default function DegreeResultVerificationPage({
                   disabled={isGeneratingPdf}
                   onClick={handleDownloadPDF}
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#006a4e] hover:bg-[#005a42] text-white rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow cursor-pointer disabled:opacity-60"
-                  title="Download two-page A4 Marksheet PDF"
+                  title="Download Official Marksheet PDF"
                 >
                   {isGeneratingPdf ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Generating A4 PDF...</span>
+                      <span>Generating PDF...</span>
                     </>
                   ) : (
                     <>
@@ -1247,7 +1368,7 @@ export default function DegreeResultVerificationPage({
                   type="button"
                   onClick={handlePrint}
                   className="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
-                  title="Direct Print (A4 Portrait)"
+                  title="Direct Print Marksheet"
                 >
                   <Printer className="w-4 h-4 text-gray-700" />
                   <span>Print Marksheet</span>
@@ -1260,10 +1381,10 @@ export default function DegreeResultVerificationPage({
             {/* ========================================================================= */}
             <div 
               id="marksheet-page-1"
-              className="marksheet-page-1 bg-white rounded-lg border-2 border-slate-800 shadow-md p-2 sm:p-2.5 relative overflow-hidden print:border-2 print:shadow-none print:p-1"
+              className={`marksheet-page-1 ${isTwoPage ? "is-two-page" : ""} bg-white rounded-lg border-2 border-slate-800 shadow-md p-2 sm:p-2.5 relative overflow-hidden print:border-2 print:shadow-none print:p-1 max-w-[840px] mx-auto w-full`}
             >
               {/* Inner Official Academic Certificate Border */}
-              <div className="border border-slate-700 rounded-sm p-4 sm:p-6 space-y-3.5 print:p-3 print:space-y-2.5 bg-white">
+              <div className="marksheet-sheet-inner border border-slate-700 rounded-sm p-4 sm:p-6 space-y-3.5 print:p-3 print:space-y-2.5 bg-white flex-1 flex flex-col">
                 
                 {/* Sample Data Disclaimer Watermark */}
                 {(!matchedStudent.isVerifiedAcademicRecord || matchedStudent.id.startsWith("BNIE-BA-") || matchedStudent.id.startsWith("BNIE-DEG-PASS-")) && (
@@ -1377,7 +1498,7 @@ export default function DegreeResultVerificationPage({
                     <div className="w-full h-28 sm:h-32 border border-slate-300 rounded-xs overflow-hidden bg-white">
                       <img 
                         src={matchedStudent.photoUrl || (matchedStudent.gender === "Female" ? PASSPORT_AVATARS.female1 : PASSPORT_AVATARS.male1)} 
-                        alt={matchedStudent.name}
+                        alt={`${matchedStudent.name} — BNIE Bangladesh Education`}
                         className="w-full h-full object-cover object-top"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
@@ -1551,7 +1672,7 @@ export default function DegreeResultVerificationPage({
                       {/* Subject Table (Single column or Two-column layout for 30-subject catalogue) */}
                       <div className="overflow-x-auto p-1.5">
                         {isTwoColumn ? (
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-3">
                             <div>
                               <div className="text-[10px] font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded mb-1 border border-slate-300">
                                 Section A: Papers 01 — 15
@@ -1675,7 +1796,7 @@ export default function DegreeResultVerificationPage({
               )}
 
               {/* Page 1 Bottom Footer Indicator */}
-              <div className="pt-2 border-t border-slate-300 flex items-center justify-between text-[10px] text-slate-500 font-mono">
+              <div className="mt-auto pt-2 border-t border-slate-300 flex items-center justify-between text-[10px] text-slate-500 font-mono">
                 <span>Central Academic Archive: BNIE-{matchedStudent.rollNumber}-{matchedStudent.passingYear}</span>
                 <span className="font-bold text-slate-800">
                   {isTwoPage ? "Page 1 of 2 • Transcript continues on Page 2" : "Page 1 of 1 • End of Official Academic Transcript"}
@@ -1691,10 +1812,10 @@ export default function DegreeResultVerificationPage({
             {isTwoPage && (
               <div 
                 id="marksheet-page-2"
-                className="marksheet-page-2 bg-white rounded-lg border-2 border-slate-800 shadow-md p-2 sm:p-2.5 relative overflow-hidden print:border-2 print:shadow-none print:p-1"
+                className="marksheet-page-2 bg-white rounded-lg border-2 border-slate-800 shadow-md p-2 sm:p-2.5 relative overflow-hidden print:border-2 print:shadow-none print:p-1 max-w-[840px] mx-auto w-full"
               >
                 {/* Inner Official Academic Certificate Border */}
-                <div className="border border-slate-700 rounded-sm p-4 sm:p-6 space-y-3.5 print:p-3 print:space-y-2.5 bg-white">
+                <div className="marksheet-sheet-inner border border-slate-700 rounded-sm p-4 sm:p-6 space-y-3.5 print:p-3 print:space-y-2.5 bg-white flex-1 flex flex-col">
 
                 {/* Page 2 Minimalist Continuation Header */}
                 <div className="border-b-2 border-slate-900 pb-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
@@ -1857,7 +1978,7 @@ export default function DegreeResultVerificationPage({
                         {/* Subject Table */}
                         <div className="overflow-x-auto p-2">
                           {isTwoColumn ? (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-4">
                               <div>
                                 <div className="text-[10px] font-bold text-amber-900 bg-amber-50 px-2 py-1 rounded mb-1.5 border border-amber-200">
                                   Section A: Papers 01 — 15
@@ -1981,7 +2102,7 @@ export default function DegreeResultVerificationPage({
                 </div>
 
                 {/* Page 2 Bottom Footer Indicator */}
-                <div className="pt-2 border-t border-slate-300 flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                <div className="mt-auto pt-2 border-t border-slate-300 flex items-center justify-between text-[10px] text-slate-500 font-mono">
                   <span>Record Verified at bnie.edu.bd/degree-marksheet-result</span>
                   <span className="font-bold text-slate-800">
                     Page 2 of 2 • End of Official Transcript
