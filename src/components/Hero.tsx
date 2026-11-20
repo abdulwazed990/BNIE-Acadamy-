@@ -38,7 +38,7 @@ export default function Hero({
   const titleBn = homepageSettings?.heroTitleBn || "বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট";
   const titleEn = homepageSettings?.heroTitleEn || "Bangladesh National Institute of Education (BNIE)";
   const subtitleBn = homepageSettings?.heroSubtitleBn || "BNIE Bangladesh • ডিজিটাল সনদ ও মার্কশিট যাচাইকরণ পোর্টাল";
-  const subtitleEn = homepageSettings?.heroSubtitleEn || "BNIE Bangladesh একটি স্বায়ত্তশাসিত জাতীয় শিক্ষা প্রতিষ্ঠান। এখানে ৪ বছর মেয়াদী স্নাতক সম্মান (অনার্স), ৩ বছর মেয়াদী ডিগ্রি (পাস), স্নাতকোত্তর (মাস্টার্স), ১ থেকে ৪ বছর মেয়াদী পলিটেকনিক ডিপ্লোমা ইন ইঞ্জিনিয়ারিং এবং এস.এস.সি ও এইচ.এস.সি ভোকেশনাল সনদ ও পূর্ণাঙ্গ সেমিস্টারভিত্তিক অনলাইন মার্কশিট, QR কোড সার্টিফিকেট যাচাই ও অনলাইন ভর্তি আবেদন সুবিধা রয়েছে।";
+  const subtitleEn = homepageSettings?.heroSubtitleEn || "গণপ্রজাতন্ত্রী বাংলাদেশ সরকার অনুমোদিত (অনুমোদনের তারিখ: ১৫ জুলাই ১৯৯৬ • সরকারি লাইসেন্স নং: BNIE/GOV-LIC/1996/0715 • স্মারক নং: MOE/REG-1996/0715-BNIE) একটি স্বায়ত্তশাসিত জাতীয় শিক্ষা প্রতিষ্ঠান (bnie-my-gov-portal.com)। এখানে ৪ বছর মেয়াদী স্নাতক সম্মান (অনার্স), ৩ বছর মেয়াদী ডিগ্রি (পাস), স্নাতকোত্তর (মাস্টার্স), ১ থেকে ৪ বছর মেয়াদী পলিটেকনিক ডিপ্লোমা ইন ইঞ্জিনিয়ারিং এবং এস.এস.সি ও এইচ.এস.সি ভোকেশনাল সনদ, অনলাইন মার্কশিট, QR কোড সার্টিফিকেট যাচাই ও অনলাইন ভর্তি আবেদন সুবিধা রয়েছে।";
 
 
 

@@ -96,7 +96,7 @@ interface PageSeoMetadata {
 const PAGE_SEO_CONFIG: Record<string, PageSeoMetadata> = {
   home: {
     title: "BNIE Bangladesh | Bangladesh National Institute of Education",
-    description: "Bangladesh National Institute of Education (BNIE / বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট) — Official portal for certificate verification, online marksheet, Honours, Degree, Masters, Diploma & admission.",
+    description: "Official portal (bnie-my-gov-portal.com) of Bangladesh National Institute of Education (BNIE), Government-approved autonomous educational institute (15 July 1996 • License: BNIE/GOV-LIC/1996/0715). Verify certificates, marksheets, Honours, Degree, Masters & Diploma.",
     canonicalPath: "/",
     breadcrumbName: "Home"
   },
@@ -133,7 +133,7 @@ const PAGE_SEO_CONFIG: Record<string, PageSeoMetadata> = {
   },
   accreditation: {
     title: "Government Approval & Institutional License (1996) | BNIE",
-    description: "Official institutional recognition and Government License (BNIE/GOV-LIC/1996/0715) of Bangladesh National Institute of Education, approved 15 July 1996.",
+    description: "Official Government Institutional License (BNIE/GOV-LIC/1996/0715) and statutory approval of Bangladesh National Institute of Education (bnie-my-gov-portal.com), approved 15 July 1996 (Memo: MOE/REG-1996/0715-BNIE).",
     canonicalPath: "/?page=accreditation",
     breadcrumbName: "Government Approval & Recognition"
   },
@@ -402,7 +402,7 @@ export default function App() {
     if (typeof document === "undefined") return;
 
     const seo = PAGE_SEO_CONFIG[currentPage] || PAGE_SEO_CONFIG.home;
-    const baseOrigin = "https://bnie.edu.bd";
+    const baseOrigin = "https://bnie-my-gov-portal.com";
     const canonicalUrl = `${baseOrigin}${seo.canonicalPath}`;
 
     // 1. Document Title

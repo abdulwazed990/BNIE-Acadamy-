@@ -69,7 +69,7 @@ export default function StudentHandbooksPage({
 
     content += `========================================================================\n`;
     content += `Published by: Directorate of Academic Affairs & Examinations\n`;
-    content += `Official Verification Portal: https://bnie.edu.bd/verify\n`;
+    content += `Official Verification Portal: https://bnie-my-gov-portal.com/?page=verify\n`;
     content += `Document Authenticity Key: SHA256-${hb.code}-OFFICIAL-AUTHENTICATED\n`;
     content += `========================================================================\n`;
 

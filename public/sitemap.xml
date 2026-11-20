@@ -2,135 +2,135 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://bnie.edu.bd/</loc>
-    <xhtml:link rel="alternate" hreflang="bn-BD" href="https://bnie.edu.bd/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://bnie.edu.bd/"/>
+    <loc>https://bnie-my-gov-portal.com/</loc>
+    <xhtml:link rel="alternate" hreflang="bn-BD" href="https://bnie-my-gov-portal.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://bnie-my-gov-portal.com/"/>
     <lastmod>2026-11-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=verify</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=accreditation</loc>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://bnie-my-gov-portal.com/?page=verify</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=degree-marksheet-result</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=degree-marksheet-result</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=courses</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=courses</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.90</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=online-admission</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=online-admission</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.90</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=find-program</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=find-program</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=services</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=services</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=specializations</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=specializations</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=accreditation</loc>
-    <lastmod>2026-11-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.80</priority>
-  </url>
-  <url>
-    <loc>https://bnie.edu.bd/?page=notices</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=notices</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=help-center</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=help-center</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=student-handbooks</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=student-handbooks</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=research-publications</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=research-publications</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=regional-centers</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=regional-centers</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=leadership</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=leadership</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=vc-message</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=vc-message</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.65</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=complaints-services</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=complaints-services</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.60</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=osaps-login</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=osaps-login</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.60</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=ebook</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=ebook</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.60</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=web-email</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=web-email</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.60</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=privacy-policy</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=privacy-policy</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.50</priority>
   </url>
   <url>
-    <loc>https://bnie.edu.bd/?page=terms-conditions</loc>
+    <loc>https://bnie-my-gov-portal.com/?page=terms-conditions</loc>
     <lastmod>2026-11-20</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.50</priority>

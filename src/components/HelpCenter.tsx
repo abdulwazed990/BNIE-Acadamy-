@@ -30,7 +30,7 @@ const FAQ_LIST: FAQItem[] = [
     id: "q_result_check",
     category: "verification",
     question: "How do I check BNIE student result and marksheet online? | BNIE এর রেজাল্ট ও মার্কশিট কিভাবে দেখব?",
-    answer: "To check your BNIE exam result, visit the 'Degree Result' or 'Certificate Verification' portal on bnie.edu.bd. Enter your Student ID, Roll Number, or Registration Number and select your Exam Type (Honours, Degree Pass, Masters, or Diploma). The portal will instantly display your verified marksheet, semester GPA, and cumulative CGPA."
+    answer: "To check your BNIE exam result, visit the 'Degree Result' or 'Certificate Verification' portal on bnie-my-gov-portal.com. Enter your Student ID, Roll Number, or Registration Number and select your Exam Type (Honours, Degree Pass, Masters, or Diploma). The portal will instantly display your verified marksheet, semester GPA, and cumulative CGPA."
   },
   {
     id: "q_cert_verify",

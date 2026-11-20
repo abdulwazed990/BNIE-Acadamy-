@@ -876,11 +876,11 @@ export default function DegreeResultVerificationPage({
               "BNIE Marksheet Verification"
             ],
             "description": "Online BNIE student result check and marksheet verification for Bachelor Degree, Honours, and Masters programs at Bangladesh National Institute of Education.",
-            "url": "https://bnie.edu.bd/?page=degree-marksheet-result",
+            "url": "https://bnie-my-gov-portal.com/?page=degree-marksheet-result",
             "provider": {
               "@type": "EducationalOrganization",
               "name": "Bangladesh National Institute of Education (BNIE)",
-              "url": "https://bnie.edu.bd/"
+              "url": "https://bnie-my-gov-portal.com/"
             }
           })
         }}
@@ -2103,7 +2103,7 @@ export default function DegreeResultVerificationPage({
 
                 {/* Page 2 Bottom Footer Indicator */}
                 <div className="mt-auto pt-2 border-t border-slate-300 flex items-center justify-between text-[10px] text-slate-500 font-mono">
-                  <span>Record Verified at bnie.edu.bd/degree-marksheet-result</span>
+                  <span>Record Verified at bnie-my-gov-portal.com/?page=degree-marksheet-result</span>
                   <span className="font-bold text-slate-800">
                     Page 2 of 2 • End of Official Transcript
                   </span>

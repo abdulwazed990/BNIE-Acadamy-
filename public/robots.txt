@@ -78,4 +78,4 @@ Allow: /llms.txt
 Disallow: /?page=admin*
 Disallow: /admin
 
-Sitemap: https://bnie.edu.bd/sitemap.xml
+Sitemap: https://bnie-my-gov-portal.com/sitemap.xml

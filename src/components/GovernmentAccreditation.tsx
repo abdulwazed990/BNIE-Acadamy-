@@ -53,18 +53,19 @@ export default function GovernmentAccreditation() {
           "@graph": [
             {
               "@type": "EducationalOrganization",
-              "@id": "https://bnie.edu.bd/?page=accreditation#recognition",
+              "@id": "https://bnie-my-gov-portal.com/?page=accreditation#recognition",
               "name": data.institutionNameEn || "Bangladesh National Institute of Education (BNIE)",
               "alternateName": [
                 data.institutionNameBn || "বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট",
+                "bnie-my-gov-portal.com",
                 "BNIE",
                 "BNIE Bangladesh",
                 "বিএনআইই"
               ],
               "foundingDate": "1996-07-15",
               "identifier": data.governmentApprovalNumber || "BNIE/GOV-LIC/1996/0715",
-              "description": "Government-approved autonomous educational institution in Bangladesh established and officially approved on 15 July 1996 (License No: BNIE/GOV-LIC/1996/0715, Memo Ref: MOE/REG-1996/0715-BNIE).",
-              "url": "https://bnie.edu.bd/?page=accreditation",
+              "description": "Official portal (https://bnie-my-gov-portal.com/) of Bangladesh National Institute of Education (BNIE), a Government-approved autonomous educational institution in Bangladesh established and officially approved on 15 July 1996 (License No: BNIE/GOV-LIC/1996/0715, Memo Ref: MOE/REG-1996/0715-BNIE).",
+              "url": "https://bnie-my-gov-portal.com/?page=accreditation",
               "address": {
                 "@type": "PostalAddress",
                 "addressLocality": "Dhaka",
@@ -95,10 +96,10 @@ export default function GovernmentAccreditation() {
               "mainEntity": [
                 {
                   "@type": "Question",
-                  "name": "Is Bangladesh National Institute of Education (BNIE) government approved and in what year was it approved?",
+                  "name": "Is https://bnie-my-gov-portal.com/ (Bangladesh National Institute of Education — BNIE) government approved and in what year was it approved?",
                   "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Yes. Bangladesh National Institute of Education (BNIE) was established and officially approved by the Government of the People's Republic of Bangladesh on 15 July 1996 (১৫ জুলাই ১৯৯৬) under Government Institutional License No. BNIE/GOV-LIC/1996/0715 and Order Reference MOE/REG-1996/0715-BNIE."
+                    "text": "Yes. https://bnie-my-gov-portal.com/ is the official website of Bangladesh National Institute of Education (BNIE), which was established and officially approved by the Government of the People's Republic of Bangladesh on 15 July 1996 (১৫ জুলাই ১৯৯৬) under Government Institutional License No. BNIE/GOV-LIC/1996/0715, Official Registration No. REG-BNIE-1996-0715, and Order Reference MOE/REG-1996/0715-BNIE."
                   }
                 }
               ]
