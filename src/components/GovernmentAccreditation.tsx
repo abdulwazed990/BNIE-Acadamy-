@@ -21,7 +21,11 @@ import {
   subscribeInstitutionalRecognition 
 } from "../lib/institutionalRecognitionService";
 
-export default function GovernmentAccreditation() {
+interface GovernmentAccreditationProps {
+  isStandalonePage?: boolean;
+}
+
+export default function GovernmentAccreditation({ isStandalonePage = false }: GovernmentAccreditationProps) {
   const [data, setData] = useState<InstitutionalRecognitionSettings>(() => getLocalInstitutionalRecognition());
 
   useEffect(() => {
@@ -121,12 +125,18 @@ export default function GovernmentAccreditation() {
             </span>
           </div>
           
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-950 font-sans tracking-tight leading-tight">
-            Government Approval &amp; Institutional Recognition
-          </h1>
-          <h2 className="text-xl sm:text-2xl font-bold text-[#006a4e] mt-1 font-serif">
+          {isStandalonePage ? (
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-950 font-sans tracking-tight leading-tight">
+              Government Approval &amp; Institutional Recognition
+            </h1>
+          ) : (
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-950 font-sans tracking-tight leading-tight">
+              Government Approval &amp; Institutional Recognition
+            </h2>
+          )}
+          <p className="text-xl sm:text-2xl font-bold text-[#006a4e] mt-1 font-serif">
             সরকারি অনুমোদন ও প্রাতিষ্ঠানিক স্বীকৃতি
-          </h2>
+          </p>
           <p className="text-xs sm:text-sm text-gray-600 mt-2 leading-relaxed">
             <strong>{data.institutionNameBn || "বাংলাদেশ জাতীয় শিক্ষা ইনস্টিটিউট"}</strong> ({data.institutionNameEn || "Bangladesh National Institute of Education — BNIE"}) ১৯৯৬ সালে প্রতিষ্ঠিত একটি স্বায়ত্তশাসিত জাতীয় উচ্চশিক্ষা ও কারিগরি শিক্ষা প্রতিষ্ঠান। এটি দেশব্যাপী স্নাতক সম্মান (Honours), ডিগ্রি পাস, স্নাতকোত্তর (Masters), ডিপ্লোমা ইন ইঞ্জিনিয়ারিং এবং কারিগরি সনদ প্রদান ও কেন্দ্রীয় ডিজিটাল ভেরিফিকেশন সেবা প্রদান করে।
           </p>

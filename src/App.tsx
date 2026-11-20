@@ -96,68 +96,68 @@ interface PageSeoMetadata {
 const PAGE_SEO_CONFIG: Record<string, PageSeoMetadata> = {
   home: {
     title: "BNIE Bangladesh | Bangladesh National Institute of Education",
-    description: "Official portal (bnie-my-gov-portal.com) of Bangladesh National Institute of Education (BNIE), Government-approved autonomous educational institute (15 July 1996 • License: BNIE/GOV-LIC/1996/0715). Verify certificates, marksheets, Honours, Degree, Masters & Diploma.",
+    description: "Official BNIE Bangladesh portal (bnie-my-gov-portal.com), Government-approved 15 July 1996 (BNIE/GOV-LIC/1996/0715). Verify certificates & marksheets.",
     canonicalPath: "/",
     breadcrumbName: "Home"
   },
   "degree-marksheet-result": {
     title: "Online Marksheet & Degree, Honours, Masters Result | BNIE",
-    description: "Check BNIE online marksheet and academic transcript verification (অনলাইন মার্কশিট যাচাই) for Bachelor Honours, Degree Pass, and Masters programs in Bangladesh.",
+    description: "Check BNIE online marksheet & transcript verification (অনলাইন মার্কশিট যাচাই) for Honours, Degree Pass & Masters in Bangladesh.",
     canonicalPath: "/?page=degree-marksheet-result",
     breadcrumbName: "Online Marksheet Verification"
   },
   verify: {
     title: "Certificate Verification Online | BNIE Bangladesh (সনদ যাচাই)",
-    description: "BNIE Certificate Verification online (অনলাইন সার্টিফিকেট ও সনদ যাচাই) via Roll, Registration, or QR code for SSC Vocational, HSC Vocational & Diploma in Engineering.",
+    description: "BNIE Certificate Verification online (সনদ যাচাই) via Roll, Registration, or QR code for SSC, HSC Vocational & Diploma.",
     canonicalPath: "/?page=verify",
     breadcrumbName: "Certificate Verification"
   },
   report: {
     title: "Digital Academic Transcript & Certificate Report | BNIE",
-    description: "Official verified academic record, QR code dossier, and marksheet transcript from Bangladesh National Institute of Education (BNIE Bangladesh).",
+    description: "Official verified academic transcript, QR code record, and marksheet report from Bangladesh National Institute of Education (BNIE).",
     canonicalPath: "/?page=report",
     breadcrumbName: "Transcript Report",
     noIndex: true
   },
   "find-program": {
     title: "Bachelor Honours, Degree Pass, Masters & Diploma Programs | BNIE",
-    description: "Explore Bachelor Honours, Degree Pass courses, Masters programs, and Polytechnic Diploma in Engineering at Bangladesh National Institute of Education (BNIE).",
+    description: "Explore Bachelor Honours, Degree Pass, Masters, and Polytechnic Diploma in Engineering programs at BNIE Bangladesh.",
     canonicalPath: "/?page=find-program",
     breadcrumbName: "Academic Programs"
   },
   "online-admission": {
     title: "Online Admission Application | BNIE Bangladesh (অনলাইন ভর্তি)",
-    description: "Apply online for Honours admission, Degree Pass, Masters, and Diploma in Engineering (Computer, Civil, Electrical, Mechanical) at BNIE Bangladesh.",
+    description: "Apply online for Honours, Degree Pass, Masters, and Diploma in Engineering (Computer, Civil, Electrical, Mechanical) at BNIE.",
     canonicalPath: "/?page=online-admission",
     breadcrumbName: "Online Admission"
   },
   accreditation: {
     title: "Government Approval & Institutional License (1996) | BNIE",
-    description: "Official Government Institutional License (BNIE/GOV-LIC/1996/0715) and statutory approval of Bangladesh National Institute of Education (bnie-my-gov-portal.com), approved 15 July 1996 (Memo: MOE/REG-1996/0715-BNIE).",
+    description: "Government Institutional License BNIE/GOV-LIC/1996/0715 & 15 July 1996 approval of BNIE Bangladesh (bnie-my-gov-portal.com).",
     canonicalPath: "/?page=accreditation",
     breadcrumbName: "Government Approval & Recognition"
   },
   services: {
     title: "BNIE Student Services & Digital Education Portal Bangladesh",
-    description: "BNIE student services: online certificate verification, marksheet check, academic transcripts, SSC/HSC Vocational, Honours, Masters & technical courses.",
+    description: "BNIE student services: online certificate verification, marksheet check, academic transcripts, Honours, Masters & Diploma.",
     canonicalPath: "/?page=services",
     breadcrumbName: "Student Services"
   },
   notices: {
     title: "BNIE Examination Results, Notices & Academic Circulars (নোটিশ)",
-    description: "Latest examination results, notice circulars, examination schedules, and academic announcements from Bangladesh National Institute of Education (BNIE).",
+    description: "Latest examination results, notice circulars, exam schedules, and academic updates from BNIE Bangladesh.",
     canonicalPath: "/?page=notices",
     breadcrumbName: "Notices"
   },
   "research-publications": {
     title: "Research, Journals & Publications | BNIE",
-    description: "Academic journals, scholarly research, conference proceedings, and faculty publications from Bangladesh National Institute of Education.",
+    description: "Academic journals, scholarly research, conference proceedings, and faculty publications from BNIE Bangladesh.",
     canonicalPath: "/?page=research-publications",
     breadcrumbName: "Research Publications"
   },
   "regional-centers": {
     title: "Regional Resource Centers | BNIE",
-    description: "Divisional and regional learning centers, academic support hubs, and liaison points of Bangladesh National Institute of Education across Bangladesh.",
+    description: "Divisional and regional learning centers, academic support hubs, and liaison offices of BNIE across Bangladesh.",
     canonicalPath: "/?page=regional-centers",
     breadcrumbName: "Regional Centers"
   },
@@ -169,91 +169,91 @@ const PAGE_SEO_CONFIG: Record<string, PageSeoMetadata> = {
   },
   "student-handbooks": {
     title: "BNIE Student Handbooks & Academic Records (শিক্ষার্থী হ্যান্ডবুক)",
-    description: "Download official student handbooks, examination codes of conduct, grading guidelines, and academic rules of BNIE Bangladesh.",
+    description: "Download official student handbooks, exam rules, grading guides, and academic policies of BNIE Bangladesh.",
     canonicalPath: "/?page=student-handbooks",
     breadcrumbName: "Student Handbooks"
   },
   "vc-message": {
     title: "Message from the Vice-Chancellor | BNIE",
-    description: "Executive address and strategic educational vision from the Vice-Chancellor of Bangladesh National Institute of Education.",
+    description: "Executive welcome address and educational vision from the Vice-Chancellor of Bangladesh National Institute of Education (BNIE).",
     canonicalPath: "/?page=vc-message",
     breadcrumbName: "Vice-Chancellor Message"
   },
   "complaints-services": {
     title: "Citizen Charter & Grievance Redress | BNIE",
-    description: "Student grievance redressal system, citizen charter, and service dispute resolution cell at BNIE.",
+    description: "Student grievance redressal system, citizen charter, and academic support cell at Bangladesh National Institute of Education.",
     canonicalPath: "/?page=complaints-services",
     breadcrumbName: "Citizen Charter"
   },
   "help-center": {
     title: "BNIE Help Center & FAQs | Result & Certificate Check (সহায়তা)",
-    description: "Help Center: how to check BNIE result, verify certificates online, online marksheet, and answers to student questions at BNIE Bangladesh.",
+    description: "Help Center: how to check BNIE results, verify certificates & marksheets online, and student FAQs at BNIE Bangladesh.",
     canonicalPath: "/?page=help-center",
     breadcrumbName: "Help Center"
   },
   help: {
     title: "BNIE Help Center & FAQs | Result & Certificate Check (সহায়তা)",
-    description: "Help Center: how to check BNIE result, verify certificates online, online marksheet, and answers to student questions at BNIE Bangladesh.",
+    description: "Help Center: how to check BNIE results, verify certificates & marksheets online, and student FAQs at BNIE Bangladesh.",
     canonicalPath: "/?page=help-center",
     breadcrumbName: "Help Center"
   },
   "privacy-policy": {
     title: "Privacy Policy & Data Protection | BNIE Bangladesh",
-    description: "Student data privacy principles, verification record security, and digital privacy policy of Bangladesh National Institute of Education.",
+    description: "Student data privacy principles, verification record security, and digital privacy policy of BNIE Bangladesh.",
     canonicalPath: "/?page=privacy-policy",
     breadcrumbName: "Privacy Policy"
   },
   privacy: {
     title: "Privacy Policy & Data Protection | BNIE Bangladesh",
-    description: "Student data privacy principles, verification record security, and digital privacy policy of Bangladesh National Institute of Education.",
+    description: "Student data privacy principles, verification record security, and digital privacy policy of BNIE Bangladesh.",
     canonicalPath: "/?page=privacy-policy",
     breadcrumbName: "Privacy Policy"
   },
   "terms-conditions": {
     title: "Terms of Service & Usage Conditions | BNIE Bangladesh",
-    description: "Terms of service governing use of the BNIE portal, online certificate verification, and institutional digital resources.",
+    description: "Terms of service governing use of the BNIE portal, online certificate verification, and digital academic records.",
     canonicalPath: "/?page=terms-conditions",
     breadcrumbName: "Terms & Conditions"
   },
   terms: {
     title: "Terms of Service & Usage Conditions | BNIE Bangladesh",
-    description: "Terms of service governing use of the BNIE portal, online certificate verification, and institutional digital resources.",
+    description: "Terms of service governing use of the BNIE portal, online certificate verification, and digital academic records.",
     canonicalPath: "/?page=terms-conditions",
     breadcrumbName: "Terms & Conditions"
   },
   "osaps-login": {
     title: "OSAPS Online Student Access Portal | BNIE",
-    description: "Student login portal for OSAPS course registration, marksheet checks, and student records at BNIE.",
+    description: "OSAPS student login portal for course registration, marksheet checks, and academic records at BNIE Bangladesh.",
     canonicalPath: "/?page=osaps-login",
     breadcrumbName: "OSAPS Student Portal"
   },
   ebook: {
     title: "Digital E-Library & Academic Resources | BNIE",
-    description: "Open educational resources, lecture textbooks, and course syllabus readers for BNIE students.",
+    description: "Open educational resources, lecture textbooks, and digital syllabus readers for BNIE Bangladesh students.",
     canonicalPath: "/?page=ebook",
     breadcrumbName: "E-Library"
   },
   "web-email": {
     title: "Institutional Webmail Gateway | BNIE",
-    description: "Official webmail and communication gateway for BNIE students, faculty, and administrative staff.",
+    description: "Official institutional webmail and communication gateway for BNIE students, faculty, and administrative staff.",
     canonicalPath: "/?page=web-email",
     breadcrumbName: "Webmail"
   },
   courses: {
     title: "BNIE Polytechnic Diploma Engineering Programs (পলিটেকনিক ডিপ্লোমা)",
-    description: "1-Year to 4-Year Polytechnic Diploma in Engineering (Civil, Electrical, Mechanical, Computer) at Bangladesh National Institute of Education (BNIE Bangladesh).",
+    description: "1-Year to 4-Year Polytechnic Diploma in Engineering (Civil, Electrical, Mechanical, Computer) at BNIE Bangladesh.",
     canonicalPath: "/?page=courses",
     breadcrumbName: "Diploma Courses"
   },
   specializations: {
     title: "Vocational & Professional Specializations | BNIE",
-    description: "Explore vocational trade certifications, skill development tracks, and technology programs at BNIE.",
+    description: "Explore vocational trade certifications, skill development tracks, and engineering technology programs at BNIE.",
     canonicalPath: "/?page=specializations",
     breadcrumbName: "Vocational Specializations"
   },
   "admin-login": {
     title: "Administrative Registry Console | BNIE",
-    description: "Secure credential management console for authorized BNIE registry officers only.",
+    description: "Secure administrative registry management console for authorized BNIE officers and examination controllers.",
     canonicalPath: "/?page=admin-login",
     breadcrumbName: "Admin Registry",
     noIndex: true
@@ -874,7 +874,7 @@ export default function App() {
                   <span>Return to Home Portal</span>
                 </button>
               </div>
-              <GovernmentAccreditation />
+              <GovernmentAccreditation isStandalonePage />
               <Contact />
             </motion.div>
           )}
